@@ -13,5 +13,6 @@ Summary:
   - Sharing remixed files is allowed with the same credit/restrictions
 
 Original tooling code in this repository (HTML/CSS/JS/Python helper scripts)
-that is not part of the 3D mesh may be reused with attribution to this project,
-but the Starship mesh and any STL that includes it remain CC BY-NC.
+by David Leeds (https://github.com/leedsexplore) that is not part of the 3D mesh
+may be reused with attribution to this project and author, but the Starship mesh
+and any STL that includes it remain CC BY-NC.

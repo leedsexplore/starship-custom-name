@@ -59,9 +59,13 @@ function meshXml(vertices, triangles, indent = "        ") {
 /**
  * Build a multi-object 3MF (ZIP) for MMU / multi-material assignment.
  * @param {{ name: string, geometry: import('three').BufferGeometry, color: string }[]} parts
+ * @param {{ application?: string, author?: string, version?: string }} [meta]
  */
-export function build3mf(parts) {
+export function build3mf(parts, meta = {}) {
   if (!parts.length) throw new Error("No parts for 3MF");
+  const application = meta.application || "Starship Custom Name";
+  const author = meta.author || "";
+  const version = meta.version || "";
 
   const baseLines = parts.map(
     (p, i) =>
@@ -86,8 +90,8 @@ export function build3mf(parts) {
 <model unit="millimeter" xml:lang="en-US"
   xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
   xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06">
-  <metadata name="Application">Starship Custom Name</metadata>
-  <resources>
+  <metadata name="Application">${escapeXml(application)}${version ? ` ${escapeXml(version)}` : ""}</metadata>
+${author ? `  <metadata name="Author">${escapeXml(author)}</metadata>\n` : ""}  <resources>
     <basematerials id="1">
 ${baseLines.join("\n")}
     </basematerials>

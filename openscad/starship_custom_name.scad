@@ -1,6 +1,8 @@
-// Starship with customizable side name — remix of Josh1297's SpaceX Starship
+// Starship Custom Name — OpenSCAD path (v1.0.0)
+// Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
+// Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship
-// License: CC BY-NC (same as parent). Attribution: Josh1297.
+// License: CC BY-NC (same as parent). Attribution: Josh1297 (+ credit this remix if you share).
 //
 // Prefer the web customizer (repo root) for wrap-to-hull, boolean engraved STL/3MF,
 // PNG covers, and share links. This OpenSCAD file is the advanced flat path.

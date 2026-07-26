@@ -1,13 +1,16 @@
 # Starship Custom Name
 
+**v1.0.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+
 Simple customizer for a Printables remix of [Josh1297’s SpaceX Starship](https://www.printables.com/model/225040-spacex-starship).
 
 **Type a name → preview colors → download STL, multi-material 3MF, or a PNG cover.**  
-License is **CC BY-NC** — credit Josh1297.
+License is **CC BY-NC** — credit Josh1297. Tooling by David Leeds.
 
 ## Use the web tool
 
-**Live:** [https://leedsexplore.github.io/starship-custom-name/](https://leedsexplore.github.io/starship-custom-name/)
+**Live:** [https://leedsexplore.github.io/starship-custom-name/](https://leedsexplore.github.io/starship-custom-name/)  
+**Source:** [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
 
 1. Open the site above (or run locally — see below).
 2. Enter hull text, fonts, colors, and placement.
@@ -59,8 +62,13 @@ python3 scripts/merge_stls.py \
 
 Or set `Part = preview_with_ship` and `Style = engraved` for a local `difference()` preview.
 
+## Version
+
+Bump `APP_VERSION` in [`version.js`](version.js) when shipping user-facing changes (also update cache-bust query params in `index.html` to match).
+
 ## Attribution
 
+- Remix / web tool: **David Leeds** ([@leedsexplore](https://github.com/leedsexplore))
 - Parent model: [SpaceX Starship](https://www.printables.com/model/225040-spacex-starship) by **Josh1297** (@Josh1297_194747)
 - License: [CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)
 - See [ATTRIBUTION.md](ATTRIBUTION.md)

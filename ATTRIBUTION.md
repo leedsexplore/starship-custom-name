@@ -1,5 +1,14 @@
 # Attribution
 
+## Remix / tool
+
+**Starship Custom Name** (web customizer + OpenSCAD wrapper)  
+by **David Leeds** ([@leedsexplore](https://github.com/leedsexplore))  
+https://github.com/leedsexplore/starship-custom-name  
+https://leedsexplore.github.io/starship-custom-name/
+
+## Parent model
+
 This project is a **remix** of:
 
 **SpaceX Starship** by Josh1297  

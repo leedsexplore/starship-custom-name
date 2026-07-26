@@ -8,13 +8,16 @@
       name="description"
       content="Customize the name on a printable Starship remix, preview a color, and download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=9" />
+    <link rel="stylesheet" href="styles.css?v=1.0.0" />
   </head>
   <body>
     <div id="app">
       <aside class="panel">
         <header class="brand">
-          <p class="eyebrow">Printables remix tool</p>
+          <p class="eyebrow">
+            Printables remix tool
+            <span class="version" id="app-version" aria-label="App version">v1.0.0</span>
+          </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
             Type a name, preview Prusa/space colors, download STL or multi-material 3MF.
@@ -155,6 +158,22 @@
 
         <footer class="fineprint">
           <p>
+            Tool by
+            <a
+              href="https://github.com/leedsexplore"
+              target="_blank"
+              rel="noopener"
+              >David Leeds</a
+            >
+            (<a
+              href="https://github.com/leedsexplore/starship-custom-name"
+              target="_blank"
+              rel="noopener"
+              >source</a
+            >
+            · <span id="footer-version">v1.0.0</span>)
+          </p>
+          <p>
             Remix of
             <a
               href="https://www.printables.com/model/225040-spacex-starship"
@@ -188,6 +207,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=9"></script>
+    <script type="module" src="app.js?v=1.0.0"></script>
   </body>
 </html>
