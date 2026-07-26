@@ -188,6 +188,23 @@ a {
   border-color: var(--accent-dim);
 }
 
+.secondary.full {
+  width: 100%;
+}
+
+.field.check {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--text);
+}
+
+.field.check input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--accent);
+}
+
 .field input[type="text"] {
   width: 100%;
   border: 1px solid var(--panel-border);

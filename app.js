@@ -12,20 +12,39 @@ const EMBED_MM = 0.35;
 /** Approx safe text span along hull before flaps (mm). */
 const SAFE_TEXT_SPAN_MM = 48;
 const SHIP_URL = "./assets/StarShipV2_original.stl";
-const FONT_URL = "./fonts/helvetiker_bold.typeface.json";
+const FONT_URL = "./fonts/optimer_bold.typeface.json";
+
+/** Fold unsupported accented letters to ASCII lookalikes when needed. */
+const ACCENT_FOLD = {
+  Á: "A", À: "A", Â: "A", Ä: "A", Ã: "A", Å: "A", Æ: "AE",
+  É: "E", È: "E", Ê: "E", Ë: "E",
+  Í: "I", Ì: "I", Î: "I", Ï: "I",
+  Ó: "O", Ò: "O", Ô: "O", Ö: "O", Õ: "O", Ø: "O",
+  Ú: "U", Ù: "U", Û: "U", Ü: "U",
+  Ý: "Y", Ñ: "N", Ç: "C",
+  á: "a", à: "a", â: "a", ä: "a", ã: "a", å: "a", æ: "ae",
+  é: "e", è: "e", ê: "e", ë: "e",
+  í: "i", ì: "i", î: "i", ï: "i",
+  ó: "o", ò: "o", ô: "o", ö: "o", õ: "o", ø: "o",
+  ú: "u", ù: "u", û: "u", ü: "u",
+  ý: "y", ÿ: "y", ñ: "n", ç: "c", ß: "ss",
+};
 
 const el = {
+  form: document.getElementById("controls"),
   name: document.getElementById("name"),
   color: document.getElementById("color"),
   size: document.getElementById("size"),
   pos: document.getElementById("pos"),
   depth: document.getElementById("depth"),
+  wrap: document.getElementById("wrap"),
   sizeLabel: document.getElementById("size-label"),
   posLabel: document.getElementById("pos-label"),
   depthLabel: document.getElementById("depth-label"),
   download: document.getElementById("download"),
   copyLink: document.getElementById("copy-link"),
   resetView: document.getElementById("reset-view"),
+  fitSize: document.getElementById("fit-size"),
   status: document.getElementById("status"),
   glyphWarn: document.getElementById("glyph-warn"),
   lengthWarn: document.getElementById("length-warn"),
@@ -61,6 +80,7 @@ const textMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.color.value).offsetHSL(0, 0, -0.08),
   metalness: 0.25,
   roughness: 0.5,
+  side: THREE.DoubleSide,
 });
 
 let font = null;
@@ -70,7 +90,7 @@ let shipMesh = null;
 let textMesh = null;
 let ready = false;
 let rebuildTimer = 0;
-let rebuildPromise = Promise.resolve();
+let lastSpanMm = 0;
 
 function setStatus(msg, isError = false) {
   el.status.textContent = msg;
@@ -78,8 +98,16 @@ function setStatus(msg, isError = false) {
 }
 
 function selectedSide() {
-  const checked = document.querySelector('input[name="side"]:checked');
-  return checked?.value === "left" ? "left" : "right";
+  return document.querySelector('input[name="side"]:checked')?.value === "left"
+    ? "left"
+    : "right";
+}
+
+function selectedStyle() {
+  return document.querySelector('input[name="style"]:checked')?.value ===
+    "engraved"
+    ? "engraved"
+    : "raised";
 }
 
 function resize() {
@@ -110,71 +138,130 @@ function applyColor() {
 function sanitizeName(raw) {
   const text = (raw || "").slice(0, 24);
   if (!fontGlyphs.size) {
-    return { display: text || " ", missing: [], used: text || " " };
+    return { display: text || " ", missing: [], folded: [], used: text || " " };
   }
+
   const missing = [];
+  const folded = [];
   let used = "";
+
   for (const ch of text) {
     if (ch === " " || fontGlyphs.has(ch)) {
       used += ch;
-    } else if (!missing.includes(ch)) {
-      missing.push(ch);
+      continue;
     }
+    const replacement = ACCENT_FOLD[ch];
+    if (replacement && [...replacement].every((c) => fontGlyphs.has(c))) {
+      used += replacement;
+      folded.push(`${ch}→${replacement}`);
+      continue;
+    }
+    if (!missing.includes(ch)) missing.push(ch);
   }
+
   used = used.replace(/\s+/g, " ").trim();
-  return { display: text, missing, used: used || " " };
+  return { display: text, missing, folded, used: used || " " };
 }
 
-function updateGlyphWarn(missing) {
-  if (!missing.length) {
+function updateGlyphWarn(missing, folded) {
+  const parts = [];
+  if (folded.length) {
+    parts.push(`Simplified: ${folded.join(", ")}`);
+  }
+  if (missing.length) {
+    parts.push(
+      `Skipped (not in font): ${missing.map((c) => JSON.stringify(c)).join(", ")}`
+    );
+  }
+  if (!parts.length) {
     el.glyphWarn.hidden = true;
     el.glyphWarn.textContent = "";
     return;
   }
-  const shown = missing.map((c) => JSON.stringify(c)).join(", ");
   el.glyphWarn.hidden = false;
-  el.glyphWarn.textContent = `Font can’t draw: ${shown}. Those characters are skipped in the STL.`;
+  el.glyphWarn.textContent = parts.join(" · ");
 }
 
 function updateLengthWarn(spanMm) {
+  lastSpanMm = spanMm;
   if (spanMm <= SAFE_TEXT_SPAN_MM) {
     el.lengthWarn.hidden = true;
     el.lengthWarn.textContent = "";
     return;
   }
   el.lengthWarn.hidden = false;
-  el.lengthWarn.textContent = `Text is ~${spanMm.toFixed(0)} mm long (safe band ~${SAFE_TEXT_SPAN_MM} mm). Shrink letter size or shorten the name for a cleaner fit.`;
+  el.lengthWarn.textContent = `Text is ~${spanMm.toFixed(0)} mm long (safe band ~${SAFE_TEXT_SPAN_MM} mm). Use “Fit text to hull” or shorten the name.`;
 }
 
-function buildTextGeometry(text, size, depth) {
+function buildFlatTextGeometry(text, size, depth) {
   const geometry = new TextGeometry(text, {
     font,
     size,
     depth,
-    curveSegments: 7,
+    curveSegments: 8,
     bevelEnabled: false,
   });
   geometry.computeBoundingBox();
   const bb = geometry.boundingBox;
-  const cx = (bb.min.x + bb.max.x) / 2;
-  const cy = (bb.min.y + bb.max.y) / 2;
-  geometry.translate(-cx, -cy, 0);
+  geometry.translate(
+    -(bb.min.x + bb.max.x) / 2,
+    -(bb.min.y + bb.max.y) / 2,
+    0
+  );
+  // Letters run along +Y (ship length); letter height along ±X; extrude +Z.
   geometry.rotateZ(Math.PI / 2);
   return geometry;
 }
 
-function placeTextMesh(geometry) {
-  const side = selectedSide();
-  const zSign = side === "right" ? 1 : -1;
-  const z0 = zSign * (HULL_RADIUS_Z - EMBED_MM);
+/**
+ * Bend flat text onto the cylindrical hull (axis // Y through body center).
+ * Writes world-space coordinates into the geometry.
+ */
+function wrapGeometryToHull(geometry, side, textY, style) {
+  const sign = side === "right" ? 1 : -1;
+  const R = HULL_RADIUS_Z;
+  const pos = geometry.attributes.position;
+  const v = new THREE.Vector3();
+
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    // Flip across-axis on left so text reads correctly from outside.
+    const across = side === "left" ? -v.x : v.x;
+    const along = v.y;
+    // Raised: z=0 sits slightly inside hull, z=depth ends proud of surface.
+    // Engraved: z=0 at surface, z=depth cuts inward toward the axis.
+    const radial = style === "raised" ? R - EMBED_MM + v.z : R - v.z;
+    const theta = across / R;
+    const x = BODY_CENTER_X + radial * Math.sin(theta);
+    const z = sign * radial * Math.cos(theta);
+    const y = textY + along;
+    pos.setXYZ(i, x, y, z);
+  }
+  pos.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function placeFlatOnHull(geometry, side, textY, style) {
+  const sign = side === "right" ? 1 : -1;
   const mesh = new THREE.Mesh(geometry, textMaterial);
-  mesh.position.set(BODY_CENTER_X, Number(el.pos.value), z0);
+  if (style === "raised") {
+    mesh.position.set(BODY_CENTER_X, textY, sign * (HULL_RADIUS_Z - EMBED_MM));
+  } else {
+    // Engraved flat: sit at surface and extrude inward via negative scale on Z.
+    mesh.position.set(BODY_CENTER_X, textY, sign * HULL_RADIUS_Z);
+    mesh.scale.z = -1;
+  }
   if (side === "left") {
-    // Match openscad rotate([180,0,90]) so extrusion points inward/outward correctly
-    // and text stays readable along the hull.
-    mesh.rotation.x = Math.PI;
+    mesh.rotation.y = Math.PI;
   }
   return mesh;
+}
+
+function measureSpan(geometry) {
+  geometry.computeBoundingBox();
+  const bb = geometry.boundingBox;
+  return Math.max(bb.max.y - bb.min.y, bb.max.x - bb.min.x, 0);
 }
 
 function rebuildText() {
@@ -182,21 +269,34 @@ function rebuildText() {
 
   const proud = Number(el.depth.value);
   const totalDepth = EMBED_MM + proud;
-  const { missing, used } = sanitizeName(el.name.value);
-  updateGlyphWarn(missing);
+  const side = selectedSide();
+  const style = selectedStyle();
+  const textY = Number(el.pos.value);
+  const wrap = el.wrap.checked;
+  const { missing, folded, used } = sanitizeName(el.name.value);
+  updateGlyphWarn(missing, folded);
 
-  const geometry = buildTextGeometry(used, Number(el.size.value), totalDepth);
-  geometry.computeBoundingBox();
-  const bb = geometry.boundingBox;
-  // After rotZ(90), length along ship is roughly X extent of original → Y span now
-  const spanMm = Math.max(bb.max.y - bb.min.y, bb.max.x - bb.min.x);
+  const flat = buildFlatTextGeometry(
+    used,
+    Number(el.size.value),
+    totalDepth
+  );
+  const spanMm = measureSpan(flat);
   updateLengthWarn(spanMm);
 
   if (textMesh) {
     scene.remove(textMesh);
     textMesh.geometry.dispose();
+    textMesh = null;
   }
-  textMesh = placeTextMesh(geometry);
+
+  if (wrap) {
+    wrapGeometryToHull(flat, side, textY, style);
+    textMesh = new THREE.Mesh(flat, textMaterial);
+  } else {
+    textMesh = placeFlatOnHull(flat, side, textY, style);
+  }
+
   scene.add(textMesh);
   return Promise.resolve();
 }
@@ -204,12 +304,11 @@ function rebuildText() {
 function scheduleRebuild() {
   updateLabels();
   window.clearTimeout(rebuildTimer);
-  rebuildPromise = new Promise((resolve) => {
+  return new Promise((resolve) => {
     rebuildTimer = window.setTimeout(() => {
       rebuildText().then(resolve);
     }, 120);
   });
-  return rebuildPromise;
 }
 
 function flushRebuild() {
@@ -224,8 +323,7 @@ function frameCamera() {
   const center = box.getCenter(new THREE.Vector3());
   controls.target.copy(center);
   const maxDim = Math.max(size.x, size.y, size.z);
-  const side = selectedSide();
-  const zDir = side === "right" ? 1 : -1;
+  const zDir = selectedSide() === "right" ? 1 : -1;
   camera.position.set(
     center.x + maxDim * 0.35,
     center.y + maxDim * 0.05,
@@ -242,6 +340,8 @@ function readState() {
     pos: el.pos.value,
     depth: el.depth.value,
     side: selectedSide(),
+    style: selectedStyle(),
+    wrap: el.wrap.checked ? "1" : "0",
   };
 }
 
@@ -255,9 +355,19 @@ function applyState(state) {
   if (state.pos != null) el.pos.value = state.pos;
   if (state.depth != null) el.depth.value = state.depth;
   if (state.side === "left" || state.side === "right") {
-    const radio = document.querySelector(`input[name="side"][value="${state.side}"]`);
+    const radio = document.querySelector(
+      `input[name="side"][value="${state.side}"]`
+    );
     if (radio) radio.checked = true;
   }
+  if (state.style === "raised" || state.style === "engraved") {
+    const radio = document.querySelector(
+      `input[name="style"][value="${state.style}"]`
+    );
+    if (radio) radio.checked = true;
+  }
+  if (state.wrap === "0" || state.wrap === "false") el.wrap.checked = false;
+  if (state.wrap === "1" || state.wrap === "true") el.wrap.checked = true;
   updateLabels();
   applyColor();
 }
@@ -265,12 +375,18 @@ function applyState(state) {
 function stateFromUrl() {
   const q = new URLSearchParams(window.location.search);
   const state = {};
-  if (q.has("name")) state.name = q.get("name");
-  if (q.has("color")) state.color = q.get("color");
-  if (q.has("size")) state.size = q.get("size");
-  if (q.has("pos")) state.pos = q.get("pos");
-  if (q.has("depth")) state.depth = q.get("depth");
-  if (q.has("side")) state.side = q.get("side");
+  for (const key of [
+    "name",
+    "color",
+    "size",
+    "pos",
+    "depth",
+    "side",
+    "style",
+    "wrap",
+  ]) {
+    if (q.has(key)) state[key] = q.get(key);
+  }
   return state;
 }
 
@@ -283,6 +399,8 @@ function writeUrl(replace = true) {
   q.set("pos", s.pos);
   q.set("depth", s.depth);
   q.set("side", s.side);
+  q.set("style", s.style);
+  q.set("wrap", s.wrap);
   const url = `${window.location.pathname}?${q.toString()}`;
   if (replace) history.replaceState(null, "", url);
   return `${window.location.origin}${url}`;
@@ -330,8 +448,12 @@ async function downloadStl() {
     a.click();
     URL.revokeObjectURL(a.href);
     writeUrl();
+    const extra =
+      selectedStyle() === "engraved"
+        ? " Engraved letters are inset meshes (use slicer mesh-boolean subtract if your tool supports it)."
+        : "";
     setStatus(
-      "STL downloaded — color is preview only; set filament in your slicer."
+      `STL downloaded — color is preview only; set filament in your slicer.${extra}`
     );
   } catch (err) {
     console.error(err);
@@ -351,11 +473,35 @@ async function copyShareLink() {
   }
 }
 
+async function fitTextToHull() {
+  if (!font || !ready) return;
+  let size = Number(el.size.value);
+  // Shrink until span fits or we hit the minimum.
+  while (size > 3) {
+    const { used } = sanitizeName(el.name.value);
+    const geo = buildFlatTextGeometry(used, size, EMBED_MM + Number(el.depth.value));
+    const span = measureSpan(geo);
+    geo.dispose();
+    if (span <= SAFE_TEXT_SPAN_MM) break;
+    size -= 0.5;
+  }
+  el.size.value = String(size);
+  updateLabels();
+  await flushRebuild();
+  writeUrl();
+  setStatus(
+    lastSpanMm <= SAFE_TEXT_SPAN_MM
+      ? `Fitted to ${size.toFixed(1)} mm letter height.`
+      : `Still long at minimum size (${lastSpanMm.toFixed(0)} mm). Shorten the name.`
+  );
+}
+
 function onControlChange() {
   scheduleRebuild().then(() => writeUrl());
 }
 
 async function boot() {
+  el.form.addEventListener("submit", (e) => e.preventDefault());
   applyState(stateFromUrl());
   updateLabels();
   resize();
@@ -369,10 +515,13 @@ async function boot() {
   el.size.addEventListener("input", onControlChange);
   el.pos.addEventListener("input", onControlChange);
   el.depth.addEventListener("input", onControlChange);
-  for (const radio of document.querySelectorAll('input[name="side"]')) {
+  el.wrap.addEventListener("change", onControlChange);
+  for (const radio of document.querySelectorAll(
+    'input[name="side"], input[name="style"]'
+  )) {
     radio.addEventListener("change", () => {
       onControlChange();
-      frameCamera();
+      if (radio.name === "side") frameCamera();
     });
   }
   el.presets.addEventListener("click", (ev) => {
@@ -388,6 +537,7 @@ async function boot() {
     frameCamera();
     setStatus("View reset.");
   });
+  el.fitSize.addEventListener("click", fitTextToHull);
 
   try {
     const fontLoader = new FontLoader();

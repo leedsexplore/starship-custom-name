@@ -20,6 +20,8 @@ Text_Size = 5; // [3:0.5:14]
 Text_Depth = 0.65; // [0.3:0.1:2.5]
 // Font (must be installed on your system)
 Font = "Liberation Sans:style=Bold";
+// Raised emboss, or engraved (cut) — engraved needs Part=preview boolean locally
+Style = "raised"; // [raised, engraved]
 
 /* [Placement] */
 // Position along the ship length (Y). Nose is +Y, engines/base are -Y.
@@ -48,24 +50,34 @@ module ship() {
 
 module name_plate() {
     z_sign = Side == "right" ? 1 : -1;
-    z0 = z_sign * (hull_radius_z + Surface_Offset);
+    z0 = Style == "raised"
+        ? z_sign * (hull_radius_z + Surface_Offset)
+        : z_sign * hull_radius_z;
 
     translate([body_center_x + Text_X_Offset, Text_Y, z0])
         rotate([Side == "right" ? 0 : 180, 0, 90])
-            linear_extrude(height = Text_Depth, convexity = 8)
-                text(
-                    Name,
-                    size = Text_Size,
-                    font = Font,
-                    halign = "center",
-                    valign = "center",
-                    $fn = 32
-                );
+            mirror([0, 0, Style == "engraved" ? 1 : 0])
+                linear_extrude(height = Text_Depth, convexity = 8)
+                    text(
+                        Name,
+                        size = Text_Size,
+                        font = Font,
+                        halign = "center",
+                        valign = "center",
+                        $fn = 32
+                    );
 }
 
 if (Part == "preview_with_ship") {
-    ship();
-    name_plate();
+    if (Style == "engraved") {
+        difference() {
+            ship();
+            name_plate();
+        }
+    } else {
+        ship();
+        name_plate();
+    }
 } else {
     name_plate();
 }

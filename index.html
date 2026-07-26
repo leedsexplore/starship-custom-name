@@ -8,7 +8,7 @@
       name="description"
       content="Customize the name on a printable Starship remix, preview a color, and download your STL."
     />
-    <link rel="stylesheet" href="styles.css?v=2" />
+    <link rel="stylesheet" href="styles.css?v=3" />
   </head>
   <body>
     <div id="app">
@@ -63,6 +63,23 @@
             </div>
           </fieldset>
 
+          <fieldset class="field fieldset">
+            <legend>Text style</legend>
+            <div class="segmented">
+              <label
+                ><input type="radio" name="style" value="raised" checked /> Raised</label
+              >
+              <label
+                ><input type="radio" name="style" value="engraved" /> Engraved</label
+              >
+            </div>
+          </fieldset>
+
+          <label class="field check">
+            <input id="wrap" type="checkbox" checked />
+            <span>Wrap text to hull curve</span>
+          </label>
+
           <label class="field">
             <span>Letter size <em id="size-label">5.0 mm</em></span>
             <input id="size" type="range" min="3" max="8" step="0.5" value="5" />
@@ -74,7 +91,7 @@
           </label>
 
           <label class="field">
-            <span>Emboss height <em id="depth-label">0.30 mm</em></span>
+            <span>Emboss / engrave depth <em id="depth-label">0.30 mm</em></span>
             <input
               id="depth"
               type="range"
@@ -97,6 +114,9 @@
                 Reset view
               </button>
             </div>
+            <button type="button" id="fit-size" class="secondary full">
+              Fit text to hull
+            </button>
             <p id="status" class="status" role="status">Loading ship…</p>
           </div>
         </form>
@@ -133,6 +153,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2"></script>
+    <script type="module" src="app.js?v=3"></script>
   </body>
 </html>
