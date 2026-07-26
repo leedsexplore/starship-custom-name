@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v1.1.3** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v1.1.4** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 Simple customizer for a Printables remix of [Josh1297’s SpaceX Starship](https://www.printables.com/model/225040-spacex-starship).
 
@@ -15,15 +15,15 @@ License is **CC BY-NC** — credit Josh1297. Tooling by David Leeds.
 1. Open the site above (or run locally — see below).
 2. Enter hull text, fonts, colors, and placement.
 3. Download:
-   - **STL** — single mesh. Engraved uses a true boolean subtract at export time.
-   - **3MF (MMU)** — raised: separate Hull + Letters objects for multi-material. Engraved: booleaned solid.
-   - **PNG cover** — viewport snapshot for Printables gallery images.
+   - **STL** — engraved uses a true boolean subtract. Raised overlays letters on the hull (prefer **3MF** for clean multi-material).
+   - **3MF (MMU)** — raised: separate Hull + Letters objects. Engraved: booleaned solid (or Hull + cutter fallback if CSG fails).
+   - **PNG cover** — square full-ship snapshot for Printables gallery images.
    - **OpenSCAD params** — settings snippet for the advanced flat OpenSCAD path.
 4. Slice and print (vertical + supports, same as the original).
 
 Shareable URLs look like:
 
-`https://leedsexplore.github.io/starship-custom-name/?name=Alex&color=e10600&text=e10600&font=optimer-bold&size=5&pos=-2&depth=0.3&scale=100&side=right&style=raised&wrap=1`
+`https://leedsexplore.github.io/starship-custom-name/?name=Alex&color=e10600&text=f2f0e6&font=optimer-bold&size=5&pos=-2&depth=0.5&scale=100&side=right&style=raised&wrap=1`
 
 | Control | Notes |
 |--------|--------|
@@ -33,7 +33,7 @@ Shareable URLs look like:
 | Engraved | Preview is inset; export runs CSG boolean |
 | Wrap | Web-only cylindrical bend |
 
-Defaults: matching **Signal Red** hull + letters.
+Defaults: **Signal Red** hull (`#e10600`) + **Pearl White** letters (`#f2f0e6`), emboss depth 0.5 mm.
 
 ### Run locally
 

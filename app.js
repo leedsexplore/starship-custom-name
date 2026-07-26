@@ -973,17 +973,19 @@ function buildExportMeshes({ preferBoolean }) {
   const note =
     style === "engraved"
       ? "Boolean failed — exported inset letter meshes (use slicer mesh-boolean if needed)."
-      : "Raised letters merged with hull.";
+      : "Raised letters overlaid on hull (not boolean-unioned). Prefer 3MF for MMU.";
 
   return { mode: "merged", group, ship, text, note };
 }
 
 function triggerDownload(blob, filename) {
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
+  const url = URL.createObjectURL(blob);
+  a.href = url;
   a.download = filename;
   a.click();
-  URL.revokeObjectURL(a.href);
+  // Delay revoke — Safari/Firefox can drop the download if revoked immediately.
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
 function setExportBusy(busy) {
@@ -1053,12 +1055,14 @@ async function download3mf() {
     const scale = modelScale();
 
     let parts;
+    let engravedSolid = false;
 
     if (style === "engraved") {
       setStatus("Boolean engraving for 3MF…");
       await yieldToUi();
       const payload = buildExportMeshes({ preferBoolean: true });
       if (payload.mode === "boolean") {
+        engravedSolid = true;
         parts = [
           {
             name: "Hull (engraved)",
@@ -1074,7 +1078,7 @@ async function download3mf() {
         ];
       }
       setStatus(
-        payload.mode === "boolean"
+        engravedSolid
           ? "Packing engraved 3MF…"
           : "Packing 3MF (inset fallback)…"
       );
@@ -1105,7 +1109,9 @@ async function download3mf() {
     setStatus(
       style === "raised"
         ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU)."
-        : "3MF downloaded — engraved hull is a single solid (recess cut)."
+        : engravedSolid
+          ? "3MF downloaded — engraved hull is a single solid (recess cut)."
+          : "3MF downloaded — boolean failed; Hull + Letters (cutter) for slicer boolean."
     );
   } catch (err) {
     console.error(err);
