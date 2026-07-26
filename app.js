@@ -729,9 +729,9 @@ function frameCamera() {
 }
 
 /**
- * Face-on framing for a square Printables cover — ship centered in frame.
- * Aims at the hull axis (not the text AABB). Skips OrbitControls.update()
- * so spherical recomputation cannot pull the subject off-center.
+ * Full-ship framing for a square Printables cover.
+ * Fits the entire model (nose → fins) in frame, viewed from the lettered side.
+ * Skips OrbitControls.update() so spherical recomputation cannot skew framing.
  * Assumes camera.aspect is already 1 (set by captureCoverDataUrl).
  */
 function frameCoverCamera() {
@@ -739,20 +739,25 @@ function frameCoverCamera() {
     frameCamera();
     return;
   }
-  const textY = Number(el.pos.value);
-  const zDir = selectedSide() === "right" ? 1 : -1;
-  const span = Math.max(lastSpanMm, Number(el.size.value) * 4, 28);
-  // Vertical fit: letter span + hull margin so fins/context show without clipping.
-  const fitH = span + 36;
-  const fov = THREE.MathUtils.degToRad(camera.fov);
-  const dist = (fitH / 2) / Math.tan(fov / 2) * 1.05;
+  modelGroup.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(modelGroup);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  // Prefer hull axis X so the cylinder sits dead-center horizontally.
+  center.x = BODY_CENTER_X * modelGroup.scale.x;
 
-  const target = new THREE.Vector3(BODY_CENTER_X, textY, 0);
-  camera.position.set(BODY_CENTER_X, textY, zDir * dist);
+  // Extra margin so nose + flaps read clearly in the square (not edge-clipped).
+  const fit = Math.max(size.x, size.y, size.z) * 1.35;
+  const fov = THREE.MathUtils.degToRad(camera.fov);
+  const dist = fit / 2 / Math.tan(fov / 2);
+  const zDir = selectedSide() === "right" ? 1 : -1;
+
+  // Slight X bias for a 3/4 read without losing horizontal centering much.
+  camera.position.set(center.x + fit * 0.12, center.y, center.z + zDir * dist);
   camera.up.set(0, 1, 0);
-  camera.lookAt(target);
+  camera.lookAt(center);
   camera.updateMatrixWorld();
-  controls.target.copy(target);
+  controls.target.copy(center);
 }
 
 function normalizeHex(value) {
