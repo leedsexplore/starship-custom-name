@@ -31,13 +31,37 @@
               maxlength="24"
               value="Custom Name"
               placeholder="Your name"
+              spellcheck="false"
             />
           </label>
+          <p id="glyph-warn" class="warn" hidden></p>
+          <p id="length-warn" class="warn" hidden></p>
 
-          <label class="field field-inline">
+          <div class="field">
             <span>Preview color</span>
-            <input id="color" type="color" value="#c5ccd6" />
-          </label>
+            <div class="color-row">
+              <div class="presets" id="presets" role="group" aria-label="Color presets">
+                <button type="button" class="swatch" data-color="#c5ccd6" title="Stainless" style="background:#c5ccd6"></button>
+                <button type="button" class="swatch" data-color="#f4f1ea" title="White" style="background:#f4f1ea"></button>
+                <button type="button" class="swatch" data-color="#1a1a1a" title="Black" style="background:#1a1a1a"></button>
+                <button type="button" class="swatch" data-color="#c45c26" title="Heat shield" style="background:#c45c26"></button>
+                <button type="button" class="swatch" data-color="#3d7ea6" title="Blue" style="background:#3d7ea6"></button>
+              </div>
+              <input id="color" type="color" value="#c5ccd6" aria-label="Custom preview color" />
+            </div>
+          </div>
+
+          <fieldset class="field fieldset">
+            <legend>Hull side</legend>
+            <div class="segmented">
+              <label
+                ><input type="radio" name="side" value="right" checked /> Right</label
+              >
+              <label
+                ><input type="radio" name="side" value="left" /> Left</label
+              >
+            </div>
+          </fieldset>
 
           <label class="field">
             <span>Letter size <em id="size-label">5.0 mm</em></span>
@@ -65,6 +89,14 @@
             <button type="button" id="download" class="primary">
               Download STL
             </button>
+            <div class="secondary-row">
+              <button type="button" id="copy-link" class="secondary">
+                Copy link
+              </button>
+              <button type="button" id="reset-view" class="secondary">
+                Reset view
+              </button>
+            </div>
             <p id="status" class="status" role="status">Loading ship…</p>
           </div>
         </form>
@@ -83,6 +115,7 @@
           <p>
             Advanced:
             <a href="openscad/starship_custom_name.scad">OpenSCAD Customizer</a>
+            (uses <code>../assets/</code> STL)
           </p>
         </footer>
       </aside>
@@ -95,8 +128,8 @@
     <script type="importmap">
       {
         "imports": {
-          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
-          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+          "three": "./vendor/three/three.module.js",
+          "three/addons/": "./vendor/three/examples/jsm/"
         }
       }
     </script>

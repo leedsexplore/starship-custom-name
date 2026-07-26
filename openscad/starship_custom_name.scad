@@ -40,7 +40,7 @@ Part = "text_only"; // [text_only, preview_with_ship]
 /* [Hidden] */
 body_center_x = -22.3;
 hull_radius_z = 10.55;
-stl_file = "StarShipV2_original.stl";
+stl_file = "../assets/StarShipV2_original.stl";
 
 module ship() {
     import(stl_file, convexity=10);

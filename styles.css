@@ -90,10 +90,102 @@ a {
   float: right;
 }
 
-.field-inline {
-  flex-direction: row;
+.color-row {
+  display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.65rem;
+}
+
+.presets {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  padding: 0;
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.swatch.active {
+  border-color: var(--accent);
+}
+
+.fieldset {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.fieldset legend {
+  padding: 0;
+  margin-bottom: 0.4rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.segmented {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.segmented label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.4rem;
+  border-radius: 10px;
+  border: 1px solid var(--panel-border);
+  background: var(--field);
+  color: var(--text);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.segmented input {
+  accent-color: var(--accent);
+}
+
+.warn {
+  margin: -0.35rem 0 0;
+  padding: 0.55rem 0.65rem;
+  border-radius: 8px;
+  background: rgba(240, 160, 112, 0.12);
+  border: 1px solid rgba(240, 160, 112, 0.35);
+  color: var(--danger);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.secondary-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem;
+}
+
+.secondary {
+  appearance: none;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 0.65rem 0.7rem;
+  background: var(--field);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary:hover {
+  border-color: var(--accent-dim);
 }
 
 .field input[type="text"] {
@@ -216,5 +308,16 @@ a {
   .panel {
     border-right: 0;
     border-bottom: 1px solid var(--panel-border);
+    max-height: none;
+  }
+
+  .primary,
+  .secondary {
+    min-height: 44px;
+  }
+
+  .swatch {
+    width: 34px;
+    height: 34px;
   }
 }
