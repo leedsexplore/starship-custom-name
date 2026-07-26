@@ -2,31 +2,40 @@
 // https://www.printables.com/model/225040-spacex-starship
 // License: CC BY-NC (same as parent). Attribution: Josh1297.
 //
+// Prefer the web customizer (repo root) for wrap-to-hull, boolean engraved STL/3MF,
+// PNG covers, and share links. This OpenSCAD file is the advanced flat path.
+//
 // How to customize:
 //   1. Open this file in OpenSCAD
-//   2. Customizer → set Name (and placement if you want)
-//   3. Leave Part = "text_only", Render (F6), Export as STL
-//   4. In your slicer, load StarShipV2_original.stl + your text STL together
-//      (or run ../scripts/merge_stls.py to bake one file)
+//   2. Customizer → set Name / Font / Style / placement
+//   3. Part = "text_only" → F6 → Export STL, then merge with the ship in your slicer
+//      OR Part = "preview_with_ship" for a local boolean preview (engraved = difference)
 //
-// Prefer the web customizer at the repo root (index.html) for most users.
+// Web font → OpenSCAD mapping (install the font on your system):
+//   optimer-bold / helvetiker-bold  → Liberation Sans:style=Bold
+//   optimer-regular / helvetiker-regular → Liberation Sans:style=Regular
+//   gentilis-bold → Gentium Book Basic:style=Bold (if available)
+//
+// Depth note: web "depth" is proud height; total extrude ≈ 0.35 embed + proud.
+// Here Text_Depth is the full extrude; Surface_Offset ≈ -0.35 embeds into the hull.
+// Wrap-to-hull and model scale % are web/export-only.
 
 /* [Text] */
 // Name / text on the side of the ship
 Name = "Custom Name";
-// Letter height (mm)
-Text_Size = 5; // [3:0.5:14]
-// Letter extrusion depth (mm). Most of this sinks into the hull; a bit stays proud.
-Text_Depth = 0.65; // [0.3:0.1:2.5]
+// Letter height (mm) — matches web customizer range
+Text_Size = 5; // [3:0.5:8]
+// Full letter extrusion (mm). Pair with Surface_Offset ≈ -0.35 for a light emboss.
+Text_Depth = 0.65; // [0.5:0.05:1.5]
 // Font (must be installed on your system)
-Font = "Liberation Sans:style=Bold";
-// Raised emboss, or engraved (cut) — engraved needs Part=preview boolean locally
+Font = "Liberation Sans:style=Bold"; // [Liberation Sans:style=Bold, Liberation Sans:style=Regular, Gentium Book Basic:style=Bold]
+// Raised emboss, or engraved (cut) — engraved needs Part=preview_with_ship for boolean
 Style = "raised"; // [raised, engraved]
 
 /* [Placement] */
 // Position along the ship length (Y). Nose is +Y, engines/base are -Y.
-// Mid-body on the main cylinder (between forward and aft flaps).
-Text_Y = -2; // [-50:1:50]
+// Mid-body on the main cylinder (between forward and aft flaps). Keep |Y| + half text length under ~28 mm.
+Text_Y = -2; // [-30:1:30]
 // Which side of the hull
 Side = "right"; // [right, left]
 // Nudge text along the cross-section (X), mm
@@ -36,7 +45,7 @@ Surface_Offset = -0.35; // [-1.5:0.05:2]
 
 /* [Export] */
 // text_only = name badge for merging/slicing with the ship
-// preview_with_ship = ship + text (preview only; may not export cleanly)
+// preview_with_ship = ship + text (engraved uses difference(); may be heavy)
 Part = "text_only"; // [text_only, preview_with_ship]
 
 /* [Hidden] */

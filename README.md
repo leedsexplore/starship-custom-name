@@ -2,25 +2,35 @@
 
 Simple customizer for a Printables remix of [Josh1297’s SpaceX Starship](https://www.printables.com/model/225040-spacex-starship).
 
-**Type a name → preview a color → download an STL.**  
-Color is preview-only (pick filament in your slicer). License is **CC BY-NC** — credit Josh1297.
+**Type a name → preview colors → download STL, multi-material 3MF, or a PNG cover.**  
+License is **CC BY-NC** — credit Josh1297.
 
 ## Use the web tool
 
 **Live:** [https://leedsexplore.github.io/starship-custom-name/](https://leedsexplore.github.io/starship-custom-name/)
 
 1. Open the site above (or run locally — see below).
-2. Enter your hull text and optional preview color.
-3. Click **Download STL** (or **Copy link** to share your settings).
+2. Enter hull text, fonts, colors, and placement.
+3. Download:
+   - **STL** — single mesh. Engraved uses a true boolean subtract at export time.
+   - **3MF (MMU)** — raised: separate Hull + Letters objects for multi-material. Engraved: booleaned solid.
+   - **PNG cover** — viewport snapshot for Printables gallery images.
+   - **OpenSCAD params** — settings snippet for the advanced flat OpenSCAD path.
 4. Slice and print (vertical + supports, same as the original).
 
 Shareable URLs look like:
 
-`https://leedsexplore.github.io/starship-custom-name/?name=Alex&color=e10600&text=e10600&font=optimer-bold&size=5&pos=-2&depth=0.3&side=right&style=raised&wrap=1`
+`https://leedsexplore.github.io/starship-custom-name/?name=Alex&color=e10600&text=e10600&font=optimer-bold&size=5&pos=-2&depth=0.3&scale=100&side=right&style=raised&wrap=1`
 
-**Font style:** use the **Font style** dropdown (Optimer / Helvetiker / Gentilis). Gentilis has the best accent coverage.
+| Control | Notes |
+|--------|--------|
+| Font style | Optimer / Helvetiker / Gentilis (Gentilis = best accents) |
+| Model scale | 50–200% (baked into STL/3MF) |
+| Color presets | Prusament-oriented names on hover (approx where noted) |
+| Engraved | Preview is inset; export runs CSG boolean |
+| Wrap | Web-only cylindrical bend |
 
-Preview defaults: matching **Signal Red** hull + letters (filament colors are still chosen in your slicer).
+Defaults: matching **Signal Red** hull + letters.
 
 ### Run locally
 
@@ -30,7 +40,7 @@ python3 -m http.server 8080
 # open http://127.0.0.1:8080/
 ```
 
-> Serve over HTTP so the browser can load the STL, font, and vendored Three.js (`vendor/`).
+> Serve over HTTP so the browser can load the STL, fonts, and vendored modules (`vendor/`).
 
 ## OpenSCAD (advanced)
 
@@ -38,7 +48,7 @@ python3 -m http.server 8080
 open openscad/starship_custom_name.scad
 ```
 
-The `.scad` imports `../assets/StarShipV2_original.stl`. Use the Customizer, export `text_only`, then:
+Flat emboss/engrave only (no hull wrap). Font mapping matches the web dropdown where system fonts allow. Use the Customizer, export `text_only`, then:
 
 ```bash
 python3 scripts/merge_stls.py \
@@ -46,6 +56,8 @@ python3 scripts/merge_stls.py \
   your_text.stl \
   my_starship.stl
 ```
+
+Or set `Part = preview_with_ship` and `Style = engraved` for a local `difference()` preview.
 
 ## Attribution
 
@@ -55,4 +67,4 @@ python3 scripts/merge_stls.py \
 
 ## Printables
 
-After you publish the remix on Printables, link this tool from the model description so downloaders can customize without installing OpenSCAD.
+After you publish the remix on Printables, link this tool from the model description so downloaders can customize without installing OpenSCAD. Use **PNG cover** for gallery images.

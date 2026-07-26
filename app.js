@@ -4,6 +4,8 @@ import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
+import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
+import { build3mf } from "./export3mf.js";
 
 /** Placement tuned to Josh1297 Starship mesh (same as openscad/). */
 const BODY_CENTER_X = -22.3;
@@ -11,6 +13,10 @@ const HULL_RADIUS_Z = 10.55;
 const EMBED_MM = 0.35;
 /** Approx safe text span along hull before flaps (mm). */
 const SAFE_TEXT_SPAN_MM = 48;
+/** Beyond this, downloads ask for confirmation. */
+const HARD_TEXT_SPAN_MM = 60;
+/** |pos| + half-span past this often nears flap roots. */
+const FLAP_ZONE_Y_MM = 28;
 const SHIP_URL = "./assets/StarShipV2_original.stl";
 
 /** Available extruded fonts (Three.js typeface JSON). */
@@ -18,34 +24,81 @@ const FONT_OPTIONS = {
   "optimer-bold": {
     label: "Optimer Bold",
     url: "./fonts/optimer_bold.typeface.json",
+    openscad: "Liberation Sans:style=Bold",
   },
   "optimer-regular": {
     label: "Optimer Regular",
     url: "./fonts/optimer_regular.typeface.json",
+    openscad: "Liberation Sans:style=Regular",
   },
   "helvetiker-bold": {
     label: "Helvetiker Bold",
     url: "./fonts/helvetiker_bold.typeface.json",
+    openscad: "Liberation Sans:style=Bold",
   },
   "helvetiker-regular": {
     label: "Helvetiker Regular",
     url: "./fonts/helvetiker_regular.typeface.json",
+    openscad: "Liberation Sans:style=Regular",
   },
   "gentilis-bold": {
     label: "Gentilis Bold",
     url: "./fonts/gentilis_bold.typeface.json",
+    openscad: "Gentium Book Basic:style=Bold",
   },
 };
 
 /** Prusa filament + Starship / space-theme preview defaults. */
 const COLOR_PRESETS = [
-  { id: "signal-red", name: "Signal Red", hex: "#e10600" },
-  { id: "prusa-orange", name: "Prusa Orange", hex: "#fa6831" },
-  { id: "starship-steel", name: "Starship Steel", hex: "#c8ced6" },
-  { id: "pearl-white", name: "Pearl White", hex: "#f2f0e6" },
-  { id: "jet-black", name: "Jet Black", hex: "#1c1c1c" },
-  { id: "heatshield", name: "Heatshield", hex: "#3a3734" },
-  { id: "prusa-azure", name: "Prusa Azure", hex: "#0077c8" },
+  {
+    id: "signal-red",
+    name: "Signal Red",
+    hex: "#e10600",
+    filament: "Prusament PLA",
+    sku: "Lipstick Red (approx)",
+  },
+  {
+    id: "prusa-orange",
+    name: "Prusa Orange",
+    hex: "#fa6831",
+    filament: "Prusament PLA",
+    sku: "Prusa Orange",
+  },
+  {
+    id: "starship-steel",
+    name: "Starship Steel",
+    hex: "#c8ced6",
+    filament: "Prusament PLA",
+    sku: "Galaxy Silver (approx)",
+  },
+  {
+    id: "pearl-white",
+    name: "Pearl White",
+    hex: "#f2f0e6",
+    filament: "Prusament PLA",
+    sku: "Pearl White",
+  },
+  {
+    id: "jet-black",
+    name: "Jet Black",
+    hex: "#1c1c1c",
+    filament: "Prusament PLA",
+    sku: "Jet Black",
+  },
+  {
+    id: "heatshield",
+    name: "Heatshield",
+    hex: "#3a3734",
+    filament: "Custom",
+    sku: "non-Prusament preview",
+  },
+  {
+    id: "prusa-azure",
+    name: "Prusa Azure",
+    hex: "#0077c8",
+    filament: "Prusament PLA",
+    sku: "Azure Blue",
+  },
 ];
 
 /** Fold unsupported accented letters to ASCII lookalikes when needed. */
@@ -72,11 +125,16 @@ const el = {
   size: document.getElementById("size"),
   pos: document.getElementById("pos"),
   depth: document.getElementById("depth"),
+  scale: document.getElementById("scale"),
   wrap: document.getElementById("wrap"),
   sizeLabel: document.getElementById("size-label"),
   posLabel: document.getElementById("pos-label"),
   depthLabel: document.getElementById("depth-label"),
+  scaleLabel: document.getElementById("scale-label"),
   download: document.getElementById("download"),
+  download3mf: document.getElementById("download-3mf"),
+  downloadPng: document.getElementById("download-png"),
+  downloadScad: document.getElementById("download-scad"),
   copyLink: document.getElementById("copy-link"),
   resetView: document.getElementById("reset-view"),
   fitSize: document.getElementById("fit-size"),
@@ -87,13 +145,17 @@ const el = {
   textPresets: document.getElementById("text-presets"),
   fontStyle: document.getElementById("font-style"),
   viewport: document.getElementById("viewport"),
+  hud: document.getElementById("hud"),
 };
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x0a101c);
 
 const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 2000);
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  preserveDrawingBuffer: true,
+});
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 el.viewport.appendChild(renderer.domElement);
 
@@ -110,6 +172,10 @@ scene.add(fill);
 const rim = new THREE.DirectionalLight(0xffe0c0, 0.35);
 rim.position.set(-20, 40, 100);
 scene.add(rim);
+
+/** Root for ship + text so scale % applies to both. */
+const modelGroup = new THREE.Group();
+scene.add(modelGroup);
 
 const shipMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.color.value),
@@ -133,6 +199,10 @@ let textMesh = null;
 let ready = false;
 let rebuildTimer = 0;
 let lastSpanMm = 0;
+const csgEvaluator = new Evaluator();
+// STL ship has position/normal/color — no uvs. Default evaluator attrs include uv and crash.
+csgEvaluator.attributes = ["position", "normal"];
+csgEvaluator.useGroups = false;
 
 async function loadFontById(fontId) {
   const id = FONT_OPTIONS[fontId] ? fontId : "optimer-bold";
@@ -177,6 +247,15 @@ function selectedStyle() {
     : "raised";
 }
 
+function modelScale() {
+  return Number(el.scale.value) / 100;
+}
+
+function applyModelScale() {
+  const s = modelScale();
+  modelGroup.scale.setScalar(s);
+}
+
 function resize() {
   const { clientWidth: w, clientHeight: h } = el.viewport;
   camera.aspect = w / Math.max(h, 1);
@@ -188,6 +267,7 @@ function updateLabels() {
   el.sizeLabel.textContent = `${Number(el.size.value).toFixed(1)} mm`;
   el.posLabel.textContent = el.pos.value;
   el.depthLabel.textContent = `${Number(el.depth.value).toFixed(2)} mm`;
+  el.scaleLabel.textContent = `${el.scale.value}%`;
 }
 
 function mountPresets(container, input) {
@@ -198,9 +278,10 @@ function mountPresets(container, input) {
     btn.className = "swatch";
     btn.style.background = preset.hex;
     btn.dataset.color = preset.hex;
-    btn.title = preset.name;
-    btn.setAttribute("aria-label", preset.name);
-    btn.innerHTML = `<span class="swatch-name">${preset.name}</span>`;
+    const tip = `${preset.name} · ${preset.filament} · ${preset.sku}`;
+    btn.title = tip;
+    btn.setAttribute("aria-label", tip);
+    btn.innerHTML = `<span class="swatch-name">${tip}</span>`;
     btn.addEventListener("click", () => {
       input.value = preset.hex;
       applyColor();
@@ -220,7 +301,6 @@ function syncPresetActive(container, hex) {
 function applyColor() {
   shipMaterial.color.set(el.color.value);
   textMaterial.color.set(el.textColor.value);
-  // Dark hulls: a touch of emissive keeps letter edges readable in the preview.
   const hsl = { h: 0, s: 0, l: 0 };
   shipMaterial.color.getHSL(hsl);
   textMaterial.emissive.setHex(hsl.l < 0.22 ? 0x1a1a1a : 0x000000);
@@ -277,13 +357,38 @@ function updateGlyphWarn(missing, folded) {
 
 function updateLengthWarn(spanMm) {
   lastSpanMm = spanMm;
-  if (spanMm <= SAFE_TEXT_SPAN_MM) {
+  const textY = Number(el.pos.value);
+  const extent = Math.abs(textY) + spanMm / 2;
+  const parts = [];
+
+  if (spanMm > HARD_TEXT_SPAN_MM) {
+    parts.push(
+      `Very long — span ~${spanMm.toFixed(0)} mm (safe ≤${SAFE_TEXT_SPAN_MM} mm). Likely hits flaps.`
+    );
+    el.lengthWarn.classList.add("warn-hard");
+  } else if (spanMm > SAFE_TEXT_SPAN_MM) {
+    parts.push(
+      `Span ~${spanMm.toFixed(0)} mm (safe ≤${SAFE_TEXT_SPAN_MM} mm). Use “Fit text to hull” or shorten.`
+    );
+    el.lengthWarn.classList.remove("warn-hard");
+  } else {
+    el.lengthWarn.classList.remove("warn-hard");
+  }
+
+  if (extent > FLAP_ZONE_Y_MM) {
+    parts.push(
+      `Position + length nears flap zone (~±${FLAP_ZONE_Y_MM} mm). Nudge position toward mid-body.`
+    );
+    if (spanMm <= SAFE_TEXT_SPAN_MM) el.lengthWarn.classList.remove("warn-hard");
+  }
+
+  if (!parts.length) {
     el.lengthWarn.hidden = true;
     el.lengthWarn.textContent = "";
     return;
   }
   el.lengthWarn.hidden = false;
-  el.lengthWarn.textContent = `Text is ~${spanMm.toFixed(0)} mm long (safe band ~${SAFE_TEXT_SPAN_MM} mm). Use “Fit text to hull” or shorten the name.`;
+  el.lengthWarn.textContent = parts.join(" ");
 }
 
 function buildFlatTextGeometry(text, size, extrudeMm) {
@@ -320,11 +425,8 @@ function wrapGeometryToHull(geometry, side, textY, style) {
 
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i);
-    // Flip across-axis on left so text reads correctly from outside.
     const across = side === "left" ? -v.x : v.x;
     const along = v.y;
-    // Raised: z=0 sits slightly inside hull, z=depth ends proud of surface.
-    // Engraved: z=0 at surface, z=depth cuts inward toward the axis.
     const radial = style === "raised" ? R - EMBED_MM + v.z : R - v.z;
     const theta = across / R;
     const x = BODY_CENTER_X + radial * Math.sin(theta);
@@ -344,7 +446,6 @@ function placeFlatOnHull(geometry, side, textY, style) {
     mesh.position.set(BODY_CENTER_X, textY, sign * (HULL_RADIUS_Z - EMBED_MM));
     if (side === "left") mesh.rotation.y = Math.PI;
   } else {
-    // Engraved flat: start at outer surface, extrude toward hull axis (-Z local after flip).
     mesh.position.set(BODY_CENTER_X, textY, sign * HULL_RADIUS_Z);
     mesh.rotation.y = side === "left" ? 0 : Math.PI;
   }
@@ -378,7 +479,7 @@ function rebuildText() {
   updateLengthWarn(spanMm);
 
   if (textMesh) {
-    scene.remove(textMesh);
+    modelGroup.remove(textMesh);
     textMesh.geometry.dispose();
     textMesh = null;
   }
@@ -390,7 +491,8 @@ function rebuildText() {
     textMesh = placeFlatOnHull(flat, side, textY, style);
   }
 
-  scene.add(textMesh);
+  modelGroup.add(textMesh);
+  applyModelScale();
   return Promise.resolve();
 }
 
@@ -411,7 +513,7 @@ function flushRebuild() {
 
 function frameCamera() {
   if (!shipMesh) return;
-  const box = new THREE.Box3().setFromObject(shipMesh);
+  const box = new THREE.Box3().setFromObject(modelGroup);
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
   controls.target.copy(center);
@@ -431,6 +533,16 @@ function normalizeHex(value) {
   return /^#[0-9a-fA-F]{6}$/.test(hex) ? hex.toLowerCase() : null;
 }
 
+function nameSlug() {
+  return (
+    (el.name.value.trim() || "starship")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")
+      .slice(0, 40) || "starship"
+  );
+}
+
 function readState() {
   return {
     name: el.name.value.trim(),
@@ -440,6 +552,7 @@ function readState() {
     size: el.size.value,
     pos: el.pos.value,
     depth: el.depth.value,
+    scale: el.scale.value,
     side: selectedSide(),
     style: selectedStyle(),
     wrap: el.wrap.checked ? "1" : "0",
@@ -450,7 +563,6 @@ function applyState(state) {
   if (state.name != null) el.name.value = String(state.name).slice(0, 24);
   const hull = normalizeHex(state.color);
   if (hull) el.color.value = hull;
-  // Back-compat: older links only had `color` — mirror to letters unless text= set.
   const letter = normalizeHex(state.text) || hull;
   if (letter) el.textColor.value = letter;
   if (state.font && FONT_OPTIONS[state.font]) {
@@ -460,6 +572,10 @@ function applyState(state) {
   if (state.size != null) el.size.value = state.size;
   if (state.pos != null) el.pos.value = state.pos;
   if (state.depth != null) el.depth.value = state.depth;
+  if (state.scale != null) {
+    const n = Number(state.scale);
+    if (Number.isFinite(n)) el.scale.value = String(Math.min(200, Math.max(50, n)));
+  }
   if (state.side === "left" || state.side === "right") {
     const radio = document.querySelector(
       `input[name="side"][value="${state.side}"]`
@@ -475,6 +591,7 @@ function applyState(state) {
   if (state.wrap === "0" || state.wrap === "false") el.wrap.checked = false;
   if (state.wrap === "1" || state.wrap === "true") el.wrap.checked = true;
   updateLabels();
+  applyModelScale();
   applyColor();
 }
 
@@ -489,6 +606,7 @@ function stateFromUrl() {
     "size",
     "pos",
     "depth",
+    "scale",
     "side",
     "style",
     "wrap",
@@ -508,6 +626,7 @@ function writeUrl(replace = true) {
   q.set("size", s.size);
   q.set("pos", s.pos);
   q.set("depth", s.depth);
+  q.set("scale", s.scale);
   q.set("side", s.side);
   q.set("style", s.style);
   q.set("wrap", s.wrap);
@@ -516,68 +635,319 @@ function writeUrl(replace = true) {
   return `${window.location.origin}${url}`;
 }
 
-function mergeForExport() {
-  if (!shipGeometry || !textMesh) {
-    throw new Error("Model not ready");
-  }
+function confirmLongTextIfNeeded() {
+  if (lastSpanMm <= HARD_TEXT_SPAN_MM) return true;
+  return window.confirm(
+    `Text span is ~${lastSpanMm.toFixed(0)} mm and may hit the flaps. Download anyway?`
+  );
+}
 
+function yieldToUi() {
+  return new Promise((resolve) => setTimeout(resolve, 30));
+}
+
+/**
+ * Ship + text geometries in model space (pre-scale), with text world-baked.
+ */
+function cloneModelSpaceParts() {
+  if (!shipGeometry || !textMesh) throw new Error("Model not ready");
   textMesh.updateMatrixWorld(true);
+  shipMesh.updateMatrixWorld(true);
 
   const ship = shipGeometry.clone();
-  const text = textMesh.geometry.clone();
-  text.applyMatrix4(textMesh.matrixWorld);
+  // Bake ship mesh local transform (identity today) into geometry.
+  ship.applyMatrix4(shipMesh.matrix);
 
+  const text = textMesh.geometry.clone();
+  text.applyMatrix4(textMesh.matrix);
+
+  return { ship, text };
+}
+
+function applyScaleToGeometry(geometry, scale) {
+  if (scale === 1) return geometry;
+  geometry.scale(scale, scale, scale);
+  return geometry;
+}
+
+/**
+ * True CSG subtract for engraved export. Falls back by throwing.
+ */
+function prepareForCsg(geometry) {
+  const geo = geometry.index ? geometry.clone() : geometry.clone();
+  // Drop color/uv so attribute prep matches evaluator.attributes.
+  if (geo.attributes.color) geo.deleteAttribute("color");
+  if (geo.attributes.uv) geo.deleteAttribute("uv");
+  geo.clearGroups();
+  if (!geo.attributes.normal) geo.computeVertexNormals();
+  return geo;
+}
+
+function booleanEngrave(shipGeo, textGeo) {
+  const shipBrush = new Brush(prepareForCsg(shipGeo));
+  const textBrush = new Brush(prepareForCsg(textGeo));
+  shipBrush.updateMatrixWorld(true);
+  textBrush.updateMatrixWorld(true);
+
+  try {
+    const result = csgEvaluator.evaluate(shipBrush, textBrush, SUBTRACTION);
+    return result.geometry;
+  } catch (err) {
+    console.warn("SUBTRACTION failed, trying HOLLOW_SUBTRACTION", err);
+    const result = csgEvaluator.evaluate(
+      shipBrush,
+      textBrush,
+      HOLLOW_SUBTRACTION
+    );
+    return result.geometry;
+  }
+}
+
+/**
+ * @returns {{ mode: 'boolean'|'merged', geometry?: THREE.BufferGeometry, group?: THREE.Group, note: string }}
+ */
+function buildExportMeshes({ preferBoolean }) {
+  const scale = modelScale();
+  const style = selectedStyle();
+  const { ship, text } = cloneModelSpaceParts();
+
+  if (style === "engraved" && preferBoolean) {
+    try {
+      const cut = booleanEngrave(ship, text);
+      applyScaleToGeometry(cut, scale);
+      cut.computeVertexNormals();
+      ship.dispose();
+      text.dispose();
+      return {
+        mode: "boolean",
+        geometry: cut,
+        note: "Engraved with true boolean subtract.",
+      };
+    } catch (err) {
+      console.warn("CSG engraving failed; falling back to inset merge", err);
+    }
+  }
+
+  applyScaleToGeometry(ship, scale);
+  applyScaleToGeometry(text, scale);
   ship.computeVertexNormals();
   text.computeVertexNormals();
 
-  const exporter = new STLExporter();
   const group = new THREE.Group();
   group.add(new THREE.Mesh(ship));
   group.add(new THREE.Mesh(text));
-  return exporter.parse(group, { binary: true });
+
+  const note =
+    style === "engraved"
+      ? "Boolean failed — exported inset letter meshes (use slicer mesh-boolean if needed)."
+      : "Raised letters merged with hull.";
+
+  return { mode: "merged", group, ship, text, note };
+}
+
+function triggerDownload(blob, filename) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function setExportBusy(busy) {
+  el.download.disabled = busy;
+  el.download3mf.disabled = busy;
+  el.downloadPng.disabled = busy;
+  el.downloadScad.disabled = busy;
 }
 
 async function downloadStl() {
   try {
-    el.download.disabled = true;
+    setExportBusy(true);
     setStatus("Building STL…");
     await flushRebuild();
-    if (!textMesh) throw new Error("Model not ready");
+    if (!confirmLongTextIfNeeded()) {
+      setStatus("Download cancelled.");
+      return;
+    }
 
-    const buffer = mergeForExport();
-    const blob = new Blob([buffer], { type: "model/stl" });
-    const slug =
-      (el.name.value.trim() || "starship")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "_")
-        .replace(/^_|_$/g, "")
-        .slice(0, 40) || "starship";
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `starship_${slug}.stl`;
-    a.click();
-    URL.revokeObjectURL(a.href);
+    const preferBoolean = selectedStyle() === "engraved";
+    if (preferBoolean) {
+      setStatus("Boolean engraving… this can take a few seconds.");
+      await yieldToUi();
+    }
+
+    const payload = buildExportMeshes({ preferBoolean });
+    const exporter = new STLExporter();
+    let buffer;
+    if (payload.mode === "boolean") {
+      buffer = exporter.parse(new THREE.Mesh(payload.geometry), { binary: true });
+      payload.geometry.dispose();
+    } else {
+      buffer = exporter.parse(payload.group, { binary: true });
+      payload.ship.dispose();
+      payload.text.dispose();
+    }
+
+    triggerDownload(
+      new Blob([buffer], { type: "model/stl" }),
+      `starship_${nameSlug()}.stl`
+    );
     writeUrl();
-    const extra =
-      selectedStyle() === "engraved"
-        ? " Engraved letters are inset meshes (use slicer mesh-boolean subtract if your tool supports it)."
-        : "";
     setStatus(
-      `STL downloaded — color is preview only; set filament in your slicer.${extra}`
+      `STL downloaded — ${payload.note} Color is preview-only; set filament in your slicer.`
     );
   } catch (err) {
     console.error(err);
     setStatus(err.message || "Export failed", true);
   } finally {
-    el.download.disabled = false;
+    setExportBusy(false);
   }
+}
+
+async function download3mf() {
+  try {
+    setExportBusy(true);
+    setStatus("Building 3MF…");
+    await flushRebuild();
+    if (!confirmLongTextIfNeeded()) {
+      setStatus("Download cancelled.");
+      return;
+    }
+
+    const style = selectedStyle();
+    const hullColor = el.color.value;
+    const letterColor = el.textColor.value;
+    const scale = modelScale();
+
+    let parts;
+
+    if (style === "engraved") {
+      setStatus("Boolean engraving for 3MF…");
+      await yieldToUi();
+      const payload = buildExportMeshes({ preferBoolean: true });
+      if (payload.mode === "boolean") {
+        parts = [
+          {
+            name: "Hull (engraved)",
+            geometry: payload.geometry,
+            color: hullColor,
+          },
+        ];
+      } else {
+        // Fallback: two objects so slicer can still assign materials / boolean.
+        parts = [
+          { name: "Hull", geometry: payload.ship, color: hullColor },
+          { name: "Letters (cutter)", geometry: payload.text, color: letterColor },
+        ];
+      }
+      setStatus(
+        payload.mode === "boolean"
+          ? "Packing engraved 3MF…"
+          : "Packing 3MF (inset fallback)…"
+      );
+    } else {
+      const { ship, text } = cloneModelSpaceParts();
+      applyScaleToGeometry(ship, scale);
+      applyScaleToGeometry(text, scale);
+      parts = [
+        { name: "Hull", geometry: ship, color: hullColor },
+        { name: "Letters", geometry: text, color: letterColor },
+      ];
+      setStatus("Packing multi-material 3MF…");
+    }
+
+    await yieldToUi();
+    const zipped = build3mf(parts);
+    for (const p of parts) p.geometry.dispose();
+
+    triggerDownload(
+      new Blob([zipped], { type: "model/3mf" }),
+      `starship_${nameSlug()}.3mf`
+    );
+    writeUrl();
+    setStatus(
+      style === "raised"
+        ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU)."
+        : "3MF downloaded — engraved hull is a single solid (recess cut)."
+    );
+  } catch (err) {
+    console.error(err);
+    setStatus(err.message || "3MF export failed", true);
+  } finally {
+    setExportBusy(false);
+  }
+}
+
+async function downloadPng() {
+  try {
+    setExportBusy(true);
+    setStatus("Capturing cover…");
+    await flushRebuild();
+    frameCamera();
+    const prevHud = el.hud.hidden;
+    el.hud.hidden = true;
+    resize();
+    renderer.render(scene, camera);
+    const dataUrl = renderer.domElement.toDataURL("image/png");
+    el.hud.hidden = prevHud;
+
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `starship_${nameSlug()}_cover.png`;
+    a.click();
+    setStatus("PNG cover downloaded — good for Printables gallery images.");
+  } catch (err) {
+    console.error(err);
+    setStatus(err.message || "PNG capture failed", true);
+  } finally {
+    setExportBusy(false);
+  }
+}
+
+function downloadOpenscadSnippet() {
+  const s = readState();
+  const fontKey = FONT_OPTIONS[s.font] ? s.font : "optimer-bold";
+  const openscadFont = FONT_OPTIONS[fontKey].openscad;
+  // Web proud depth + embed ≈ OpenSCAD Text_Depth with Surface_Offset = -EMBED
+  const textDepth = (EMBED_MM + Number(s.depth)).toFixed(2);
+  const nameEscaped = (s.name || "Custom Name").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+
+  const scad = `// Generated by Starship Custom Name web customizer
+// Wrap-to-hull is web-only — OpenSCAD uses flat emboss/engrave.
+// Open with openscad/starship_custom_name.scad or paste into Customizer.
+
+/* [Text] */
+Name = "${nameEscaped}";
+Text_Size = ${Number(s.size).toFixed(1)}; // [3:0.5:8]
+Text_Depth = ${textDepth}; // [0.5:0.05:1.5]
+Font = "${openscadFont}"; // web font: ${fontKey}
+Style = "${s.style}"; // [raised, engraved]
+
+/* [Placement] */
+Text_Y = ${Number(s.pos)}; // [-30:1:30]
+Side = "${s.side}"; // [right, left]
+Text_X_Offset = 0;
+Surface_Offset = -${EMBED_MM};
+
+/* [Export] */
+Part = "preview_with_ship"; // [text_only, preview_with_ship]
+
+// Model scale ${s.scale}% is web/export-only — scale in the slicer if needed.
+`;
+
+  triggerDownload(
+    new Blob([scad], { type: "text/plain" }),
+    `starship_${nameSlug()}_params.scad`
+  );
+  setStatus("OpenSCAD params downloaded — open with the included .scad (no hull wrap).");
+  writeUrl();
 }
 
 async function copyShareLink() {
   const url = writeUrl();
   try {
     await navigator.clipboard.writeText(url);
-    setStatus("Link copied — shares name, color, and placement.");
+    setStatus("Link copied — shares name, colors, font, scale, and placement.");
   } catch {
     setStatus(`Copy failed — URL is ${url}`, true);
   }
@@ -586,10 +956,13 @@ async function copyShareLink() {
 async function fitTextToHull() {
   if (!font || !ready) return;
   let size = Number(el.size.value);
-  // Shrink until span fits or we hit the minimum.
   while (size > 3) {
     const { used } = sanitizeName(el.name.value);
-    const geo = buildFlatTextGeometry(used, size, EMBED_MM + Number(el.depth.value));
+    const geo = buildFlatTextGeometry(
+      used,
+      size,
+      EMBED_MM + Number(el.depth.value)
+    );
     const span = measureSpan(geo);
     geo.dispose();
     if (span <= SAFE_TEXT_SPAN_MM) break;
@@ -601,8 +974,8 @@ async function fitTextToHull() {
   writeUrl();
   setStatus(
     lastSpanMm <= SAFE_TEXT_SPAN_MM
-      ? `Fitted to ${size.toFixed(1)} mm letter height.`
-      : `Still long at minimum size (${lastSpanMm.toFixed(0)} mm). Shorten the name.`
+      ? `Fitted to ${size.toFixed(1)} mm letter height (span ~${lastSpanMm.toFixed(0)} mm).`
+      : `Still long at minimum size (~${lastSpanMm.toFixed(0)} mm). Shorten the name.`
   );
 }
 
@@ -631,6 +1004,11 @@ async function boot() {
   el.size.addEventListener("input", onControlChange);
   el.pos.addEventListener("input", onControlChange);
   el.depth.addEventListener("input", onControlChange);
+  el.scale.addEventListener("input", () => {
+    updateLabels();
+    applyModelScale();
+    writeUrl();
+  });
   el.wrap.addEventListener("change", onControlChange);
   el.fontStyle.addEventListener("change", () => {
     applyFontSelection(el.fontStyle.value).catch((err) => {
@@ -647,6 +1025,9 @@ async function boot() {
     });
   }
   el.download.addEventListener("click", downloadStl);
+  el.download3mf.addEventListener("click", download3mf);
+  el.downloadPng.addEventListener("click", downloadPng);
+  el.downloadScad.addEventListener("click", downloadOpenscadSnippet);
   el.copyLink.addEventListener("click", copyShareLink);
   el.resetView.addEventListener("click", () => {
     frameCamera();
@@ -669,19 +1050,20 @@ async function boot() {
     shipGeometry.computeVertexNormals();
 
     shipMesh = new THREE.Mesh(shipGeometry, shipMaterial);
-    scene.add(shipMesh);
+    modelGroup.add(shipMesh);
+    applyModelScale();
 
     ready = true;
-    el.download.disabled = false;
+    setExportBusy(false);
     applyColor();
     await rebuildText();
     frameCamera();
     writeUrl();
-    setStatus("Ready — edit the name, then download your STL.");
+    setStatus("Ready — edit the name, then download STL / 3MF / PNG.");
   } catch (err) {
     console.error(err);
     setStatus("Failed to load ship or font.", true);
-    el.download.disabled = true;
+    setExportBusy(true);
   }
 }
 

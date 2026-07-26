@@ -186,6 +186,19 @@ a {
   line-height: 1.35;
 }
 
+.warn.warn-hard {
+  background: rgba(240, 96, 96, 0.14);
+  border-color: rgba(240, 96, 96, 0.45);
+  color: #ffb0a0;
+}
+
+.field-note {
+  margin: 0.35rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
 .secondary-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -297,6 +310,15 @@ a {
 }
 
 .primary:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.primary.alt {
+  background: linear-gradient(180deg, #9ad0c0 0%, #5fb89a 55%, #3f9a7c 100%);
+}
+
+.secondary:disabled {
   opacity: 0.55;
   cursor: wait;
 }

@@ -6,9 +6,9 @@
     <title>Starship Custom Name</title>
     <meta
       name="description"
-      content="Customize the name on a printable Starship remix, preview a color, and download your STL."
+      content="Customize the name on a printable Starship remix, preview a color, and download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=7" />
+    <link rel="stylesheet" href="styles.css?v=9" />
   </head>
   <body>
     <div id="app">
@@ -17,8 +17,8 @@
           <p class="eyebrow">Printables remix tool</p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
-            Type a name, preview Prusa/space colors, download your STL.
-            Colors are preview-only — pick filament in your slicer.
+            Type a name, preview Prusa/space colors, download STL or multi-material 3MF.
+            Preview colors are a guide — assign filament in your slicer.
           </p>
         </header>
 
@@ -38,7 +38,7 @@
           <p id="length-warn" class="warn" hidden></p>
 
           <div class="field">
-            <span>Hull color <em class="hint">preview only</em></span>
+            <span>Hull color <em class="hint">preview / 3MF</em></span>
             <div class="color-row">
               <div class="presets" id="hull-presets" data-target="color" role="group" aria-label="Hull color presets"></div>
               <input id="color" type="color" value="#e10600" aria-label="Custom hull color" />
@@ -46,7 +46,7 @@
           </div>
 
           <div class="field">
-            <span>Name text color <em class="hint">preview only</em></span>
+            <span>Name text color <em class="hint">preview / 3MF</em></span>
             <div class="color-row">
               <div class="presets" id="text-presets" data-target="text-color" role="group" aria-label="Name text color presets"></div>
               <input id="text-color" type="color" value="#e10600" aria-label="Custom name text color" />
@@ -86,6 +86,9 @@
                 ><input type="radio" name="style" value="engraved" /> Engraved</label
               >
             </div>
+            <p class="field-note">
+              Engraved export uses a true boolean cut. Live preview stays inset for speed.
+            </p>
           </fieldset>
 
           <label class="field check">
@@ -115,10 +118,26 @@
             />
           </label>
 
+          <label class="field">
+            <span>Model scale <em id="scale-label">100%</em></span>
+            <input id="scale" type="range" min="50" max="200" step="5" value="100" />
+          </label>
+
           <div class="actions">
             <button type="button" id="download" class="primary" disabled>
               Download STL
             </button>
+            <button type="button" id="download-3mf" class="primary alt" disabled>
+              Download 3MF (MMU)
+            </button>
+            <div class="secondary-row">
+              <button type="button" id="download-png" class="secondary" disabled>
+                PNG cover
+              </button>
+              <button type="button" id="download-scad" class="secondary" disabled>
+                OpenSCAD params
+              </button>
+            </div>
             <div class="secondary-row">
               <button type="button" id="copy-link" class="secondary">
                 Copy link
@@ -148,7 +167,7 @@
           <p>
             Advanced:
             <a href="openscad/starship_custom_name.scad">OpenSCAD Customizer</a>
-            (uses <code>../assets/</code> STL)
+            (flat emboss only; hull wrap is web-only)
           </p>
         </footer>
       </aside>
@@ -162,10 +181,13 @@
       {
         "imports": {
           "three": "./vendor/three/three.module.js",
-          "three/addons/": "./vendor/three/examples/jsm/"
+          "three/addons/": "./vendor/three/examples/jsm/",
+          "three-mesh-bvh": "./vendor/three-mesh-bvh/index.module.js",
+          "three-bvh-csg": "./vendor/three-bvh-csg/index.module.js",
+          "fflate": "./vendor/fflate/browser.js"
         }
       }
     </script>
-    <script type="module" src="app.js?v=7"></script>
+    <script type="module" src="app.js?v=9"></script>
   </body>
 </html>
