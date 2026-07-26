@@ -14,6 +14,16 @@ const SAFE_TEXT_SPAN_MM = 48;
 const SHIP_URL = "./assets/StarShipV2_original.stl";
 const FONT_URL = "./fonts/optimer_bold.typeface.json";
 
+/** Prusa filament + Starship / space-theme preview defaults. */
+const COLOR_PRESETS = [
+  { id: "prusa-orange", name: "Prusa Orange", hex: "#fa6831" },
+  { id: "starship-steel", name: "Starship Steel", hex: "#c8ced6" },
+  { id: "pearl-white", name: "Pearl White", hex: "#f2f0e6" },
+  { id: "jet-black", name: "Jet Black", hex: "#1c1c1c" },
+  { id: "heatshield", name: "Heatshield", hex: "#3a3734" },
+  { id: "prusa-azure", name: "Prusa Azure", hex: "#0077c8" },
+];
+
 /** Fold unsupported accented letters to ASCII lookalikes when needed. */
 const ACCENT_FOLD = {
   Á: "A", À: "A", Â: "A", Ä: "A", Ã: "A", Å: "A", Æ: "AE",
@@ -34,6 +44,7 @@ const el = {
   form: document.getElementById("controls"),
   name: document.getElementById("name"),
   color: document.getElementById("color"),
+  textColor: document.getElementById("text-color"),
   size: document.getElementById("size"),
   pos: document.getElementById("pos"),
   depth: document.getElementById("depth"),
@@ -48,7 +59,8 @@ const el = {
   status: document.getElementById("status"),
   glyphWarn: document.getElementById("glyph-warn"),
   lengthWarn: document.getElementById("length-warn"),
-  presets: document.getElementById("presets"),
+  hullPresets: document.getElementById("hull-presets"),
+  textPresets: document.getElementById("text-presets"),
   viewport: document.getElementById("viewport"),
 };
 
@@ -63,23 +75,26 @@ el.viewport.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.55));
-const key = new THREE.DirectionalLight(0xffffff, 1.15);
+scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+const key = new THREE.DirectionalLight(0xffffff, 1.25);
 key.position.set(40, 70, 90);
 scene.add(key);
-const fill = new THREE.DirectionalLight(0x88aaff, 0.4);
+const fill = new THREE.DirectionalLight(0x9eb6ff, 0.35);
 fill.position.set(-60, -30, -40);
 scene.add(fill);
+const rim = new THREE.DirectionalLight(0xffe0c0, 0.35);
+rim.position.set(-20, 40, 100);
+scene.add(rim);
 
 const shipMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.color.value),
-  metalness: 0.35,
-  roughness: 0.45,
+  metalness: 0.42,
+  roughness: 0.4,
 });
 const textMaterial = new THREE.MeshStandardMaterial({
-  color: new THREE.Color(el.color.value).offsetHSL(0, 0, -0.08),
-  metalness: 0.25,
-  roughness: 0.5,
+  color: new THREE.Color(el.textColor.value),
+  metalness: 0.2,
+  roughness: 0.55,
   side: THREE.DoubleSide,
 });
 
@@ -123,16 +138,42 @@ function updateLabels() {
   el.depthLabel.textContent = `${Number(el.depth.value).toFixed(2)} mm`;
 }
 
-function applyColor() {
-  const c = new THREE.Color(el.color.value);
-  shipMaterial.color.copy(c);
-  textMaterial.color.copy(c).offsetHSL(0, 0, -0.08);
-  for (const btn of el.presets.querySelectorAll(".swatch")) {
-    btn.classList.toggle(
-      "active",
-      btn.dataset.color.toLowerCase() === el.color.value.toLowerCase()
-    );
+function mountPresets(container, input) {
+  container.replaceChildren();
+  for (const preset of COLOR_PRESETS) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "swatch";
+    btn.style.background = preset.hex;
+    btn.dataset.color = preset.hex;
+    btn.title = preset.name;
+    btn.setAttribute("aria-label", preset.name);
+    btn.innerHTML = `<span class="swatch-name">${preset.name}</span>`;
+    btn.addEventListener("click", () => {
+      input.value = preset.hex;
+      applyColor();
+      writeUrl();
+    });
+    container.appendChild(btn);
   }
+}
+
+function syncPresetActive(container, hex) {
+  const wanted = hex.toLowerCase();
+  for (const btn of container.querySelectorAll(".swatch")) {
+    btn.classList.toggle("active", btn.dataset.color.toLowerCase() === wanted);
+  }
+}
+
+function applyColor() {
+  shipMaterial.color.set(el.color.value);
+  textMaterial.color.set(el.textColor.value);
+  // Dark hulls: a touch of emissive keeps letter edges readable in the preview.
+  const hsl = { h: 0, s: 0, l: 0 };
+  shipMaterial.color.getHSL(hsl);
+  textMaterial.emissive.setHex(hsl.l < 0.22 ? 0x1a1a1a : 0x000000);
+  syncPresetActive(el.hullPresets, el.color.value);
+  syncPresetActive(el.textPresets, el.textColor.value);
 }
 
 function sanitizeName(raw) {
@@ -249,13 +290,11 @@ function placeFlatOnHull(geometry, side, textY, style) {
   const mesh = new THREE.Mesh(geometry, textMaterial);
   if (style === "raised") {
     mesh.position.set(BODY_CENTER_X, textY, sign * (HULL_RADIUS_Z - EMBED_MM));
+    if (side === "left") mesh.rotation.y = Math.PI;
   } else {
-    // Engraved flat: sit at surface and extrude inward via negative scale on Z.
+    // Engraved flat: start at outer surface, extrude toward hull axis (-Z local after flip).
     mesh.position.set(BODY_CENTER_X, textY, sign * HULL_RADIUS_Z);
-    mesh.scale.z = -1;
-  }
-  if (side === "left") {
-    mesh.rotation.y = Math.PI;
+    mesh.rotation.y = side === "left" ? 0 : Math.PI;
   }
   return mesh;
 }
@@ -334,10 +373,17 @@ function frameCamera() {
   controls.update();
 }
 
+function normalizeHex(value) {
+  if (!value) return null;
+  const hex = value.startsWith("#") ? value : `#${value}`;
+  return /^#[0-9a-fA-F]{6}$/.test(hex) ? hex.toLowerCase() : null;
+}
+
 function readState() {
   return {
     name: el.name.value.trim(),
     color: el.color.value.replace("#", ""),
+    text: el.textColor.value.replace("#", ""),
     size: el.size.value,
     pos: el.pos.value,
     depth: el.depth.value,
@@ -349,10 +395,11 @@ function readState() {
 
 function applyState(state) {
   if (state.name != null) el.name.value = String(state.name).slice(0, 24);
-  if (state.color) {
-    const hex = state.color.startsWith("#") ? state.color : `#${state.color}`;
-    if (/^#[0-9a-fA-F]{6}$/.test(hex)) el.color.value = hex;
-  }
+  const hull = normalizeHex(state.color);
+  if (hull) el.color.value = hull;
+  // Back-compat: older links only had `color` — mirror to letters unless text= set.
+  const letter = normalizeHex(state.text) || hull;
+  if (letter) el.textColor.value = letter;
   if (state.size != null) el.size.value = state.size;
   if (state.pos != null) el.pos.value = state.pos;
   if (state.depth != null) el.depth.value = state.depth;
@@ -380,6 +427,7 @@ function stateFromUrl() {
   for (const key of [
     "name",
     "color",
+    "text",
     "size",
     "pos",
     "depth",
@@ -397,6 +445,7 @@ function writeUrl(replace = true) {
   const q = new URLSearchParams();
   if (s.name) q.set("name", s.name);
   q.set("color", s.color);
+  q.set("text", s.text);
   q.set("size", s.size);
   q.set("pos", s.pos);
   q.set("depth", s.depth);
@@ -504,12 +553,18 @@ function onControlChange() {
 
 async function boot() {
   el.form.addEventListener("submit", (e) => e.preventDefault());
+  mountPresets(el.hullPresets, el.color);
+  mountPresets(el.textPresets, el.textColor);
   applyState(stateFromUrl());
   updateLabels();
   resize();
   window.addEventListener("resize", resize);
 
   el.color.addEventListener("input", () => {
+    applyColor();
+    writeUrl();
+  });
+  el.textColor.addEventListener("input", () => {
     applyColor();
     writeUrl();
   });
@@ -526,13 +581,6 @@ async function boot() {
       if (radio.name === "side") frameCamera();
     });
   }
-  el.presets.addEventListener("click", (ev) => {
-    const btn = ev.target.closest(".swatch");
-    if (!btn) return;
-    el.color.value = btn.dataset.color;
-    applyColor();
-    writeUrl();
-  });
   el.download.addEventListener("click", downloadStl);
   el.copyLink.addEventListener("click", copyShareLink);
   el.resetView.addEventListener("click", () => {
@@ -560,6 +608,7 @@ async function boot() {
     scene.add(shipMesh);
 
     ready = true;
+    el.download.disabled = false;
     applyColor();
     await rebuildText();
     frameCamera();

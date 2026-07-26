@@ -8,7 +8,7 @@
       name="description"
       content="Customize the name on a printable Starship remix, preview a color, and download your STL."
     />
-    <link rel="stylesheet" href="styles.css?v=4" />
+    <link rel="stylesheet" href="styles.css?v=5" />
   </head>
   <body>
     <div id="app">
@@ -17,8 +17,8 @@
           <p class="eyebrow">Printables remix tool</p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
-            Type a name, pick a preview color, download your STL. Color is for
-            preview only — choose filament in your slicer.
+            Type a name, preview Prusa/space colors, download your STL.
+            Colors are preview-only — pick filament in your slicer.
           </p>
         </header>
 
@@ -38,16 +38,18 @@
           <p id="length-warn" class="warn" hidden></p>
 
           <div class="field">
-            <span>Preview color</span>
+            <span>Hull color <em class="hint">preview only</em></span>
             <div class="color-row">
-              <div class="presets" id="presets" role="group" aria-label="Color presets">
-                <button type="button" class="swatch" data-color="#c5ccd6" title="Stainless" style="background:#c5ccd6"></button>
-                <button type="button" class="swatch" data-color="#f4f1ea" title="White" style="background:#f4f1ea"></button>
-                <button type="button" class="swatch" data-color="#1a1a1a" title="Black" style="background:#1a1a1a"></button>
-                <button type="button" class="swatch" data-color="#c45c26" title="Heat shield" style="background:#c45c26"></button>
-                <button type="button" class="swatch" data-color="#3d7ea6" title="Blue" style="background:#3d7ea6"></button>
-              </div>
-              <input id="color" type="color" value="#c5ccd6" aria-label="Custom preview color" />
+              <div class="presets" id="hull-presets" data-target="color" role="group" aria-label="Hull color presets"></div>
+              <input id="color" type="color" value="#c8ced6" aria-label="Custom hull color" />
+            </div>
+          </div>
+
+          <div class="field">
+            <span>Letter color <em class="hint">preview only</em></span>
+            <div class="color-row">
+              <div class="presets" id="text-presets" data-target="text-color" role="group" aria-label="Letter color presets"></div>
+              <input id="text-color" type="color" value="#fa6831" aria-label="Custom letter color" />
             </div>
           </div>
 
@@ -103,7 +105,7 @@
           </label>
 
           <div class="actions">
-            <button type="button" id="download" class="primary">
+            <button type="button" id="download" class="primary" disabled>
               Download STL
             </button>
             <div class="secondary-row">
@@ -153,6 +155,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=4"></script>
+    <script type="module" src="app.js?v=5"></script>
   </body>
 </html>

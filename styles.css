@@ -96,24 +96,45 @@ a {
   gap: 0.65rem;
 }
 
+.field .hint {
+  float: right;
+  font-style: normal;
+  font-size: 0.75rem;
+  color: var(--muted);
+  opacity: 0.85;
+}
+
 .presets {
   display: flex;
-  gap: 0.4rem;
+  gap: 0.35rem;
   flex-wrap: wrap;
+  flex: 1;
 }
 
 .swatch {
-  width: 28px;
-  height: 28px;
+  position: relative;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   border: 2px solid transparent;
   padding: 0;
   cursor: pointer;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+
+.swatch-name {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .swatch.active {
   border-color: var(--accent);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2),
+    0 0 0 2px rgba(126, 182, 255, 0.25);
 }
 
 .fieldset {
