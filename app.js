@@ -1136,8 +1136,8 @@ async function captureCoverDataUrl() {
   const prevAmb = scene.children.find((c) => c.isAmbientLight)?.intensity;
 
   el.hud.hidden = true;
-  // Light studio backdrop so Printables gallery (dark UI) still reads the ship.
-  scene.background = new THREE.Color(0xe8eef5);
+  // Solid black for Printables / PNG cover exports.
+  scene.background = new THREE.Color(0x000000);
   key.intensity = 1.45;
   const amb = scene.children.find((c) => c.isAmbientLight);
   if (amb) amb.intensity = 0.62;
