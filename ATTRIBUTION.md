@@ -1,0 +1,13 @@
+# Attribution
+
+This project is a **remix** of:
+
+**SpaceX Starship** by Josh1297  
+https://www.printables.com/model/225040-spacex-starship  
+
+License: Creative Commons Attribution–NonCommercial (CC BY-NC)  
+https://creativecommons.org/licenses/by-nc/4.0/
+
+You must give credit to Josh1297 when you share remixed files or prints derived from this work. Commercial use is not allowed under the parent license.
+
+The web customizer and OpenSCAD wrapper in this repository do not change that license.

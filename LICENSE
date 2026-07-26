@@ -1,0 +1,17 @@
+This repository redistributes and remixed geometry derived from:
+
+  SpaceX Starship by Josh1297
+  https://www.printables.com/model/225040-spacex-starship
+
+under Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0).
+
+Full license text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+Summary:
+  - Attribution required (credit Josh1297)
+  - Non-commercial use only
+  - Sharing remixed files is allowed with the same credit/restrictions
+
+Original tooling code in this repository (HTML/CSS/JS/Python helper scripts)
+that is not part of the 3D mesh may be reused with attribution to this project,
+but the Starship mesh and any STL that includes it remain CC BY-NC.

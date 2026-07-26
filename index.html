@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Starship Custom Name</title>
+    <meta
+      name="description"
+      content="Customize the name on a printable Starship remix, preview a color, and download your STL."
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <aside class="panel">
+        <header class="brand">
+          <p class="eyebrow">Printables remix tool</p>
+          <h1>Starship Custom Name</h1>
+          <p class="lede">
+            Type a name, pick a preview color, download your STL. Color is for
+            preview only — choose filament in your slicer.
+          </p>
+        </header>
+
+        <form id="controls" autocomplete="off">
+          <label class="field">
+            <span>Name on the hull</span>
+            <input
+              id="name"
+              type="text"
+              maxlength="24"
+              value="Custom Name"
+              placeholder="Your name"
+            />
+          </label>
+
+          <label class="field field-inline">
+            <span>Preview color</span>
+            <input id="color" type="color" value="#c5ccd6" />
+          </label>
+
+          <label class="field">
+            <span>Letter size <em id="size-label">5.0 mm</em></span>
+            <input id="size" type="range" min="3" max="8" step="0.5" value="5" />
+          </label>
+
+          <label class="field">
+            <span>Position (along hull) <em id="pos-label">-2</em></span>
+            <input id="pos" type="range" min="-30" max="30" step="1" value="-2" />
+          </label>
+
+          <label class="field">
+            <span>Emboss height <em id="depth-label">0.30 mm</em></span>
+            <input
+              id="depth"
+              type="range"
+              min="0.15"
+              max="0.8"
+              step="0.05"
+              value="0.3"
+            />
+          </label>
+
+          <div class="actions">
+            <button type="button" id="download" class="primary">
+              Download STL
+            </button>
+            <p id="status" class="status" role="status">Loading ship…</p>
+          </div>
+        </form>
+
+        <footer class="fineprint">
+          <p>
+            Remix of
+            <a
+              href="https://www.printables.com/model/225040-spacex-starship"
+              target="_blank"
+              rel="noopener"
+              >SpaceX Starship by Josh1297</a
+            >
+            — CC BY-NC. Credit Josh1297 if you share.
+          </p>
+          <p>
+            Advanced:
+            <a href="openscad/starship_custom_name.scad">OpenSCAD Customizer</a>
+          </p>
+        </footer>
+      </aside>
+
+      <main id="viewport">
+        <div id="hud">Drag to orbit · scroll to zoom</div>
+      </main>
+    </div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
