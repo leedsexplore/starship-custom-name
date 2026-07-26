@@ -8,7 +8,7 @@
       name="description"
       content="Customize the name on a printable Starship remix, preview a color, and download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=1.1.0" />
+    <link rel="stylesheet" href="styles.css?v=1.1.1" />
   </head>
   <body>
     <div id="app">
@@ -16,7 +16,7 @@
         <header class="brand">
           <p class="eyebrow">
             Printables remix tool
-            <span class="version" id="app-version" aria-label="App version">v1.1.0</span>
+            <span class="version" id="app-version" aria-label="App version">v1.1.1</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -52,7 +52,7 @@
             <span>Name text color <em class="hint">preview / 3MF</em></span>
             <div class="color-row">
               <div class="presets" id="text-presets" data-target="text-color" role="group" aria-label="Name text color presets"></div>
-              <input id="text-color" type="color" value="#e10600" aria-label="Custom name text color" />
+              <input id="text-color" type="color" value="#f2f0e6" aria-label="Custom name text color" />
             </div>
           </div>
 
@@ -107,14 +107,14 @@
           </label>
 
           <label class="field">
-            <span>Emboss / engrave depth <em id="depth-label">0.30 mm</em></span>
+            <span>Emboss / engrave depth <em id="depth-label">0.50 mm</em></span>
             <input
               id="depth"
               type="range"
               min="0.15"
               max="0.8"
               step="0.05"
-              value="0.3"
+              value="0.5"
             />
           </label>
 
@@ -168,7 +168,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v1.1.0</span>)
+            · <span id="footer-version">v1.1.1</span>)
           </p>
           <p>
             Remix of
@@ -204,6 +204,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=1.1.0"></script>
+    <script type="module" src="app.js?v=1.1.1"></script>
   </body>
 </html>

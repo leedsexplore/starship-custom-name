@@ -1,4 +1,4 @@
-// Starship Custom Name — OpenSCAD path (v1.1.0)
+// Starship Custom Name — OpenSCAD path (v1.1.1)
 // Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
 // Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship
@@ -52,7 +52,7 @@ Part = "text_only"; // [text_only, preview_with_ship]
 
 /* [Hidden] */
 body_center_x = -22.3;
-hull_radius_z = 10.55;
+hull_radius_z = 10.7;
 stl_file = "../assets/StarShipV2_original.stl";
 
 module ship() {

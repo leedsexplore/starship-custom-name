@@ -16,7 +16,8 @@ import {
 
 /** Placement tuned to Josh1297 Starship mesh (same as openscad/). */
 const BODY_CENTER_X = -22.3;
-const HULL_RADIUS_Z = 10.55;
+/** Mid-body cylinder radius from STL (was 10.55 — too small → letters buried). */
+const HULL_RADIUS_Z = 10.7;
 const EMBED_MM = 0.35;
 /** Approx safe text span along hull before flaps (mm). */
 const SAFE_TEXT_SPAN_MM = 48;
@@ -355,9 +356,13 @@ const shipMaterial = new THREE.MeshStandardMaterial({
 });
 const textMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.textColor.value),
-  metalness: 0.2,
-  roughness: 0.55,
+  metalness: 0.15,
+  roughness: 0.45,
   side: THREE.DoubleSide,
+  // Win depth fights against dense hull facets in the live preview.
+  polygonOffset: true,
+  polygonOffsetFactor: -1,
+  polygonOffsetUnits: -2,
 });
 
 let font = null;
@@ -496,9 +501,10 @@ function syncPresetActive(container, hex) {
 function applyColor() {
   shipMaterial.color.set(el.color.value);
   textMaterial.color.set(el.textColor.value);
+  // Slight lift on dark letter colors so they stay readable on Signal Red.
   const hsl = { h: 0, s: 0, l: 0 };
-  shipMaterial.color.getHSL(hsl);
-  textMaterial.emissive.setHex(hsl.l < 0.22 ? 0x1a1a1a : 0x000000);
+  textMaterial.color.getHSL(hsl);
+  textMaterial.emissive.setHex(hsl.l < 0.28 ? 0x222222 : 0x000000);
   syncPresetActive(el.hullPresets, el.color.value);
   syncPresetActive(el.textPresets, el.textColor.value);
 }
@@ -718,6 +724,29 @@ function frameCamera() {
     center.x + maxDim * 0.35,
     center.y + maxDim * 0.05,
     center.z + zDir * maxDim * 1.55
+  );
+  controls.update();
+}
+
+/** Tight crop on the lettering — better for Printables gallery covers. */
+function frameCoverCamera() {
+  if (!textMesh) {
+    frameCamera();
+    return;
+  }
+  textMesh.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(textMesh);
+  // Pad so a bit of hull shows around the letters.
+  box.expandByScalar(6);
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  controls.target.copy(center);
+  const maxDim = Math.max(size.x, size.y, size.z, 12);
+  const zDir = selectedSide() === "right" ? 1 : -1;
+  camera.position.set(
+    center.x + maxDim * 0.55,
+    center.y + maxDim * 0.08,
+    center.z + zDir * maxDim * 1.85
   );
   controls.update();
 }
@@ -1077,19 +1106,23 @@ async function download3mf() {
   }
 }
 
+async function captureCoverDataUrl() {
+  await flushRebuild();
+  frameCoverCamera();
+  const prevHud = el.hud.hidden;
+  el.hud.hidden = true;
+  resize();
+  renderer.render(scene, camera);
+  const dataUrl = renderer.domElement.toDataURL("image/png");
+  el.hud.hidden = prevHud;
+  return dataUrl;
+}
+
 async function downloadPng() {
   try {
     setExportBusy(true);
     setStatus("Capturing cover…");
-    await flushRebuild();
-    frameCamera();
-    const prevHud = el.hud.hidden;
-    el.hud.hidden = true;
-    resize();
-    renderer.render(scene, camera);
-    const dataUrl = renderer.domElement.toDataURL("image/png");
-    el.hud.hidden = prevHud;
-
+    const dataUrl = await captureCoverDataUrl();
     const a = document.createElement("a");
     a.href = dataUrl;
     a.download = `starship_${nameSlug()}_cover.png`;
@@ -1102,6 +1135,9 @@ async function downloadPng() {
     setExportBusy(false);
   }
 }
+
+// Dev/automation hook for headless cover capture.
+window.__starshipCaptureCover = captureCoverDataUrl;
 
 function downloadOpenscadSnippet() {
   const s = readState();
