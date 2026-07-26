@@ -1,0 +1,9 @@
+{
+  "name": "starship-custom-name",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "three": "./vendor/three/three.module.js",
+    "three/addons/": "./vendor/three/examples/jsm/"
+  }
+}

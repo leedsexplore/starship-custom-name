@@ -1,4 +1,4 @@
-// Starship Custom Name — OpenSCAD path (v1.1.4)
+// Starship Custom Name — OpenSCAD path (v1.1.5)
 // Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
 // Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship

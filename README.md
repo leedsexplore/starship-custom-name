@@ -1,9 +1,10 @@
 # Starship Custom Name
 
-**v1.1.4** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v1.1.5** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 Simple customizer for a Printables remix of [Josh1297’s SpaceX Starship](https://www.printables.com/model/225040-spacex-starship).
 
+Base mesh ships with **6 Raptors** (3 sea-level + 3 vacuum).  
 **Type a name → preview colors → download STL, multi-material 3MF, or a PNG cover.**  
 License is **CC BY-NC** — credit Josh1297. Tooling by David Leeds.
 

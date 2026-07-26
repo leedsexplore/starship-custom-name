@@ -1,6 +1,6 @@
 /** App version & author — bump when shipping user-facing changes. */
 export const APP_NAME = "Starship Custom Name";
-export const APP_VERSION = "1.1.4";
+export const APP_VERSION = "1.1.5";
 
 export const AUTHOR = {
   name: "David Leeds",

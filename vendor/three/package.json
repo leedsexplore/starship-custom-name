@@ -1,0 +1,10 @@
+{
+  "name": "three",
+  "private": true,
+  "type": "module",
+  "main": "./three.module.js",
+  "exports": {
+    ".": "./three.module.js",
+    "./addons/": "./examples/jsm/"
+  }
+}
