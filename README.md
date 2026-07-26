@@ -7,7 +7,9 @@ Color is preview-only (pick filament in your slicer). License is **CC BY-NC** �
 
 ## Use the web tool
 
-1. Open the GitHub Pages site for this repo (or run locally — see below).
+**Live:** [https://leedsexplore.github.io/starship-custom-name/](https://leedsexplore.github.io/starship-custom-name/)
+
+1. Open the site above (or run locally — see below).
 2. Enter your hull text and optional preview color.
 3. Click **Download STL**.
 4. Slice and print (vertical + supports, same as the original).
