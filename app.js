@@ -193,11 +193,13 @@ function updateLengthWarn(spanMm) {
   el.lengthWarn.textContent = `Text is ~${spanMm.toFixed(0)} mm long (safe band ~${SAFE_TEXT_SPAN_MM} mm). Use “Fit text to hull” or shorten the name.`;
 }
 
-function buildFlatTextGeometry(text, size, depth) {
+function buildFlatTextGeometry(text, size, extrudeMm) {
+  // TextGeometry (three r160) maps parameters.height → extrude depth.
+  // Passing only `depth` is ignored and defaults to 50mm — do not do that.
   const geometry = new TextGeometry(text, {
     font,
     size,
-    depth,
+    height: extrudeMm,
     curveSegments: 8,
     bevelEnabled: false,
   });
