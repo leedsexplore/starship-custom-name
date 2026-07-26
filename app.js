@@ -26,32 +26,196 @@ const HARD_TEXT_SPAN_MM = 60;
 const FLAP_ZONE_Y_MM = 28;
 const SHIP_URL = "./assets/StarShipV2_original.stl";
 
-/** Available extruded fonts (Three.js typeface JSON). */
+/**
+ * Extruded fonts (Three.js typeface JSON).
+ * Popular Google fonts via @compai typefaces (OFL); classic MgOpen/Droid from three.js.
+ */
 const FONT_OPTIONS = {
   "optimer-bold": {
     label: "Optimer Bold",
+    group: "Classic",
     url: "./fonts/optimer_bold.typeface.json",
     openscad: "Liberation Sans:style=Bold",
   },
   "optimer-regular": {
     label: "Optimer Regular",
+    group: "Classic",
     url: "./fonts/optimer_regular.typeface.json",
     openscad: "Liberation Sans:style=Regular",
   },
   "helvetiker-bold": {
     label: "Helvetiker Bold",
+    group: "Classic",
     url: "./fonts/helvetiker_bold.typeface.json",
     openscad: "Liberation Sans:style=Bold",
   },
   "helvetiker-regular": {
     label: "Helvetiker Regular",
+    group: "Classic",
     url: "./fonts/helvetiker_regular.typeface.json",
     openscad: "Liberation Sans:style=Regular",
   },
   "gentilis-bold": {
-    label: "Gentilis Bold",
+    label: "Gentilis Bold (accents)",
+    group: "Classic",
     url: "./fonts/gentilis_bold.typeface.json",
     openscad: "Gentium Book Basic:style=Bold",
+  },
+  "gentilis-regular": {
+    label: "Gentilis Regular",
+    group: "Classic",
+    url: "./fonts/gentilis_regular.typeface.json",
+    openscad: "Gentium Book Basic:style=Regular",
+  },
+  "droid-sans-bold": {
+    label: "Droid Sans Bold",
+    group: "Classic",
+    url: "./fonts/droid_sans_bold.typeface.json",
+    openscad: "Droid Sans:style=Bold",
+  },
+  "droid-sans-regular": {
+    label: "Droid Sans",
+    group: "Classic",
+    url: "./fonts/droid_sans_regular.typeface.json",
+    openscad: "Droid Sans",
+  },
+  "droid-sans-mono": {
+    label: "Droid Sans Mono",
+    group: "Classic",
+    url: "./fonts/droid_sans_mono_regular.typeface.json",
+    openscad: "Droid Sans Mono",
+  },
+  "droid-serif-bold": {
+    label: "Droid Serif Bold",
+    group: "Classic",
+    url: "./fonts/droid_serif_bold.typeface.json",
+    openscad: "Droid Serif:style=Bold",
+  },
+  "droid-serif-regular": {
+    label: "Droid Serif",
+    group: "Classic",
+    url: "./fonts/droid_serif_regular.typeface.json",
+    openscad: "Droid Serif",
+  },
+  "roboto-bold": {
+    label: "Roboto Bold",
+    group: "Popular",
+    url: "./fonts/roboto_bold.typeface.json",
+    openscad: "Roboto:style=Bold",
+  },
+  "roboto-regular": {
+    label: "Roboto",
+    group: "Popular",
+    url: "./fonts/roboto_regular.typeface.json",
+    openscad: "Roboto",
+  },
+  "open-sans-bold": {
+    label: "Open Sans Bold",
+    group: "Popular",
+    url: "./fonts/open_sans_bold.typeface.json",
+    openscad: "Open Sans:style=Bold",
+  },
+  "open-sans-regular": {
+    label: "Open Sans",
+    group: "Popular",
+    url: "./fonts/open_sans_regular.typeface.json",
+    openscad: "Open Sans",
+  },
+  "montserrat-bold": {
+    label: "Montserrat Bold",
+    group: "Popular",
+    url: "./fonts/montserrat_bold.typeface.json",
+    openscad: "Montserrat:style=Bold",
+  },
+  "montserrat-regular": {
+    label: "Montserrat",
+    group: "Popular",
+    url: "./fonts/montserrat_regular.typeface.json",
+    openscad: "Montserrat",
+  },
+  "lato-bold": {
+    label: "Lato Bold",
+    group: "Popular",
+    url: "./fonts/lato_bold.typeface.json",
+    openscad: "Lato:style=Bold",
+  },
+  "lato-regular": {
+    label: "Lato",
+    group: "Popular",
+    url: "./fonts/lato_regular.typeface.json",
+    openscad: "Lato",
+  },
+  "poppins-bold": {
+    label: "Poppins Bold",
+    group: "Popular",
+    url: "./fonts/poppins_bold.typeface.json",
+    openscad: "Poppins:style=Bold",
+  },
+  "poppins-regular": {
+    label: "Poppins",
+    group: "Popular",
+    url: "./fonts/poppins_regular.typeface.json",
+    openscad: "Poppins",
+  },
+  "inter-bold": {
+    label: "Inter Bold",
+    group: "Popular",
+    url: "./fonts/inter_bold.typeface.json",
+    openscad: "Inter:style=Bold",
+  },
+  "inter-regular": {
+    label: "Inter",
+    group: "Popular",
+    url: "./fonts/inter_regular.typeface.json",
+    openscad: "Inter",
+  },
+  "nunito-bold": {
+    label: "Nunito Bold",
+    group: "Popular",
+    url: "./fonts/nunito_bold.typeface.json",
+    openscad: "Nunito:style=Bold",
+  },
+  "ubuntu-bold": {
+    label: "Ubuntu Bold",
+    group: "Popular",
+    url: "./fonts/ubuntu_bold.typeface.json",
+    openscad: "Ubuntu:style=Bold",
+  },
+  "source-sans-bold": {
+    label: "Source Sans Bold",
+    group: "Popular",
+    url: "./fonts/source_sans_bold.typeface.json",
+    openscad: "Source Sans Pro:style=Bold",
+  },
+  "raleway-bold": {
+    label: "Raleway Bold",
+    group: "Popular",
+    url: "./fonts/raleway_bold.typeface.json",
+    openscad: "Raleway:style=Bold",
+  },
+  "rubik-bold": {
+    label: "Rubik Bold",
+    group: "Popular",
+    url: "./fonts/rubik_bold.typeface.json",
+    openscad: "Rubik:style=Bold",
+  },
+  "oswald-bold": {
+    label: "Oswald Bold",
+    group: "Display",
+    url: "./fonts/oswald_bold.typeface.json",
+    openscad: "Oswald:style=Bold",
+  },
+  "oswald-regular": {
+    label: "Oswald",
+    group: "Display",
+    url: "./fonts/oswald_regular.typeface.json",
+    openscad: "Oswald",
+  },
+  "bebas-neue": {
+    label: "Bebas Neue",
+    group: "Display",
+    url: "./fonts/bebas_neue.typeface.json",
+    openscad: "Bebas Neue",
   },
 };
 
@@ -275,6 +439,30 @@ function updateLabels() {
   el.posLabel.textContent = el.pos.value;
   el.depthLabel.textContent = `${Number(el.depth.value).toFixed(2)} mm`;
   el.scaleLabel.textContent = `${el.scale.value}%`;
+}
+
+function mountFontOptions(selectedId = "optimer-bold") {
+  const select = el.fontStyle;
+  select.replaceChildren();
+  const groups = new Map();
+  for (const [id, opt] of Object.entries(FONT_OPTIONS)) {
+    const g = opt.group || "Other";
+    if (!groups.has(g)) groups.set(g, []);
+    groups.get(g).push([id, opt]);
+  }
+  for (const [groupName, items] of groups) {
+    const og = document.createElement("optgroup");
+    og.label = groupName;
+    for (const [id, opt] of items) {
+      const option = document.createElement("option");
+      option.value = id;
+      option.textContent = opt.label;
+      if (id === selectedId) option.selected = true;
+      og.appendChild(option);
+    }
+    select.appendChild(og);
+  }
+  if (!FONT_OPTIONS[select.value]) select.value = "optimer-bold";
 }
 
 function mountPresets(container, input) {
@@ -1006,9 +1194,13 @@ async function boot() {
   }
 
   el.form.addEventListener("submit", (e) => e.preventDefault());
+  const urlState = stateFromUrl();
+  mountFontOptions(
+    urlState.font && FONT_OPTIONS[urlState.font] ? urlState.font : "optimer-bold"
+  );
   mountPresets(el.hullPresets, el.color);
   mountPresets(el.textPresets, el.textColor);
-  applyState(stateFromUrl());
+  applyState(urlState);
   updateLabels();
   resize();
   window.addEventListener("resize", resize);

@@ -1,4 +1,4 @@
-// Starship Custom Name — OpenSCAD path (v1.0.0)
+// Starship Custom Name — OpenSCAD path (v1.1.0)
 // Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
 // Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship
@@ -30,7 +30,7 @@ Text_Size = 5; // [3:0.5:8]
 // Full letter extrusion (mm). Pair with Surface_Offset ≈ -0.35 for a light emboss.
 Text_Depth = 0.65; // [0.5:0.05:1.5]
 // Font (must be installed on your system)
-Font = "Liberation Sans:style=Bold"; // [Liberation Sans:style=Bold, Liberation Sans:style=Regular, Gentium Book Basic:style=Bold]
+Font = "Liberation Sans:style=Bold"; // [Liberation Sans:style=Bold, Liberation Sans:style=Regular, Gentium Book Basic:style=Bold, Roboto:style=Bold, Open Sans:style=Bold, Montserrat:style=Bold, Oswald:style=Bold, Bebas Neue, Inter:style=Bold]
 // Raised emboss, or engraved (cut) — engraved needs Part=preview_with_ship for boolean
 Style = "raised"; // [raised, engraved]
 

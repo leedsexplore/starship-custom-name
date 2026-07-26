@@ -8,7 +8,7 @@
       name="description"
       content="Customize the name on a printable Starship remix, preview a color, and download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=1.0.0" />
+    <link rel="stylesheet" href="styles.css?v=1.1.0" />
   </head>
   <body>
     <div id="app">
@@ -16,7 +16,7 @@
         <header class="brand">
           <p class="eyebrow">
             Printables remix tool
-            <span class="version" id="app-version" aria-label="App version">v1.0.0</span>
+            <span class="version" id="app-version" aria-label="App version">v1.1.0</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -59,11 +59,8 @@
           <label class="field">
             <span>Font style</span>
             <select id="font-style" aria-label="Font style">
+              <!-- Options populated from FONT_OPTIONS in app.js -->
               <option value="optimer-bold" selected>Optimer Bold</option>
-              <option value="optimer-regular">Optimer Regular</option>
-              <option value="helvetiker-bold">Helvetiker Bold</option>
-              <option value="helvetiker-regular">Helvetiker Regular</option>
-              <option value="gentilis-bold">Gentilis Bold (more accents)</option>
             </select>
           </label>
 
@@ -171,7 +168,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v1.0.0</span>)
+            · <span id="footer-version">v1.1.0</span>)
           </p>
           <p>
             Remix of
@@ -207,6 +204,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=1.0.0"></script>
+    <script type="module" src="app.js?v=1.1.0"></script>
   </body>
 </html>

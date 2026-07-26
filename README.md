@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v1.0.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v1.1.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 Simple customizer for a Printables remix of [Josh1297’s SpaceX Starship](https://www.printables.com/model/225040-spacex-starship).
 
@@ -27,7 +27,7 @@ Shareable URLs look like:
 
 | Control | Notes |
 |--------|--------|
-| Font style | Optimer / Helvetiker / Gentilis (Gentilis = best accents) |
+| Font style | Classic (Optimer/Helvetiker/Gentilis/Droid) + popular (Roboto, Open Sans, Montserrat, Inter, …) + display (Oswald, Bebas Neue) |
 | Model scale | 50–200% (baked into STL/3MF) |
 | Color presets | Prusament-oriented names on hover (approx where noted) |
 | Engraved | Preview is inset; export runs CSG boolean |

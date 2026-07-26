@@ -20,3 +20,7 @@ https://creativecommons.org/licenses/by-nc/4.0/
 You must give credit to Josh1297 when you share remixed files or prints derived from this work. Commercial use is not allowed under the parent license.
 
 The web customizer and OpenSCAD wrapper in this repository do not change that license.
+
+## Fonts
+
+See [fonts/README.md](fonts/README.md). Bundled typefaces are MgOpen/Droid (via three.js) and Google Fonts OFL conversions (via @compai typefaces) for letter extrusion only.
