@@ -12,10 +12,34 @@ const EMBED_MM = 0.35;
 /** Approx safe text span along hull before flaps (mm). */
 const SAFE_TEXT_SPAN_MM = 48;
 const SHIP_URL = "./assets/StarShipV2_original.stl";
-const FONT_URL = "./fonts/optimer_bold.typeface.json";
+
+/** Available extruded fonts (Three.js typeface JSON). */
+const FONT_OPTIONS = {
+  "optimer-bold": {
+    label: "Optimer Bold",
+    url: "./fonts/optimer_bold.typeface.json",
+  },
+  "optimer-regular": {
+    label: "Optimer Regular",
+    url: "./fonts/optimer_regular.typeface.json",
+  },
+  "helvetiker-bold": {
+    label: "Helvetiker Bold",
+    url: "./fonts/helvetiker_bold.typeface.json",
+  },
+  "helvetiker-regular": {
+    label: "Helvetiker Regular",
+    url: "./fonts/helvetiker_regular.typeface.json",
+  },
+  "gentilis-bold": {
+    label: "Gentilis Bold",
+    url: "./fonts/gentilis_bold.typeface.json",
+  },
+};
 
 /** Prusa filament + Starship / space-theme preview defaults. */
 const COLOR_PRESETS = [
+  { id: "signal-red", name: "Signal Red", hex: "#e10600" },
   { id: "prusa-orange", name: "Prusa Orange", hex: "#fa6831" },
   { id: "starship-steel", name: "Starship Steel", hex: "#c8ced6" },
   { id: "pearl-white", name: "Pearl White", hex: "#f2f0e6" },
@@ -61,6 +85,7 @@ const el = {
   lengthWarn: document.getElementById("length-warn"),
   hullPresets: document.getElementById("hull-presets"),
   textPresets: document.getElementById("text-presets"),
+  fontStyle: document.getElementById("font-style"),
   viewport: document.getElementById("viewport"),
 };
 
@@ -100,12 +125,39 @@ const textMaterial = new THREE.MeshStandardMaterial({
 
 let font = null;
 let fontGlyphs = new Set();
+let currentFontId = "optimer-bold";
+const fontCache = new Map();
 let shipGeometry = null;
 let shipMesh = null;
 let textMesh = null;
 let ready = false;
 let rebuildTimer = 0;
 let lastSpanMm = 0;
+
+async function loadFontById(fontId) {
+  const id = FONT_OPTIONS[fontId] ? fontId : "optimer-bold";
+  if (fontCache.has(id)) {
+    return { id, font: fontCache.get(id) };
+  }
+  const loader = new FontLoader();
+  const loaded = await loader.loadAsync(FONT_OPTIONS[id].url);
+  fontCache.set(id, loaded);
+  return { id, font: loaded };
+}
+
+async function applyFontSelection(fontId, { rebuild = true } = {}) {
+  setStatus("Loading font…");
+  const { id, font: loaded } = await loadFontById(fontId);
+  font = loaded;
+  currentFontId = id;
+  fontGlyphs = new Set(Object.keys(font.data?.glyphs || {}));
+  if (el.fontStyle.value !== id) el.fontStyle.value = id;
+  if (rebuild && ready) {
+    await flushRebuild();
+    writeUrl();
+    setStatus(`Font: ${FONT_OPTIONS[id].label}`);
+  }
+}
 
 function setStatus(msg, isError = false) {
   el.status.textContent = msg;
@@ -384,6 +436,7 @@ function readState() {
     name: el.name.value.trim(),
     color: el.color.value.replace("#", ""),
     text: el.textColor.value.replace("#", ""),
+    font: currentFontId || el.fontStyle.value || "optimer-bold",
     size: el.size.value,
     pos: el.pos.value,
     depth: el.depth.value,
@@ -400,6 +453,10 @@ function applyState(state) {
   // Back-compat: older links only had `color` — mirror to letters unless text= set.
   const letter = normalizeHex(state.text) || hull;
   if (letter) el.textColor.value = letter;
+  if (state.font && FONT_OPTIONS[state.font]) {
+    el.fontStyle.value = state.font;
+    currentFontId = state.font;
+  }
   if (state.size != null) el.size.value = state.size;
   if (state.pos != null) el.pos.value = state.pos;
   if (state.depth != null) el.depth.value = state.depth;
@@ -428,6 +485,7 @@ function stateFromUrl() {
     "name",
     "color",
     "text",
+    "font",
     "size",
     "pos",
     "depth",
@@ -446,6 +504,7 @@ function writeUrl(replace = true) {
   if (s.name) q.set("name", s.name);
   q.set("color", s.color);
   q.set("text", s.text);
+  q.set("font", s.font);
   q.set("size", s.size);
   q.set("pos", s.pos);
   q.set("depth", s.depth);
@@ -573,6 +632,12 @@ async function boot() {
   el.pos.addEventListener("input", onControlChange);
   el.depth.addEventListener("input", onControlChange);
   el.wrap.addEventListener("change", onControlChange);
+  el.fontStyle.addEventListener("change", () => {
+    applyFontSelection(el.fontStyle.value).catch((err) => {
+      console.error(err);
+      setStatus("Failed to load that font.", true);
+    });
+  });
   for (const radio of document.querySelectorAll(
     'input[name="side"], input[name="style"]'
   )) {
@@ -590,16 +655,15 @@ async function boot() {
   el.fitSize.addEventListener("click", fitTextToHull);
 
   try {
-    const fontLoader = new FontLoader();
     const stlLoader = new STLLoader();
+    const initialFontId = FONT_OPTIONS[el.fontStyle.value]
+      ? el.fontStyle.value
+      : "optimer-bold";
 
-    const [loadedFont, geometry] = await Promise.all([
-      fontLoader.loadAsync(FONT_URL),
+    const [, geometry] = await Promise.all([
+      applyFontSelection(initialFontId, { rebuild: false }),
       stlLoader.loadAsync(SHIP_URL),
     ]);
-
-    font = loadedFont;
-    fontGlyphs = new Set(Object.keys(font.data?.glyphs || {}));
 
     shipGeometry = geometry;
     shipGeometry.computeVertexNormals();

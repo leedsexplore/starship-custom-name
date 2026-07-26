@@ -16,9 +16,11 @@ Color is preview-only (pick filament in your slicer). License is **CC BY-NC** â€
 
 Shareable URLs look like:
 
-`https://leedsexplore.github.io/starship-custom-name/?name=Alex&color=c8ced6&text=fa6831&size=5&pos=-2&depth=0.3&side=right&style=raised&wrap=1`
+`https://leedsexplore.github.io/starship-custom-name/?name=Alex&color=e10600&text=e10600&font=optimer-bold&size=5&pos=-2&depth=0.3&side=right&style=raised&wrap=1`
 
-Preview defaults: **Starship Steel** hull + **Prusa Orange** letters (filament colors are still chosen in your slicer).
+**Font style:** use the **Font style** dropdown (Optimer / Helvetiker / Gentilis). Gentilis has the best accent coverage.
+
+Preview defaults: matching **Signal Red** hull + letters (filament colors are still chosen in your slicer).
 
 ### Run locally
 

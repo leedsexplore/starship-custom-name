@@ -8,7 +8,7 @@
       name="description"
       content="Customize the name on a printable Starship remix, preview a color, and download your STL."
     />
-    <link rel="stylesheet" href="styles.css?v=6" />
+    <link rel="stylesheet" href="styles.css?v=7" />
   </head>
   <body>
     <div id="app">
@@ -41,7 +41,7 @@
             <span>Hull color <em class="hint">preview only</em></span>
             <div class="color-row">
               <div class="presets" id="hull-presets" data-target="color" role="group" aria-label="Hull color presets"></div>
-              <input id="color" type="color" value="#c8ced6" aria-label="Custom hull color" />
+              <input id="color" type="color" value="#e10600" aria-label="Custom hull color" />
             </div>
           </div>
 
@@ -49,9 +49,20 @@
             <span>Name text color <em class="hint">preview only</em></span>
             <div class="color-row">
               <div class="presets" id="text-presets" data-target="text-color" role="group" aria-label="Name text color presets"></div>
-              <input id="text-color" type="color" value="#fa6831" aria-label="Custom name text color" />
+              <input id="text-color" type="color" value="#e10600" aria-label="Custom name text color" />
             </div>
           </div>
+
+          <label class="field">
+            <span>Font style</span>
+            <select id="font-style" aria-label="Font style">
+              <option value="optimer-bold" selected>Optimer Bold</option>
+              <option value="optimer-regular">Optimer Regular</option>
+              <option value="helvetiker-bold">Helvetiker Bold</option>
+              <option value="helvetiker-regular">Helvetiker Regular</option>
+              <option value="gentilis-bold">Gentilis Bold (more accents)</option>
+            </select>
+          </label>
 
           <fieldset class="field fieldset">
             <legend>Hull side</legend>
@@ -155,6 +166,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=6"></script>
+    <script type="module" src="app.js?v=7"></script>
   </body>
 </html>

@@ -257,6 +257,22 @@ a {
   accent-color: var(--accent);
 }
 
+.field select {
+  width: 100%;
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  background: var(--field);
+  color: var(--text);
+  padding: 0.7rem 0.8rem;
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.field select:focus {
+  outline: 2px solid var(--accent-dim);
+  border-color: var(--accent);
+}
+
 .actions {
   display: flex;
   flex-direction: column;
