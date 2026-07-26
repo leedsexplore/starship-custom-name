@@ -1131,8 +1131,16 @@ async function captureCoverDataUrl() {
   const prevAspect = camera.aspect;
   const prevCamPos = camera.position.clone();
   const prevTarget = controls.target.clone();
+  const prevBg = scene.background.clone();
+  const prevKey = key.intensity;
+  const prevAmb = scene.children.find((c) => c.isAmbientLight)?.intensity;
 
   el.hud.hidden = true;
+  // Light studio backdrop so Printables gallery (dark UI) still reads the ship.
+  scene.background = new THREE.Color(0xe8eef5);
+  key.intensity = 1.45;
+  const amb = scene.children.find((c) => c.isAmbientLight);
+  if (amb) amb.intensity = 0.62;
   // Square buffer — Printables gallery thumbs are square; wide viewport left the ship off-center.
   renderer.setSize(COVER_PX, COVER_PX, false);
   camera.aspect = 1;
@@ -1141,6 +1149,9 @@ async function captureCoverDataUrl() {
   renderer.render(scene, camera);
   const dataUrl = renderer.domElement.toDataURL("image/png");
 
+  scene.background.copy(prevBg);
+  key.intensity = prevKey;
+  if (amb && prevAmb != null) amb.intensity = prevAmb;
   el.hud.hidden = prevHud;
   camera.position.copy(prevCamPos);
   controls.target.copy(prevTarget);
