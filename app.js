@@ -728,27 +728,31 @@ function frameCamera() {
   controls.update();
 }
 
-/** Tight crop on the lettering — better for Printables gallery covers. */
+/**
+ * Face-on framing for a square Printables cover — ship centered in frame.
+ * Aims at the hull axis (not the text AABB). Skips OrbitControls.update()
+ * so spherical recomputation cannot pull the subject off-center.
+ * Assumes camera.aspect is already 1 (set by captureCoverDataUrl).
+ */
 function frameCoverCamera() {
-  if (!textMesh) {
+  if (!shipMesh) {
     frameCamera();
     return;
   }
-  textMesh.updateMatrixWorld(true);
-  const box = new THREE.Box3().setFromObject(textMesh);
-  // Pad so a bit of hull shows around the letters.
-  box.expandByScalar(6);
-  const size = box.getSize(new THREE.Vector3());
-  const center = box.getCenter(new THREE.Vector3());
-  controls.target.copy(center);
-  const maxDim = Math.max(size.x, size.y, size.z, 12);
+  const textY = Number(el.pos.value);
   const zDir = selectedSide() === "right" ? 1 : -1;
-  camera.position.set(
-    center.x + maxDim * 0.55,
-    center.y + maxDim * 0.08,
-    center.z + zDir * maxDim * 1.85
-  );
-  controls.update();
+  const span = Math.max(lastSpanMm, Number(el.size.value) * 4, 28);
+  // Vertical fit: letter span + hull margin so fins/context show without clipping.
+  const fitH = span + 36;
+  const fov = THREE.MathUtils.degToRad(camera.fov);
+  const dist = (fitH / 2) / Math.tan(fov / 2) * 1.05;
+
+  const target = new THREE.Vector3(BODY_CENTER_X, textY, 0);
+  camera.position.set(BODY_CENTER_X, textY, zDir * dist);
+  camera.up.set(0, 1, 0);
+  camera.lookAt(target);
+  camera.updateMatrixWorld();
+  controls.target.copy(target);
 }
 
 function normalizeHex(value) {
@@ -1106,15 +1110,34 @@ async function download3mf() {
   }
 }
 
+const COVER_PX = 1024;
+
 async function captureCoverDataUrl() {
   await flushRebuild();
-  frameCoverCamera();
   const prevHud = el.hud.hidden;
+  const prevSize = new THREE.Vector2();
+  renderer.getSize(prevSize);
+  const prevAspect = camera.aspect;
+  const prevCamPos = camera.position.clone();
+  const prevTarget = controls.target.clone();
+
   el.hud.hidden = true;
-  resize();
+  // Square buffer — Printables gallery thumbs are square; wide viewport left the ship off-center.
+  renderer.setSize(COVER_PX, COVER_PX, false);
+  camera.aspect = 1;
+  camera.updateProjectionMatrix();
+  frameCoverCamera();
   renderer.render(scene, camera);
   const dataUrl = renderer.domElement.toDataURL("image/png");
+
   el.hud.hidden = prevHud;
+  camera.position.copy(prevCamPos);
+  controls.target.copy(prevTarget);
+  controls.update();
+  renderer.setSize(prevSize.x, prevSize.y, false);
+  camera.aspect = prevAspect;
+  camera.updateProjectionMatrix();
+  resize();
   return dataUrl;
 }
 
