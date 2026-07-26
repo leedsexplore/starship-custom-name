@@ -18,7 +18,7 @@ License is **CC BY-NC** — credit Josh1297. Tooling by David Leeds.
    - **STL** — engraved uses a true boolean subtract. Raised overlays letters on the hull (prefer **3MF** for clean multi-material).
    - **3MF (MMU)** — raised: separate Hull + Letters objects. Engraved: booleaned solid (or Hull + cutter fallback if CSG fails).
    - **PNG cover** — square full-ship snapshot for Printables gallery images.
-   - **OpenSCAD params** — settings snippet for the advanced flat OpenSCAD path.
+   - **OpenSCAD params** *(optional)* — settings snippet for the advanced flat path in `openscad/` (GitHub only; not needed for most users).
 4. Slice and print (vertical + supports, same as the original).
 
 Shareable URLs look like:
@@ -45,22 +45,9 @@ python3 -m http.server 8080
 
 > Serve over HTTP so the browser can load the STL, fonts, and vendored modules (`vendor/`).
 
-## OpenSCAD (advanced)
+## OpenSCAD (optional / advanced)
 
-```bash
-open openscad/starship_custom_name.scad
-```
-
-Flat emboss/engrave only (no hull wrap). Font mapping matches the web dropdown where system fonts allow. Use the Customizer, export `text_only`, then:
-
-```bash
-python3 scripts/merge_stls.py \
-  assets/StarShipV2_original.stl \
-  your_text.stl \
-  my_starship.stl
-```
-
-Or set `Part = preview_with_ship` and `Style = engraved` for a local `difference()` preview.
+Most people should use the **web tool**. An offline flat-emboss path lives in `openscad/` (no hull wrap). Prefer the web exporter for wrap, boolean engraved STL/3MF, and PNG covers.
 
 ## Version
 
@@ -75,4 +62,4 @@ Bump `APP_VERSION` in [`version.js`](version.js) when shipping user-facing chang
 
 ## Printables
 
-After you publish the remix on Printables, link this tool from the model description so downloaders can customize without installing OpenSCAD. Use **PNG cover** for gallery images.
+The Printables listing ships sample + original STLs and links here for customization. Use **PNG cover** for gallery images; replace with a real print photo when you have one.
