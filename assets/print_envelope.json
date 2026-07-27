@@ -172,34 +172,34 @@
     {
       "file": "assets/starship_ship_print_1_200.stl",
       "aabb_min_mm": [
-        -24.7422,
+        -22.575,
         -39.8499,
         0.0
       ],
       "aabb_max_mm": [
-        24.75,
+        22.575,
         39.8499,
-        260.4999
+        260.5
       ],
       "aabb_size_mm": [
-        49.4922,
+        45.15,
         79.6999,
-        260.4999
+        260.5
       ],
       "height_axis": "Z",
-      "height_mm": 260.4999,
+      "height_mm": 260.5,
       "mid_barrel_diameter_mm": 45.15,
       "footprint_max_mm": 79.6999,
-      "footprint_min_mm": 49.4922,
+      "footprint_min_mm": 45.15,
       "tip_at_axis_max": true,
       "engines_protrude_past_skirt_mm": 0.0,
-      "base_band_inward_extent_mm": 1.9523,
+      "base_band_inward_extent_mm": 0.0,
       "implied_real_scale_1_to_N": 200.0,
       "at_1_200_from_height": {
         "height_mm": 260.5,
         "diameter_mm": 45.15,
         "footprint_max_mm": 79.7,
-        "footprint_min_mm": 49.492,
+        "footprint_min_mm": 45.15,
         "scale_percent_of_mesh": 100.0,
         "fits_core_one": true,
         "z_margin_mm": 9.5
@@ -218,7 +218,7 @@
   "preferred_print_mesh": {
     "file": "assets/starship_ship_print_1_200.stl",
     "role": "parametric 1:200 CAD solid (true proportions)",
-    "height_mm": 260.4999,
+    "height_mm": 260.5,
     "mid_barrel_diameter_mm": 45.15,
     "footprint_max_mm": 79.6999,
     "engines_protrude_past_skirt_mm": 0.0,
