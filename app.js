@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.1.2";
+import { build3mf } from "./export3mf.js?v=2.1.3";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.1.2";
+} from "./version.js?v=2.1.3";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -493,10 +493,10 @@ const steelMaterial = new THREE.MeshStandardMaterial({
   envMapIntensity: 0.7,
 });
 /**
- * Seamless hexagonal heat-tile bump map, calibrated to the print emboss:
- * 6 hex columns per repeat with applyTileUVs scale 12 mm → 2.0 mm flat-to-flat
- * and ~0.35 mm grooves, matching HEX_FTF / GROOVE_W in emboss_hex_tiles.py
- * (measured off the Fusion tiles_combined.stl reference at 1:200).
+ * Seamless hexagonal heat-tile bump map, calibrated to the print tiles:
+ * pointy-top hexes, 6 columns per repeat with applyTileUVs scale 8.7 mm →
+ * 1.45 mm flat-to-flat with thin ~0.2 mm grooves — same HEX_FTF / GROOVE_W as
+ * emboss_hex_tiles.py (scale-true 0.29 m tiles measured off tiles_combined.stl).
  */
 function makeHexTileTexture() {
   const S = 512;
@@ -507,18 +507,18 @@ function makeHexTileTexture() {
   g.fillRect(0, 0, S, S);
   const px = S / 6;
   const py = S / 7;
-  // Circumradius sized so the inter-tile gap ≈ 0.35 mm of the 2.0 mm pitch.
-  const R = (py / 1.5) * 0.83;
+  // Circumradius sized so the inter-tile gap ≈ 0.2 mm of the 1.45 mm pitch.
+  const R = (py / 1.5) * 0.86;
   for (let j = -1; j <= 8; j++) {
     for (let i = -1; i <= 7; i++) {
       const cx = i * px + (j % 2 ? px / 2 : 0);
       const cy = j * py;
-      // Flat tile face with a short falloff at the rim — reads like the
-      // shallow radial carve in the reference mesh, not a domed button.
+      // Flat plate face with a crisp rim — the reference tiles are flat
+      // plates with thin grooves, not domed buttons.
       const grad = g.createRadialGradient(cx, cy, R * 0.15, cx, cy, R);
-      grad.addColorStop(0, "#c2c2c2");
-      grad.addColorStop(0.85, "#b6b6b6");
-      grad.addColorStop(1, "#6a6a6a");
+      grad.addColorStop(0, "#c6c6c6");
+      grad.addColorStop(0.9, "#bfbfbf");
+      grad.addColorStop(1, "#565656");
       g.fillStyle = grad;
       g.beginPath();
       for (let k = 0; k < 6; k++) {
@@ -587,9 +587,9 @@ csgEvaluator.useGroups = false;
 /**
  * Cylindrical UV unwrap for the tile shell (print-scale, Z-up, before orient()).
  * Flap faces keep a planar map so the hex pattern doesn't smear.
- * scaleMm 12 = one texture repeat per 12 mm → 2.0 mm hex pitch (6 columns).
+ * scaleMm 8.7 = one texture repeat per 8.7 mm → 1.45 mm hex pitch (6 columns).
  */
-function applyTileUVs(geom, hullRadiusZ, scaleMm = 12) {
+function applyTileUVs(geom, hullRadiusZ, scaleMm = 8.7) {
   const HULL_R = hullRadiusZ;
   const p = geom.attributes.position;
   const n = p.count;

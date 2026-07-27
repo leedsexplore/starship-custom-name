@@ -2,9 +2,10 @@
 """Build a printable hex-tile relief on the black heat-shield body.
 
 The OpenSCAD heat shield is a smooth raised shell. This script replaces that
-shell with a dense procedural windward shell whose outer surface carries real
-hex grooves, keeps solid OpenSCAD windward flap halves + Raptor bells, and
-repairs toward zero open edges for PrusaSlicer:
+shell with a windward groove-floor shell plus thousands of discrete pointy-top
+hex plate prisms (the construction used by the Fusion reference mesh — crisp
+tile borders instead of a sampled heightfield), keeps solid OpenSCAD windward
+flap halves + Raptor bells, and repairs toward zero open edges for PrusaSlicer:
 
   assets/starship_print_1_200_tiles_hex.stl
   assets/starship_ship_print_1_200_hex.stl   (steel + hex tiles merge)
@@ -26,7 +27,6 @@ from pathlib import Path
 
 import numpy as np
 import trimesh
-from trimesh.remesh import subdivide_to_size
 
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
@@ -46,17 +46,17 @@ TILE_WRAP_DEG = 190.0
 NOSE_LEN = 12.97 * S
 NOSE_TIP_R = 0.60 * S
 
-# Printable hero tiles (readable on a 0.4 mm nozzle).
-# Calibrated against the Fusion reference mesh
-# ~/Desktop/SpaceX AI Engineer/tiles_combined.stl (H≈360 mm, R≈31.5 mm, ~1:145):
-# measured circ tile pitch ≈2.79 mm and groove depth ≈0.30 mm, which scale to
-# ≈2.0 mm FTF and ≈0.21 mm depth at our 1:200 (R 22.5 mm) barrel.
-HEX_FTF = 2.0
-GROOVE_W = 0.35
-GROOVE_DEPTH = 0.21
-SHELL_DU = 0.50  # arc-length sample pitch (mm)
+# Tile lattice calibrated to the Fusion reference mesh
+# ~/Desktop/SpaceX AI Engineer/tiles_combined.stl (H≈360 mm ⇒ 1:144.6).
+# Autocorrelation of its unwrapped barrel: pointy-top hexes laid in
+# circumferential rows, 2.0 mm across flats, plates ~0.30 mm proud, ~0.2 mm
+# grooves — i.e. scale-true 0.29 m Starship tiles. At our 1:200 that is:
+HEX_FTF = 1.45  # mm across flats (circumferential)
+GROOVE_W = 0.20  # gap between plates (ref is ~10% of pitch; 14% is our nozzle floor)
+GROOVE_DEPTH = 0.22  # plate height above the shell floor
+PLATE_EMBED = 0.10  # how far plate prisms sink into the base shell
+SHELL_DU = 0.50  # base-shell arc-length sample pitch (mm)
 SHELL_DZ = 0.50
-FLAP_MAX_EDGE = 1.20
 FLAP_Y_THRESH = 24.0
 
 
@@ -86,39 +86,83 @@ def hull_radius_at(z: np.ndarray) -> np.ndarray:
     return np.where(z <= CYL_H, HULL_R, nose_x(z - CYL_H))
 
 
-def sd_hexagon(px: np.ndarray, py: np.ndarray, apothem: float) -> np.ndarray:
-    """Signed distance to a flat-top hexagon (negative inside). apothem = FTF/2."""
-    k0, k1, k2 = -np.sqrt(3) / 2, 0.5, np.sqrt(3) / 3
-    px = np.abs(px)
-    py = np.abs(py)
-    t = np.minimum(k0 * px + k1 * py, 0.0)
-    px = px - 2.0 * t * k0
-    py = py - 2.0 * t * k1
-    px = px - np.clip(px, -k2 * apothem, k2 * apothem)
-    py = py - apothem
-    return np.hypot(px, py) * np.sign(py)
+# Pointy-top hex plate outline (vertex up along the ship axis, flats facing
+# sideways) — matches the reference tile orientation. (du, dv) offsets in mm.
+_PLATE_S = (HEX_FTF - GROOVE_W) / np.sqrt(3)  # circumradius of the plate hex
+_PLATE_POLY = np.array(
+    [
+        (_PLATE_S * np.cos(np.radians(90 + 60 * k)), _PLATE_S * np.sin(np.radians(90 + 60 * k)))
+        for k in range(6)
+    ]
+)
+ROW_DV = 1.5 * HEX_FTF / np.sqrt(3)  # axial row pitch of the lattice
+
+# Prism face template for 12 verts: 0-5 top ring, 6-11 bottom ring.
+_PRISM_FACES = np.array(
+    [(0, 1, 2), (0, 2, 3), (0, 3, 4), (0, 4, 5)]  # top fan (outward)
+    + [(6, 8, 7), (6, 9, 8), (6, 10, 9), (6, 11, 10)]  # bottom fan (inward)
+    + [(k, 6 + k, 6 + (k + 1) % 6) for k in range(6)]
+    + [(k, 6 + (k + 1) % 6, (k + 1) % 6) for k in range(6)],
+    dtype=np.int64,
+)
 
 
-def hex_groove_weight(u: np.ndarray, v: np.ndarray) -> np.ndarray:
-    """1 in the groove, 0 in the tile interior."""
-    ap = HEX_FTF / 2.0
-    pitch_u = HEX_FTF
-    pitch_v = HEX_FTF * np.sqrt(3) / 2.0
-    row0 = np.floor(v / pitch_v)
-    col0 = np.floor(u / pitch_u)
-    # Signed distance to the containing hex (most-negative / nearest center).
-    best_sd = np.full(u.shape, np.inf, dtype=np.float64)
-    for drow in (-1, 0, 1, 2):
-        for dcol in (-1, 0, 1, 2):
-            row = row0 + drow
-            col = col0 + dcol
-            cu = (col + 0.5 * np.mod(row, 2)) * pitch_u
-            cv = row * pitch_v
-            sd = sd_hexagon(u - cu, v - cv, ap)
-            best_sd = np.minimum(best_sd, sd)
-    dist_to_edge = -best_sd  # >0 inside a tile
-    half = GROOVE_W / 2.0
-    return np.clip(1.0 - dist_to_edge / half, 0.0, 1.0)
+def hex_plate_prisms(centers_theta_z: np.ndarray) -> trimesh.Trimesh:
+    """Closed hex prisms standing radially on the hull at (theta, z) centers.
+
+    Each plate is a regular pointy-top hexagon in local surface coordinates,
+    extruded from PLATE_EMBED inside the shell floor to GROOVE_DEPTH above it.
+    Plates never touch each other (grooves separate them) so the concatenation
+    stays manifold as disjoint closed shells.
+    """
+    verts_all = []
+    faces_all = []
+    for thc, zc in centers_theta_z:
+        r_conv = hull_radius_at(np.array([zc]))[0]  # angular conversion radius
+        zs = zc + _PLATE_POLY[:, 1]
+        ths = thc + _PLATE_POLY[:, 0] / max(r_conv, 1e-6)
+        r_floor = hull_radius_at(zs) + TILE_T - GROOVE_DEPTH
+        r_top = r_floor + GROOVE_DEPTH
+        r_bot = r_floor - PLATE_EMBED
+        top = np.stack([r_top * np.cos(ths), r_top * np.sin(ths), zs], axis=-1)
+        bot = np.stack([r_bot * np.cos(ths), r_bot * np.sin(ths), zs], axis=-1)
+        base = len(verts_all) * 12
+        verts_all.append(np.vstack([top, bot]))
+        faces_all.append(_PRISM_FACES + base)
+    if not verts_all:
+        return trimesh.Trimesh()
+    mesh = trimesh.Trimesh(
+        vertices=np.vstack(verts_all), faces=np.vstack(faces_all), process=False
+    )
+    return mesh
+
+
+def barrel_plate_centers() -> np.ndarray:
+    """(theta, z) lattice over the windward wrap — rows are circumferential,
+    row count per z follows the local hull radius (tiles stay regular on the
+    nose and terminate naturally, like the reference)."""
+    half = np.radians(TILE_WRAP_DEG / 2.0)
+    centers = []
+    z0 = 0.9  # keep the first row clear of the skirt edge
+    k = 0
+    while True:
+        zc = z0 + k * ROW_DV
+        if zc + _PLATE_S > SHIP_H - 0.4:
+            break
+        r_loc = float(hull_radius_at(np.array([zc]))[0])
+        if r_loc < 1.2:
+            k += 1
+            continue
+        arc = 2 * half * r_loc
+        m = int(np.floor((arc - HEX_FTF) / HEX_FTF))
+        if m >= 1:
+            offset = (k % 2) * HEX_FTF / 2.0
+            us = (np.arange(m) - (m - 1) / 2.0) * HEX_FTF + offset
+            us = us[np.abs(us) <= arc / 2.0 - HEX_FTF / 2.0]
+            for u in us:
+                centers.append((u / r_loc, zc))
+        k += 1
+    return np.asarray(centers)
 
 
 def write_binary_stl(path: Path, mesh: trimesh.Trimesh, header: bytes) -> None:
@@ -165,7 +209,12 @@ def _grid_faces(nu: int, nv: int, flip: bool = False) -> np.ndarray:
 
 
 def build_hex_shell() -> trimesh.Trimesh:
-    """Dense windward heat-shield shell with hex grooves on the outer face."""
+    """Smooth windward base shell whose outer face is the groove floor.
+
+    The hex relief itself comes from discrete plate prisms (hex_plate_prisms)
+    standing on this floor — the reference-mesh construction, which keeps tile
+    borders crisp instead of smearing them through a sampled heightfield.
+    """
     half = np.radians(TILE_WRAP_DEG / 2.0)
     # Sample so arc pitch at the barrel ≈ SHELL_DU.
     n_theta = max(int(np.ceil(TILE_WRAP_DEG / 360.0 * 2 * np.pi * HULL_R / SHELL_DU)), 48)
@@ -179,12 +228,9 @@ def build_hex_shell() -> trimesh.Trimesh:
     theta_grid, z_grid = np.meshgrid(thetas, zs, indexing="xy")
 
     R = hull_radius_at(z_grid)
-    u = theta_grid * HULL_R
-    v = z_grid
-    groove = hex_groove_weight(u, v)
 
     r_in = R
-    r_out = R + TILE_T - GROOVE_DEPTH * groove
+    r_out = R + TILE_T - GROOVE_DEPTH
 
     def cyl_pts(r):
         return np.stack(
@@ -232,40 +278,67 @@ def build_hex_shell() -> trimesh.Trimesh:
     return mesh
 
 
-def emboss_flaps(shell: trimesh.Trimesh) -> trimesh.Trimesh:
-    """Remesh windward flap halves and cut hex grooves along (y, z)."""
-    fc = shell.triangles_center
-    flap_mask = np.abs(fc[:, 1]) > FLAP_Y_THRESH
-    if not np.any(flap_mask):
-        return trimesh.Trimesh(vertices=np.zeros((0, 3)), faces=np.zeros((0, 3), dtype=np.int64))
+def flap_plate_prisms(flaps: trimesh.Trimesh) -> trimesh.Trimesh:
+    """Hex plates standing on the windward (+X) faces of the flap halves.
 
-    flap = shell.submesh([np.where(flap_mask)[0]], append=True, repair=False)
-    v, f = subdivide_to_size(
-        flap.vertices, flap.faces, max_edge=FLAP_MAX_EDGE, max_iter=40
+    Plate centers form the same pointy-top lattice in the flap (y, z) plane;
+    each candidate is ray-cast along -X onto the flap and only kept when the
+    whole plate lands on a flat windward-facing region.
+    """
+    if flaps is None or not len(flaps.faces):
+        return trimesh.Trimesh()
+    bounds = flaps.bounds
+    x_hi = bounds[1][0] + 5.0
+    ys = []
+    k = 0
+    z0 = bounds[0][2] + 0.5
+    while z0 + k * ROW_DV < bounds[1][2]:
+        zc = z0 + k * ROW_DV
+        offset = (k % 2) * HEX_FTF / 2.0
+        y = bounds[0][1] + HEX_FTF / 2.0 + offset
+        while y < bounds[1][1]:
+            ys.append((y, zc))
+            y += HEX_FTF
+        k += 1
+    if not ys:
+        return trimesh.Trimesh()
+
+    intersector = trimesh.ray.ray_triangle.RayMeshIntersector(flaps)
+    verts_all = []
+    faces_all = []
+    n_plates = 0
+    for yc, zc in ys:
+        # 7 probes: center + 6 hex vertices (in the flap's y-z plane).
+        py = np.concatenate([[yc], yc + _PLATE_POLY[:, 0]])
+        pz = np.concatenate([[zc], zc + _PLATE_POLY[:, 1]])
+        origins = np.stack([np.full(7, x_hi), py, pz], axis=-1)
+        dirs = np.tile([-1.0, 0.0, 0.0], (7, 1))
+        locs, ray_idx, tri_idx = intersector.intersects_location(
+            origins, dirs, multiple_hits=False
+        )
+        if len(ray_idx) < 7:
+            continue
+        order = np.argsort(ray_idx)
+        locs = locs[order]
+        tri_idx = tri_idx[order]
+        nrm = flaps.face_normals[tri_idx]
+        if np.any(nrm[:, 0] < 0.7):
+            continue  # not the flat windward face
+        xs = locs[:, 0]
+        if xs.max() - xs.min() > 1.0:
+            continue  # straddles an edge or step
+        x_top = xs[1:] + GROOVE_DEPTH  # plate follows the local face
+        x_bot = xs.min() - 0.6
+        top = np.stack([x_top, py[1:], pz[1:]], axis=-1)
+        bot = np.stack([np.full(6, x_bot), py[1:], pz[1:]], axis=-1)
+        faces_all.append(_PRISM_FACES + n_plates * 12)
+        verts_all.append(np.vstack([top, bot]))
+        n_plates += 1
+    if not verts_all:
+        return trimesh.Trimesh()
+    return trimesh.Trimesh(
+        vertices=np.vstack(verts_all), faces=np.vstack(faces_all), process=False
     )
-    flap = trimesh.Trimesh(vertices=v, faces=f, process=True)
-    flap.merge_vertices()
-    trimesh.repair.fix_normals(flap)
-
-    verts = flap.vertices.copy()
-    normals = flap.vertex_normals
-    # Flap UV: span along |y|, height z — readable hex on the blade.
-    u = np.abs(verts[:, 1])
-    v_uv = verts[:, 2]
-    w = hex_groove_weight(u, v_uv)
-    # Only push from the outer-ish faces (away from hull axis in XY).
-    radial = verts[:, :2].copy()
-    rn = np.linalg.norm(radial, axis=1, keepdims=True)
-    radial = radial / np.maximum(rn, 1e-6)
-    # Prefer faces whose normal has a component leaving the material along +X
-    # (windward half) or along ±Y (blade face).
-    outward = np.maximum(normals[:, 0], 0.0) * 0.65 + np.abs(normals[:, 1]) * 0.35
-    outward = np.clip(outward, 0.0, 1.0)
-    displace = (w * outward * GROOVE_DEPTH)[:, None] * (-normals)
-    verts = verts + displace
-    out = trimesh.Trimesh(vertices=verts, faces=flap.faces, process=True)
-    trimesh.repair.fix_normals(out)
-    return out
 
 
 def load_engines(tiles: trimesh.Trimesh) -> list[trimesh.Trimesh]:
@@ -306,7 +379,8 @@ def ensure_printable(mesh: trimesh.Trimesh, label: str) -> trimesh.Trimesh:
     except Exception:
         pass
     mesh.remove_unreferenced_vertices()
-    trimesh.repair.fix_normals(mesh)
+    # multibody: thousands of disjoint tile plates must each stay outward.
+    trimesh.repair.fix_normals(mesh, multibody=True)
     try:
         trimesh.repair.fill_holes(mesh)
     except Exception as err:  # noqa: BLE001
@@ -368,8 +442,11 @@ def main() -> None:
         sys.exit(f"missing {SRC_TILES} — export print tiles first")
 
     t0 = time.time()
-    print("building procedural hex windward shell…")
+    print("building windward base shell + hex tile plates…")
     hex_shell = ensure_printable(build_hex_shell(), "hex_shell")
+    centers = barrel_plate_centers()
+    plates = hex_plate_prisms(centers)
+    print(f"  hull plates: {len(centers)} tiles, {len(plates.faces)} faces")
     print(f"  shell wall time ({time.time() - t0:.1f}s)")
 
     src = trimesh.load_mesh(SRC_TILES, force="mesh")
@@ -388,9 +465,13 @@ def main() -> None:
         else:
             flaps = None
 
-    parts = [hex_shell]
+    parts = [hex_shell, plates]
     if flaps is not None and len(flaps.faces):
         parts.append(flaps)
+        flap_plates = flap_plate_prisms(flaps)
+        print(f"  flap plates: {len(flap_plates.faces) // 20} tiles")
+        if len(flap_plates.faces):
+            parts.append(flap_plates)
     parts.extend(engines)
     combined = ensure_printable(trimesh.util.concatenate(parts), "tiles_hex")
 

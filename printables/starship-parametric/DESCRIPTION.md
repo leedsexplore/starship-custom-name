@@ -2,7 +2,7 @@
 
 **One print job — no assembly.** Hull, forward and aft flaps, engine bay, and all six Raptors in a single nose-up print. True **1:200** (H **260.5 mm**).
 
-This listing is the **embossed hex-tile** print: real grooves on the windward heat shield (~2.0 mm tiles, ~0.2 mm deep, calibrated to a reference Starship tile scan) — not a painted texture.
+This listing is the **embossed hex-tile** print: thousands of real hexagonal tile plates on the windward heat shield — scale-true 0.29 m Starship tiles (1.45 mm across flats at 1:200), ~0.2 mm proud with crisp grooves. Real geometry, not a painted texture.
 
 ## Files
 
@@ -20,7 +20,7 @@ The customizer puts a name on the **smooth** Original CAD (or classic remix) and
 
 - **Orientation:** nose up. Engines flush with the skirt.
 - **Supports:** hull/nose none; aft flaps on the plate; light supports under forward flaps (~194 mm).
-- **MMU3:** "Stainless hull" → silver, "Heat shield + Raptors" → black. Shell ~0.45 mm proud; hex grooves ~0.2 mm into that. 0.4 mm nozzle or finer; try 0.15 mm layers if grooves look soft.
+- **MMU3:** "Stainless hull" → silver, "Heat shield + Raptors" → black. Shell ~0.45 mm proud; tile plates ~0.2 mm above the groove floor. 0.4 mm nozzle or finer; try 0.15 mm layers if grooves look soft.
 - **Fits** Prusa CORE One (250×220×270) with ~9.5 mm Z margin.
 
 Source: [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
