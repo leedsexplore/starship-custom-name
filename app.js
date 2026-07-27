@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.6";
+import { build3mf } from "./export3mf.js?v=2.4.7";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.6";
+} from "./version.js?v=2.4.7";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -58,7 +58,7 @@ const SHIPS = {
     safeSpanMm: 100,
     hardSpanMm: 120,
     flapZoneYMm: 60,
-    defaultSizeMm: 5,
+    defaultSizeMm: 3.5,
     /**
      * SpaceX-style S## marking (S40 FS-13 still): leeward stainless, mid-barrel,
      * biased toward the tile/steel seam — not centered on the bare face.
@@ -2171,8 +2171,12 @@ async function boot() {
   mountPresets(el.hullPresets, el.color);
   mountPresets(el.textPresets, el.textColor);
   applyState(urlState);
-  if (urlState.name == null) el.name.value = "";
+  // Hull stays blank until the user types (or opens a share URL that includes name=).
+  if (!urlState.name || !String(urlState.name).trim()) {
+    el.name.value = "";
+  }
   if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
+  if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
   updateLabels();
   resize();
   window.addEventListener("resize", resize);
