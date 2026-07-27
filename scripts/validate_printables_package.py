@@ -62,6 +62,24 @@ def connected_shells(stl: Path) -> list[int]:
     return sorted(roots.values(), reverse=True)
 
 
+def stl_bbox_size(stl: Path) -> tuple[float, float, float]:
+    data = stl.read_bytes()
+    n = struct.unpack_from("<I", data, 80)[0]
+    mn = [1e99, 1e99, 1e99]
+    mx = [-1e99, -1e99, -1e99]
+    off = 84
+    for _ in range(n):
+        for k in (12, 24, 36):
+            x, y, z = struct.unpack_from("<fff", data, off + k)
+            for j, val in enumerate((x, y, z)):
+                if val < mn[j]:
+                    mn[j] = val
+                if val > mx[j]:
+                    mx[j] = val
+        off += 50
+    return mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]
+
+
 def main() -> None:
     if not PKG.is_dir():
         fail(f"missing package dir {PKG}")
@@ -196,13 +214,39 @@ def main() -> None:
         for part in ("Stainless hull", "Heat shield + Raptors"):
             if part not in model_xml:
                 fail(f"hex MMU 3MF missing part name {part!r}")
-    ok("hex-tile MMU 3MF has stainless + heat-shield parts")
+        if "CC BY-NC" in model_xml:
+            fail("hex MMU 3MF metadata still says CC BY-NC (expected CC BY 4.0)")
+        if 'name="License">CC BY 4.0</metadata>' not in model_xml:
+            fail("hex MMU 3MF metadata missing License CC BY 4.0")
+    ok("hex-tile MMU 3MF has stainless + heat-shield parts + CC BY 4.0")
+
+    hero_h = 260.5
+    for denom, path_name in (
+        (200, "starship_1_200_hex_tiles_one_piece.stl"),
+        (250, "starship_1_250_hex_tiles_one_piece.stl"),
+        (300, "starship_1_300_hex_tiles_one_piece.stl"),
+    ):
+        _, _, z = stl_bbox_size(files_dir / path_name)
+        expect = hero_h * (200.0 / denom)
+        if abs(z - expect) > 0.5:
+            fail(f"{path_name} height {z:.2f} mm, expected ~{expect:.2f} mm (1:{denom})")
+        ok(f"{path_name} height {z:.2f} mm (1:{denom})")
+
+    stage_py = ROOT / "scripts" / "stage_mirror_uploads.py"
+    stage_src = stage_py.read_text()
+    if "License: CC BY-NC" in stage_src:
+        fail("stage_mirror_uploads.py footer still says CC BY-NC")
+    if "License: CC BY 4.0" not in stage_src:
+        fail("stage_mirror_uploads.py footer must say CC BY 4.0")
+    ok("mirror staging footer is CC BY 4.0")
 
     if "hex" not in desc.lower() or "groove" not in desc.lower():
         fail("DESCRIPTION.md should mention the hex-tile groove variant")
     if "customizer" not in desc.lower() and "leedsexplore.github.io" not in desc.lower():
         fail("DESCRIPTION.md should point named STLs to the web customizer")
-    ok("DESCRIPTION mentions hex tiles + customizer")
+    if "one file" not in desc.lower():
+        fail("DESCRIPTION.md should keep the one-file / one-print advantage")
+    ok("DESCRIPTION mentions hex tiles + customizer + one-file")
 
     print("\nVALIDATE OK — package is ready to publish.")
     print("Live publish still needs the printables-integration CLI + session cookie")

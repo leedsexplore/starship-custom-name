@@ -38,7 +38,7 @@ HINTS = {
     ),
     "LayerHeight": "0.15",
     "Printer": "Prusa CORE One / MK4 or Bambu P1S/X1C (Z>=261mm)",
-    "License": "CC BY-NC 4.0",
+    "License": "CC BY 4.0",
 }
 
 

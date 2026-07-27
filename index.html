@@ -18,7 +18,7 @@
       content="https://leedsexplore.github.io/starship-custom-name/"
     />
     <link rel="canonical" href="https://leedsexplore.github.io/starship-custom-name/" />
-    <link rel="stylesheet" href="styles.css?v=2.4.0" />
+    <link rel="stylesheet" href="styles.css?v=2.4.1" />
   </head>
   <body>
     <div id="app">
@@ -26,7 +26,7 @@
         <header class="brand">
           <p class="eyebrow">
             Your name on Starship
-            <span class="version" id="app-version" aria-label="App version">v2.4.0</span>
+            <span class="version" id="app-version" aria-label="App version">v2.4.1</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -178,11 +178,20 @@
           <button type="button" id="core-one-preset" class="secondary full">
             CORE One 1:200 (H 260.5 mm)
           </button>
+          <div class="secondary-row scale-presets">
+            <button type="button" id="mini-250-preset" class="secondary">
+              Mini 1:250 (H ≈208 mm)
+            </button>
+            <button type="button" id="mini-300-preset" class="secondary">
+              A1 mini 1:300 (H ≈174 mm)
+            </button>
+          </div>
           <p class="field-note">
             The parametric CAD loads at true 1:200 — 100% is already H 260.5 × Ø45 mm
             on a Prusa CORE One (250×220×270). The classic mesh needs ~215%. Engines stay
-            recessed inside the skirt. Empty name on Original CAD at 100% downloads the
-            exact Printables hex STL / MMU 3MF. With a name, 3MF is Hull + Letters.
+            recessed inside the skirt. Empty name on Original CAD at 1:200 / 1:250 / 1:300
+            downloads the exact Printables hex one-piece STL (minis are scaled from the
+            same mesh). MMU 3MF is 1:200 only. With a name, 3MF is Hull + Letters.
           </p>
           <p class="field-note" id="export-path-note" hidden>
             Named export uses the smooth CAD mesh so lettering/CSG stays reliable.
@@ -234,31 +243,63 @@
           </div>
 
           <fieldset class="field fieldset named-gallery">
-            <legend>Named ship share links</legend>
-            <div class="named-links" id="named-links">
+            <legend>Named ship covers</legend>
+            <div class="named-covers" id="named-covers">
               <a
-                class="named-link"
+                class="named-cover"
                 href="?ship=parametric&amp;name=S40&amp;side=right&amp;style=raised&amp;scale=100"
-                >S40</a
               >
+                <img
+                  src="./assets/named-covers/s40.png?v=2.4.1"
+                  width="160"
+                  height="160"
+                  alt="S40 cover"
+                  loading="lazy"
+                />
+                <span>S40</span>
+              </a>
               <a
-                class="named-link"
+                class="named-cover"
                 href="?ship=parametric&amp;name=S33&amp;side=right&amp;style=raised&amp;scale=100"
-                >S33</a
               >
+                <img
+                  src="./assets/named-covers/s33.png?v=2.4.1"
+                  width="160"
+                  height="160"
+                  alt="S33 cover"
+                  loading="lazy"
+                />
+                <span>S33</span>
+              </a>
               <a
-                class="named-link"
+                class="named-cover"
                 href="?ship=parametric&amp;name=IFT-12&amp;side=right&amp;style=raised&amp;scale=100"
-                >IFT-12</a
               >
+                <img
+                  src="./assets/named-covers/ift-12.png?v=2.4.1"
+                  width="160"
+                  height="160"
+                  alt="IFT-12 cover"
+                  loading="lazy"
+                />
+                <span>IFT-12</span>
+              </a>
               <a
-                class="named-link"
+                class="named-cover"
                 href="?ship=parametric&amp;name=Starship&amp;side=right&amp;style=raised&amp;scale=100"
-                >Starship</a
               >
+                <img
+                  src="./assets/named-covers/starship.png?v=2.4.1"
+                  width="160"
+                  height="160"
+                  alt="Starship cover"
+                  loading="lazy"
+                />
+                <span>Starship</span>
+              </a>
             </div>
             <p class="field-note">
-              Open a preset, tweak colors, then Copy link or PNG cover.
+              Open a preset, tweak colors, then Copy link or PNG cover for Reddit / X.
             </p>
           </fieldset>
         </form>
@@ -278,7 +319,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.4.0</span>)
+            · <span id="footer-version">v2.4.1</span>)
           </p>
           <p>
             Print files (hex one-piece + MMU):
@@ -340,6 +381,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.4.0"></script>
+    <script type="module" src="app.js?v=2.4.1"></script>
   </body>
 </html>

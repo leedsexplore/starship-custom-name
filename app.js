@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.0";
+import { build3mf } from "./export3mf.js?v=2.4.1";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.0";
+} from "./version.js?v=2.4.1";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -402,6 +402,8 @@ const el = {
   depthLabel: document.getElementById("depth-label"),
   scaleLabel: document.getElementById("scale-label"),
   coreOnePreset: document.getElementById("core-one-preset"),
+  mini250Preset: document.getElementById("mini-250-preset"),
+  mini300Preset: document.getElementById("mini-300-preset"),
   download: document.getElementById("download"),
   download3mf: document.getElementById("download-3mf"),
   downloadPng: document.getElementById("download-png"),
@@ -752,11 +754,35 @@ function applyCoreOnePreset() {
   }
   updateLabels();
   applyModelScale();
+  updateDownloadLabels();
   writeUrl();
   const sz = scaledPrintSize(pct);
   const z = printEnvelope.coreOne?.z_mm ?? PRINT_DEFAULTS.coreOne.z_mm;
   setStatus(
     `CORE One 1:200 — H ${sz.heightMm.toFixed(1)} mm × Ø ${sz.diameterMm.toFixed(1)} mm (Z room ${ (z - sz.heightMm).toFixed(1) } mm).`
+  );
+}
+
+/** Scale % for a true 1:denom print relative to the parametric 1:200 mesh. */
+function miniScalePercent(denom) {
+  return coreOneScalePercent() * (200 / denom);
+}
+
+function applyMiniScalePreset(denom) {
+  const pct = miniScalePercent(denom);
+  const max = Number(el.scale.max);
+  const min = Number(el.scale.min);
+  el.scale.value = String(Math.min(max, Math.max(min, pct)));
+  if (Math.abs(Number(el.scale.value) - pct) > 0.001) {
+    el.scale.value = String(pct);
+  }
+  updateLabels();
+  applyModelScale();
+  updateDownloadLabels();
+  writeUrl();
+  const sz = scaledPrintSize(pct);
+  setStatus(
+    `1:${denom} mini — H ${sz.heightMm.toFixed(1)} mm × Ø ${sz.diameterMm.toFixed(1)} mm. Empty name downloads the Printables hex one-piece.`
   );
 }
 
@@ -863,10 +889,17 @@ async function ensureShipGeometry(shipDef = ship) {
 
 /** Disable downloads and (optionally) the whole control form during load/export. */
 function setUiBusy(busy, { lockForm = false } = {}) {
-  el.download.disabled = busy;
-  el.download3mf.disabled = busy;
-  el.downloadPng.disabled = busy;
-  el.downloadScad.disabled = busy;
+  if (busy) {
+    el.download.disabled = true;
+    el.download3mf.disabled = true;
+    el.downloadPng.disabled = true;
+    el.downloadScad.disabled = true;
+  } else {
+    el.download.disabled = false;
+    el.downloadPng.disabled = false;
+    el.downloadScad.disabled = false;
+    updateDownloadLabels();
+  }
   if (!lockForm && !busy) {
     el.form.classList.remove("is-busy");
     return;
@@ -989,9 +1022,16 @@ function updateLabels() {
   const sz = scaledPrintSize(pct);
   const corePct = coreOneScalePercent();
   const isCore = Math.abs(pct - corePct) < 0.05;
-  el.scaleLabel.textContent = isCore
-    ? `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm (CORE One 1:200)`
-    : `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm`;
+  const miniDenom = [250, 300].find(
+    (d) => Math.abs(pct - miniScalePercent(d)) < 0.05
+  );
+  if (isCore) {
+    el.scaleLabel.textContent = `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm (CORE One 1:200)`;
+  } else if (miniDenom) {
+    el.scaleLabel.textContent = `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm (1:${miniDenom} mini)`;
+  } else {
+    el.scaleLabel.textContent = `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm`;
+  }
   updateDownloadLabels();
 }
 
@@ -1354,8 +1394,9 @@ function hasHullName() {
 }
 
 /**
- * Empty-name Original CAD at the CORE One 1:200 preset downloads the exact
- * Printables hex files (not a regenerating smooth-hull export).
+ * Empty-name Original CAD at CORE One 1:200 downloads the exact Printables
+ * hex files. At 1:250 / 1:300, downloads the same hex mesh uniformly scaled
+ * (matches scripts/build_mini_scale.py).
  */
 function wantsPrintablesDefault() {
   return (
@@ -1365,18 +1406,68 @@ function wantsPrintablesDefault() {
   );
 }
 
+/** @returns {250|300|null} */
+function printablesMiniDenom() {
+  if (ship.id !== "parametric" || hasHullName()) return null;
+  const pct = Number(el.scale.value);
+  for (const denom of [250, 300]) {
+    if (Math.abs(pct - miniScalePercent(denom)) < 0.05) return denom;
+  }
+  return null;
+}
+
+/**
+ * Uniform-scale a binary STL the same way scripts/build_mini_scale.py does
+ * (vertex coords only; normals unchanged under uniform scale).
+ */
+function scaleBinaryStlBuffer(arrayBuffer, scale) {
+  const data = new Uint8Array(arrayBuffer.slice(0));
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  const n = view.getUint32(80, true);
+  let off = 84;
+  for (let i = 0; i < n; i++) {
+    for (const k of [12, 24, 36]) {
+      view.setFloat32(off + k, view.getFloat32(off + k, true) * scale, true);
+      view.setFloat32(
+        off + k + 4,
+        view.getFloat32(off + k + 4, true) * scale,
+        true
+      );
+      view.setFloat32(
+        off + k + 8,
+        view.getFloat32(off + k + 8, true) * scale,
+        true
+      );
+    }
+    off += 50;
+  }
+  const label = `starship hex scale=${scale.toFixed(6)} from 1:200`;
+  for (let i = 0; i < 80; i++) {
+    data[i] = i < label.length ? label.charCodeAt(i) & 0xff : 0;
+  }
+  return data.buffer;
+}
+
 function updateDownloadLabels() {
   const printables = wantsPrintablesDefault();
-  el.download.textContent = printables
-    ? "Download STL (Printables hex)"
-    : "Download STL";
-  el.download3mf.textContent = printables
-    ? "Download 3MF (Printables MMU)"
-    : "Download 3MF (Hull + Letters)";
+  const miniDenom = printablesMiniDenom();
+  if (printables) {
+    el.download.textContent = "Download STL (Printables hex)";
+    el.download3mf.textContent = "Download 3MF (Printables MMU)";
+    el.download3mf.disabled = false;
+  } else if (miniDenom) {
+    el.download.textContent = `Download STL (1:${miniDenom} mini hex)`;
+    el.download3mf.textContent = "MMU is 1:200 only";
+    el.download3mf.disabled = true;
+  } else {
+    el.download.textContent = "Download STL";
+    el.download3mf.textContent = "Download 3MF (Hull + Letters)";
+    el.download3mf.disabled = false;
+  }
   if (el.exportPathNote) {
-    // Show when Original CAD has a name (or non-CORE scale) — not the Printables path.
+    // Show when Original CAD has a name (or non-matching Printables scale).
     el.exportPathNote.hidden = !(
-      ship.id === "parametric" && !printables
+      ship.id === "parametric" && !printables && !miniDenom
     );
   }
 }
@@ -1653,6 +1744,25 @@ async function downloadStl() {
       return;
     }
 
+    const miniDenom = printablesMiniDenom();
+    if (miniDenom) {
+      setStatus(`Fetching 1:200 hex and scaling to 1:${miniDenom}…`);
+      const res = await fetch(PRINTABLES_HEX_STL_URL);
+      if (!res.ok) throw new Error(`HTTP ${res.status} fetching hex STL`);
+      const scaled = scaleBinaryStlBuffer(
+        await res.arrayBuffer(),
+        200 / miniDenom
+      );
+      const filename = `starship_1_${miniDenom}_hex_tiles_one_piece.stl`;
+      triggerDownload(new Blob([scaled], { type: "model/stl" }), filename);
+      writeUrl();
+      setStatus(
+        `STL downloaded — 1:${miniDenom} hex one-piece (same mesh as Printables mini).`
+      );
+      showPostDownloadCta(true);
+      return;
+    }
+
     setStatus("Loading solid mesh for export…");
     await ensureShipGeometry();
     await yieldToUi(50);
@@ -1713,6 +1823,15 @@ async function download3mf() {
         "3MF downloaded — exact Printables hex MMU (starship_1_200_hex_tiles_mmu.3mf)."
       );
       showPostDownloadCta(true);
+      return;
+    }
+
+    const miniDenom = printablesMiniDenom();
+    if (miniDenom) {
+      setStatus(
+        `1:${miniDenom} is one-piece STL only — use Download STL (no MMU mini).`,
+        true
+      );
       return;
     }
 
@@ -2022,9 +2141,12 @@ async function boot() {
   el.scale.addEventListener("input", () => {
     updateLabels();
     applyModelScale();
+    updateDownloadLabels();
     writeUrl();
   });
   el.coreOnePreset?.addEventListener("click", () => applyCoreOnePreset());
+  el.mini250Preset?.addEventListener("click", () => applyMiniScalePreset(250));
+  el.mini300Preset?.addEventListener("click", () => applyMiniScalePreset(300));
   for (const radio of document.querySelectorAll('input[name="ship"]')) {
     radio.addEventListener("change", () => {
       applyShipSelection(selectedShipId()).catch((err) => {

@@ -51,7 +51,7 @@ def main() -> None:
         "\n\n---\nCanonical Printables: https://www.printables.com/model/1792868\n"
         "Customizer: https://leedsexplore.github.io/starship-custom-name/\n"
         "Source: https://github.com/leedsexplore/starship-custom-name\n"
-        "License: CC BY-NC 4.0 — credit David Leeds (leedsexplore)\n"
+        "License: CC BY 4.0 — credit David Leeds (leedsexplore)\n"
     )
     (OUT / "DESCRIPTION.txt").write_text(desc + footer)
     print(f"\nReady: {OUT}")
