@@ -1,6 +1,6 @@
 /**
- * Headless sample STL: parametric CAD ship + raised wrapped "Custom Name"
- * (matches the customizer's v2 defaults — parametric base, 8 mm letters).
+ * Headless sample STL: parametric CAD ship + raised wrapped "S40"
+ * (optional local artifact — output path is gitignored).
  */
 import * as fs from "fs";
 import * as path from "path";
@@ -81,7 +81,7 @@ const shipGeo = orientParametric(
   loadBinarySTL(path.join(ROOT, "assets/starship_ship_print_1_200.stl"))
 );
 const font = loadFont(path.join(ROOT, "fonts/optimer_bold.typeface.json"));
-const textGeo = buildFlatTextGeometry(font, "Custom Name", LETTER_MM, EMBED_MM + 0.5);
+const textGeo = buildFlatTextGeometry(font, "S40", LETTER_MM, EMBED_MM + 0.5);
 wrapGeometryToHull(textGeo, "right", TEXT_Y, "raised");
 
 const group = new THREE.Group();
@@ -101,7 +101,7 @@ if (buffer instanceof DataView) {
   throw new Error("Unexpected STLExporter output");
 }
 const header = Buffer.alloc(80, 0);
-header.write("Starship sample v2.0.1 parametric CAD 1:200");
+header.write("Starship sample v2.1.11 parametric CAD 1:200");
 bytes.set(header, 0);
 
 const outPath = path.join(ROOT, "assets/starship_custom_name_sample.stl");
