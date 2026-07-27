@@ -1,22 +1,20 @@
 # SpaceX Starship 1:200 — embossed hex-tile heat shield
 
-**One single print file.** Hull, forward and aft flaps, engine bay, and all six Raptors in one body. No assembly. True **1:200** (H **260.5 mm**).
+**One print job — no assembly.** Hull, forward and aft flaps, engine bay, and all six Raptors in a single nose-up print. True **1:200** (H **260.5 mm**).
 
 This listing is the **embossed hex-tile** print: real grooves on the windward heat shield (~2.8 mm tiles, ~0.2 mm deep) — not a painted texture.
 
 ## Files
 
-| File | What you get |
-|------|----------------|
-| `starship_1_200_hex_tiles_one_piece.stl` | Full ship, one body, embossed hex heat shield — print in one filament |
-| `starship_1_200_hex_tiles_mmu.3mf` | Same ship as two MMU3 bodies: stainless hull + black heat shield / windward flap faces / Raptors |
-| `starship_parametric.scad` | OpenSCAD source (smooth shell in CAD; hex relief is generated in the build pipeline) |
+- `starship_1_200_hex_tiles_one_piece.stl` — full ship, embossed hex heat shield, one filament
+- `starship_1_200_hex_tiles_mmu.3mf` — same ship as two MMU3 bodies: stainless hull + black heat shield / windward flap faces / Raptors
+- `starship_parametric.scad` — OpenSCAD source (smooth shell in CAD; hex relief is generated in the build pipeline)
 
-**Want a name on the hull, or your own colors?** Use the free web customizer — it exports your STL/3MF directly (no sample file needed here):
+**Want a custom name on the hull?** Use the free web customizer:
 
 **[leedsexplore.github.io/starship-custom-name](https://leedsexplore.github.io/starship-custom-name/)**
 
-On Original CAD, type a name and download. For embossed hex heat-shield files without a custom name, use the STLs above.
+The customizer puts a name on the **smooth** Original CAD (or classic remix) and exports your STL/3MF. It does **not** currently export this embossed-hex listing — grab the hex files here when you want the grooved heat shield without a name.
 
 ## Printing
 

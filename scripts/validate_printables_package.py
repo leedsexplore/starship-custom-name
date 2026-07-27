@@ -88,11 +88,12 @@ def main() -> None:
 
     desc = desc_path.read_text()
     for needle in (
-        "one single print file",
+        "one print job",
         "MMU3",
         "leedsexplore.github.io/starship-custom-name",
         "CC BY-NC",
         "260.5",
+        "does **not** currently export this embossed-hex",
     ):
         if needle.lower() not in desc.lower() and needle not in desc:
             # case-insensitive for prose hooks
@@ -119,8 +120,11 @@ def main() -> None:
     if not cover.exists():
         fail("missing cover image 01-cover.png")
     for banned in images:
-        if "blueprint" in banned.name.lower() or "2d" in banned.name.lower():
+        name = banned.name.lower()
+        if "blueprint" in name or "2d" in name:
             fail(f"do not publish blueprint/2D drawing image: {banned.name}")
+        if banned.stat().st_size < 5000:
+            fail(f"gallery image too small (placeholder?): {banned.name}")
     ok(f"{len(images)} gallery images (cover={cover.name})")
 
     shells = connected_shells(files_dir / "starship_1_200_hex_tiles_one_piece.stl")
