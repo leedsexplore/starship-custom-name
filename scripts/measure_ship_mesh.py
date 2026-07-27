@@ -38,21 +38,26 @@ def measure(path: Path) -> dict:
     other = [i for i in range(3) if i != h_axis]
     height = float(size[h_axis])
 
-    # Mid-barrel diameter from verts in the middle 40% of height (exclude nose + flaps)
-    h = v[:, h_axis]
-    lo = mn[h_axis] + 0.30 * size[h_axis]
-    hi = mn[h_axis] + 0.70 * size[h_axis]
-    mid = v[(h >= lo) & (h <= hi)]
-    c0 = float(mid[:, other[0]].mean())
-    c1 = float(mid[:, other[1]].mean())
-    r = np.sqrt((mid[:, other[0]] - c0) ** 2 + (mid[:, other[1]] - c1) ** 2)
-    diameter = float(2.0 * np.percentile(r, 99.5))
-
     # Footprint in the two non-height axes (includes flaps)
     foot_a = float(size[other[0]])
     foot_b = float(size[other[1]])
     footprint_max = max(foot_a, foot_b)
     footprint_min = min(foot_a, foot_b)
+
+    # Mid-barrel diameter from verts in the middle 40% of height (exclude nose + flaps).
+    # Some OpenSCAD exports use long axial triangles with almost no mid-band vertices —
+    # fall back to the smaller non-height AABB (barrel Ø, excluding flaps).
+    h = v[:, h_axis]
+    lo = mn[h_axis] + 0.30 * size[h_axis]
+    hi = mn[h_axis] + 0.70 * size[h_axis]
+    mid = v[(h >= lo) & (h <= hi)]
+    if len(mid) >= 50:
+        c0 = float(mid[:, other[0]].mean())
+        c1 = float(mid[:, other[1]].mean())
+        r = np.sqrt((mid[:, other[0]] - c0) ** 2 + (mid[:, other[1]] - c1) ** 2)
+        diameter = float(2.0 * np.percentile(r, 99.5))
+    else:
+        diameter = footprint_min
 
     # Engine recess check: base = end with larger mid-band radius near tip stations
     # Tip has near-zero radius; base is the opposite end.
@@ -163,7 +168,8 @@ def main() -> int:
               f"flaps {a['footprint_max_mm']} mm, "
               f"CORE One fit={a['fits_core_one']} (Z margin {a['z_margin_mm']} mm)")
 
-    primary = next(m for m in meshes if m["file"].endswith("StarShipV2_cleaned_flaps.stl"))
+    # Live classic customizer mesh (not the cleaned-flaps rebuild output).
+    primary = next(m for m in meshes if m["file"].endswith("StarShipV2_original.stl"))
     envelope = {
         "real_ship": {
             "height_m": REAL_HEIGHT_M,
@@ -200,8 +206,10 @@ def main() -> int:
             "footprint_max_mm": param["footprint_max_mm"],
             "engines_protrude_past_skirt_mm": param["engines_protrude_past_skirt_mm"],
             "customizer_note": (
-                "Web tool scales Josh mesh via CORE One 1:200 preset "
-                f"(~{primary['at_1_200_from_height']['scale_percent_of_mesh']}%)"
+                "Web customizer default is this parametric mesh at 100%. "
+                "Classic remix (StarShipV2_original.stl) uses the CORE One 1:200 "
+                f"preset (~{primary['at_1_200_from_height']['scale_percent_of_mesh']}%). "
+                "Customizer 3MF is Hull+Letters, not the steel/tiles Printables MMU."
             ),
         }
 

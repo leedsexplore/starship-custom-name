@@ -1,16 +1,17 @@
 # Starship Custom Name
 
-**v2.0.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.0.9** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
 
 - **One single print file** — hull, flaps, engine bay, and all six Raptors in one
   watertight body. Zero assembly.
-- **MMU3 / multi-color ready** — a two-body 3MF (stainless hull + black
-  heat shield & Raptor bells) that still prints as one job. Optional **hex-tile
-  relief** files emboss real grooves into the windward shell.
-- **Type a name → preview colors → download STL, multi-material 3MF, or a PNG cover.**
+- **MMU3 / multi-color ready** — Printables ships a two-body 3MF (stainless hull +
+  black heat shield & Raptor bells) that still prints as one job, plus optional
+  **hex-tile relief** files. The web customizer’s 3MF is separate: Hull + Letters
+  for name coloring.
+- **Type a name → preview colors → download STL, Hull+Letters 3MF, or a PNG cover.**
 
 ## Licenses (read this)
 
@@ -33,7 +34,7 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 3. Enter hull text, fonts, colors, and placement.
 4. Download:
    - **STL** — engraved uses a true boolean subtract. Raised overlays letters on the hull (prefer **3MF** for clean multi-material).
-   - **3MF (MMU)** — raised: separate Hull + Letters objects. Engraved: booleaned solid (or Hull + cutter fallback if CSG fails).
+   - **3MF (Hull + Letters)** — raised: separate objects for lettering MMU. Engraved: booleaned solid (or Hull + cutter fallback if CSG fails). Not the Printables steel/tiles MMU.
    - **PNG cover** — square full-ship snapshot for Printables gallery images.
    - **OpenSCAD params** *(optional)* — settings snippet for the advanced flat path in `openscad/` (GitHub only; not needed for most users).
 5. Slice and print nose-up. The parametric ship at 100% is already true 1:200
@@ -102,17 +103,20 @@ Measured via `python3 scripts/measure_ship_mesh.py` → `assets/print_envelope.j
 | | Value |
 |--|--|
 | Real ship (V3 / Block 2 public) | **52.1 m** tall × **Ø9.0 m** |
-| Parametric `starship_ship_print_1_200.stl` at 100% | **H 260.5 mm**, Ø≈**45.15 mm**, flaps ≈**79.7 mm**, engines protrude **0 mm** |
+| Parametric `starship_ship_print_1_200.stl` at 100% | **H 260.5 mm**, Ø **45.0 mm**, flaps ≈**79.7 mm**, engines protrude **0 mm** |
 | Legacy mesh at 100% | **121.0 mm** tall (≈1:431); CORE One preset scales it **215.2893%** |
 | Printer envelope | CORE One **250 × 220 × 270 mm**, nose-up; **Z margin 9.5 mm** |
 
 ## Printables
 
 The listing package for the original parametric model lives in
-[`printables/starship-parametric/`](printables/starship-parametric/) — one-piece STL,
-two-color MMU 3MF, sample, `.scad` source, gallery images, and the listing copy.
+[`printables/starship-parametric/`](printables/starship-parametric/) — hex one-piece
+STL, hex MMU 3MF, `.scad` source, gallery images, and the listing copy.
 See [`printables/README.md`](printables/README.md) for the publish commands.
 
 ## Version
 
-Bump `APP_VERSION` in [`version.js`](version.js) when shipping user-facing changes (also update cache-bust query params in `index.html` to match).
+Bump `APP_VERSION` in [`version.js`](version.js) when shipping user-facing changes.
+Also update matching `?v=` cache-bust params in `index.html` (CSS + `app.js`), and
+keep `export3mf.js?v=` / asset URLs in `app.js` on the same version (fonts get
+`?v=` automatically from `APP_VERSION`).

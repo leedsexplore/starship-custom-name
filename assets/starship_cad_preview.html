@@ -27,10 +27,15 @@ import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
 
-// ?tiles=hex loads the printable embossed heat-shield mesh (real grooves).
-// Default keeps the smooth shell + bump-map sugar for a light meter-scale preview.
+// Embossed hex relief STLs are ~25MB and hang browsers — Printables-only.
+// Keep the smooth shell + bump map here for a usable meter-scale preview.
 const qs = new URLSearchParams(location.search);
-const HEX_RELIEF = qs.get("tiles") === "hex" || qs.get("hex") === "1";
+const HEX_RELIEF = false;
+if (qs.get("tiles") === "hex" || qs.get("hex") === "1") {
+  console.warn(
+    "Hex relief preview is disabled in this viewer (too large). Use the Printables hex STL/3MF files instead."
+  );
+}
 
 // Procedural hexagonal heat-tile pattern (bump map), like the real ship's
 // tiled windward side. The canvas tiles seamlessly: 6 hex columns x 7 rows.

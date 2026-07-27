@@ -1,13 +1,11 @@
 /** App version & author — bump when shipping user-facing changes. */
 export const APP_NAME = "Starship Custom Name";
-export const APP_VERSION = "2.0.8";
+export const APP_VERSION = "2.0.9";
 
 export const AUTHOR = {
   name: "David Leeds",
-  handle: "leedsexplore",
   url: "https://github.com/leedsexplore",
   repo: "https://github.com/leedsexplore/starship-custom-name",
-  pages: "https://leedsexplore.github.io/starship-custom-name/",
 };
 
 export function versionLabel() {

@@ -5,14 +5,16 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js";
+import { build3mf } from "./export3mf.js?v=2.0.9";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.0.8";
+} from "./version.js?v=2.0.9";
+
+const CACHE_BUST = APP_VERSION;
 
 /**
  * Base ship meshes. Placement values are mesh-space mm; the app convention is
@@ -23,24 +25,28 @@ const SHIPS = {
   parametric: {
     id: "parametric",
     label: "Original CAD 1:200",
-    url: "./assets/starship_ship_print_1_200.stl?v=2.0.8",
+    url: `./assets/starship_ship_print_1_200.stl?v=${CACHE_BUST}`,
     /** Key into print_envelope.json meshes[] for measured dimensions. */
     envelopeFile: "assets/starship_ship_print_1_200.stl",
-    /** Preview layers (steel + tiled heat shield) — same look as assets/starship_cad_preview.html. */
+    /**
+     * Preview layers (steel + tiled heat shield). The combined one-piece STL is
+     * lazy-loaded on first export/CSG so cold start stays ~20 MB instead of ~30 MB.
+     */
     layers: [
       {
         id: "steel",
         role: "steel",
-        url: "./assets/starship_print_1_200_steel.stl?v=2.0.8",
+        url: `./assets/starship_print_1_200_steel.stl?v=${CACHE_BUST}`,
       },
       {
         id: "tiles",
         role: "tiles",
-        url: "./assets/starship_print_1_200_tiles.stl?v=2.0.8",
+        url: `./assets/starship_print_1_200_tiles.stl?v=${CACHE_BUST}`,
       },
     ],
     bodyCenterX: 0,
-    hullRadiusZ: 22.575, // measured mid-barrel Ø 45.15 mm
+    /** Measured mid-barrel Ø 45.0 mm after weld-ring removal (AABB / envelope). */
+    hullRadiusZ: 22.5,
     embedMm: 0.35,
     safeSpanMm: 100,
     hardSpanMm: 120,
@@ -61,7 +67,7 @@ const SHIPS = {
     },
     meshDefaults: {
       meshHeightMm: 260.5,
-      meshDiameterMm: 45.15,
+      meshDiameterMm: 45.0,
       meshFootprintMaxMm: 79.7,
     },
   },
@@ -69,7 +75,7 @@ const SHIPS = {
     id: "legacy",
     label: "Classic remix (v1.x)",
     /** Pre-v2 customizer mesh — Josh1297 Starship (same as v1.1.5). */
-    url: "./assets/StarShipV2_original.stl?v=2.0.8",
+    url: `./assets/StarShipV2_original.stl?v=${CACHE_BUST}`,
     envelopeFile: "assets/StarShipV2_original.stl",
     bodyCenterX: -22.3,
     /** Mid-body cylinder radius tuned for this mesh (v1.1.x placement). */
@@ -299,6 +305,12 @@ const FONT_OPTIONS = {
     openscad: "Bebas Neue",
   },
 };
+
+for (const opt of Object.values(FONT_OPTIONS)) {
+  if (!/[?&]v=/.test(opt.url)) {
+    opt.url += `${opt.url.includes("?") ? "&" : "?"}v=${CACHE_BUST}`;
+  }
+}
 
 /** Prusa filament + Starship / space-theme preview defaults. */
 const COLOR_PRESETS = [
@@ -537,6 +549,7 @@ let font = null;
 let fontGlyphs = new Set();
 let currentFontId = "optimer-bold";
 const fontCache = new Map();
+let fontLoadToken = 0;
 let shipGeometry = null;
 /** Display object: Mesh (legacy) or Group of layered meshes (parametric). */
 let shipMesh = null;
@@ -553,8 +566,8 @@ csgEvaluator.useGroups = false;
  * Cylindrical UV unwrap for the tile shell (print-scale, Z-up, before orient()).
  * Flap faces keep a planar map so the hex pattern doesn't smear.
  */
-function applyTileUVs(geom, scaleMm = 13) {
-  const HULL_R = 22.575;
+function applyTileUVs(geom, hullRadiusZ, scaleMm = 13) {
+  const HULL_R = hullRadiusZ;
   const p = geom.attributes.position;
   const n = p.count;
   const uv = new Float32Array(n * 2);
@@ -600,16 +613,25 @@ async function loadFontById(fontId) {
 }
 
 async function applyFontSelection(fontId, { rebuild = true } = {}) {
+  const wanted = FONT_OPTIONS[fontId] ? fontId : "optimer-bold";
+  const token = ++fontLoadToken;
   setStatus("Loading font…");
-  const { id, font: loaded } = await loadFontById(fontId);
-  font = loaded;
-  currentFontId = id;
-  fontGlyphs = new Set(Object.keys(font.data?.glyphs || {}));
-  if (el.fontStyle.value !== id) el.fontStyle.value = id;
-  if (rebuild && ready) {
-    await flushRebuild();
-    writeUrl();
-    setStatus(`Font: ${FONT_OPTIONS[id].label}`);
+  try {
+    const { id, font: loaded } = await loadFontById(wanted);
+    if (token !== fontLoadToken) return;
+    font = loaded;
+    currentFontId = id;
+    fontGlyphs = new Set(Object.keys(font.data?.glyphs || {}));
+    if (el.fontStyle.value !== id) el.fontStyle.value = id;
+    if (rebuild && ready) {
+      await flushRebuild();
+      if (token !== fontLoadToken) return;
+      writeUrl();
+      setStatus(`Font: ${FONT_OPTIONS[id].label}`);
+    }
+  } catch (err) {
+    if (token !== fontLoadToken) return;
+    throw err;
   }
 }
 
@@ -755,7 +777,7 @@ async function loadShipLayers(shipDef) {
   const parts = await Promise.all(
     layerDefs.map(async (layer) => {
       const geometry = await loader.loadAsync(layer.url);
-      if (layer.role === "tiles") applyTileUVs(geometry);
+      if (layer.role === "tiles") applyTileUVs(geometry, shipDef.hullRadiusZ);
       geometry.computeVertexNormals();
       shipDef.orient(geometry);
       const material =
@@ -774,43 +796,132 @@ function buildShipDisplay(geometry, shipDef, layers) {
   return new THREE.Mesh(geometry, shipMaterial);
 }
 
+/**
+ * Combined solid used for STL/3MF/CSG. Layered parametric preview skips this on
+ * first paint; call before any export that needs a single hull volume.
+ */
+async function ensureShipGeometry(shipDef = ship) {
+  const key = shipCacheKey(shipDef);
+  if (shipGeometryCache.has(key)) {
+    const geo = shipGeometryCache.get(key);
+    if (shipDef.id === ship.id) shipGeometry = geo;
+    return geo;
+  }
+  const geo = await loadShipGeometry(shipDef);
+  if (shipDef.id === ship.id) shipGeometry = geo;
+  return geo;
+}
+
+/** Disable downloads and (optionally) the whole control form during load/export. */
+function setUiBusy(busy, { lockForm = false } = {}) {
+  el.download.disabled = busy;
+  el.download3mf.disabled = busy;
+  el.downloadPng.disabled = busy;
+  el.downloadScad.disabled = busy;
+  if (!lockForm && !busy) {
+    el.form.classList.remove("is-busy");
+    return;
+  }
+  if (!lockForm) return;
+  el.form.classList.toggle("is-busy", busy);
+  for (const node of el.form.querySelectorAll(
+    "input, select, button:not(#copy-link):not(#reset-view)"
+  )) {
+    if (
+      node.id === "download" ||
+      node.id === "download-3mf" ||
+      node.id === "download-png" ||
+      node.id === "download-scad"
+    ) {
+      continue;
+    }
+    node.disabled = busy;
+  }
+}
+
+function setExportBusy(busy) {
+  // Keep form locked in sync with export busy so controls re-enable after download.
+  setUiBusy(busy, { lockForm: true });
+}
+
 /** Swap the base mesh, retune scale/placement to its 1:200 preset, and rebuild text. */
 let shipLoadToken = 0;
 async function applyShipSelection(shipId, { retune = true } = {}) {
   const id = SHIPS[shipId] ? shipId : DEFAULT_SHIP_ID;
-  ship = SHIPS[id];
-  setShipRadio(id);
-  applyEnvelopeForShip();
-
+  const next = SHIPS[id];
+  const previousId = ship.id;
   const token = ++shipLoadToken;
-  setStatus(`Loading ${ship.label}…`);
-  const [geometry, layers] = await Promise.all([
-    loadShipGeometry(ship),
-    loadShipLayers(ship),
-  ]);
-  if (token !== shipLoadToken) return;
-  if (shipMesh) modelGroup.remove(shipMesh);
-  shipGeometry = geometry;
-  shipMesh = buildShipDisplay(geometry, ship, layers);
-  modelGroup.add(shipMesh);
 
-  if (retune) {
-    el.scale.value = String(coreOneScalePercent());
-    el.size.value = String(ship.defaultSizeMm);
-    el.pos.value = String(ship.defaultPosMm);
-    if (ship.layers?.length) {
-      el.color.value = "#c8ced6";
+  // Radio only — do not commit placement constants until geometry is ready.
+  setShipRadio(id);
+  setStatus(`Loading ${next.label}…`);
+  setUiBusy(true, { lockForm: true });
+
+  try {
+    let geometry = null;
+    let layers = null;
+    if (next.layers?.length) {
+      // Preview uses steel+tiles only; defer the ~10 MB combined solid.
+      layers = await loadShipLayers(next);
+    } else {
+      geometry = await loadShipGeometry(next);
     }
-  }
-  updateLabels();
-  applyModelScale();
-  applyColor();
-  if (ready) {
-    await flushRebuild();
     if (token !== shipLoadToken) return;
-    frameCamera();
-    writeUrl();
-    setStatus(`Base model: ${ship.label}.`);
+
+    ship = next;
+    applyEnvelopeForShip();
+
+    if (shipMesh) modelGroup.remove(shipMesh);
+    shipGeometry = geometry;
+    shipMesh = buildShipDisplay(geometry, next, layers);
+    modelGroup.add(shipMesh);
+
+    // Warm the combined solid in the background for parametric export.
+    if (next.layers?.length) {
+      loadShipGeometry(next)
+        .then((g) => {
+          if (token === shipLoadToken && ship.id === next.id) {
+            shipGeometry = g;
+          }
+        })
+        .catch((err) => console.warn("Background solid prefetch failed", err));
+    }
+
+    if (retune) {
+      el.scale.value = String(coreOneScalePercent());
+      el.size.value = String(ship.defaultSizeMm);
+      el.pos.value = String(ship.defaultPosMm);
+      if (ship.layers?.length) {
+        el.color.value = "#c8ced6";
+      }
+    }
+    updateLabels();
+    applyModelScale();
+    applyColor();
+    if (ready) {
+      await flushRebuild();
+      if (token !== shipLoadToken) return;
+      frameCamera();
+      writeUrl();
+      setStatus(`Base model: ${ship.label}.`);
+    }
+  } catch (err) {
+    if (token !== shipLoadToken) return;
+    setShipRadio(previousId);
+    ship = SHIPS[previousId] || ship;
+    applyEnvelopeForShip();
+    console.error(err);
+    setStatus(
+      `Failed to load ${next.label}${err?.message ? `: ${err.message}` : ""}.`,
+      true
+    );
+    throw err;
+  } finally {
+    if (token === shipLoadToken) {
+      setUiBusy(false, { lockForm: true });
+      // Keep downloads disabled until boot marks ready.
+      if (!ready) setExportBusy(true);
+    }
   }
 }
 
@@ -1196,6 +1307,16 @@ function readState() {
   };
 }
 
+function clampRangeInput(input, raw) {
+  const n = Number(raw);
+  if (!Number.isFinite(n)) return;
+  const max = Number(input.max);
+  const min = Number(input.min);
+  const lo = Number.isFinite(min) ? min : n;
+  const hi = Number.isFinite(max) ? max : n;
+  input.value = String(Math.min(hi, Math.max(lo, n)));
+}
+
 function applyState(state) {
   if (state.name != null) el.name.value = String(state.name).slice(0, 24);
   const hull = normalizeHex(state.color);
@@ -1206,17 +1327,10 @@ function applyState(state) {
     el.fontStyle.value = state.font;
     currentFontId = state.font;
   }
-  if (state.size != null) el.size.value = state.size;
-  if (state.pos != null) el.pos.value = state.pos;
-  if (state.depth != null) el.depth.value = state.depth;
-  if (state.scale != null) {
-    const n = Number(state.scale);
-    if (Number.isFinite(n)) {
-      const max = Number(el.scale.max) || 220;
-      const min = Number(el.scale.min) || 50;
-      el.scale.value = String(Math.min(max, Math.max(min, n)));
-    }
-  }
+  if (state.size != null) clampRangeInput(el.size, state.size);
+  if (state.pos != null) clampRangeInput(el.pos, state.pos);
+  if (state.depth != null) clampRangeInput(el.depth, state.depth);
+  if (state.scale != null) clampRangeInput(el.scale, state.scale);
   if (state.side === "left" || state.side === "right") {
     const radio = document.querySelector(
       `input[name="side"][value="${state.side}"]`
@@ -1285,31 +1399,34 @@ function confirmLongTextIfNeeded() {
   );
 }
 
-function yieldToUi() {
-  return new Promise((resolve) => setTimeout(resolve, 30));
+function yieldToUi(ms = 30) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 /**
  * Ship + text geometries in model space (pre-scale), with text world-baked.
  * Text may be null when the hull name field is empty.
+ * Callers must await ensureShipGeometry() first when the solid may still be lazy.
  */
 function cloneModelSpaceParts() {
-  if (!shipGeometry || !shipMesh) throw new Error("Model not ready");
+  if (!shipGeometry || !shipMesh) {
+    throw new Error("Model not ready — solid mesh still loading");
+  }
   shipMesh.updateMatrixWorld(true);
 
-  const ship = shipGeometry.clone();
+  const shipClone = shipGeometry.clone();
   // Bake ship mesh local transform (identity today) into geometry.
-  ship.applyMatrix4(shipMesh.matrix);
+  shipClone.applyMatrix4(shipMesh.matrix);
 
   if (!textMesh) {
-    return { ship, text: null };
+    return { ship: shipClone, text: null };
   }
 
   textMesh.updateMatrixWorld(true);
   const text = textMesh.geometry.clone();
   text.applyMatrix4(textMesh.matrix);
 
-  return { ship, text };
+  return { ship: shipClone, text };
 }
 
 function applyScaleToGeometry(geometry, scale) {
@@ -1413,13 +1530,6 @@ function triggerDownload(blob, filename) {
   window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
 }
 
-function setExportBusy(busy) {
-  el.download.disabled = busy;
-  el.download3mf.disabled = busy;
-  el.downloadPng.disabled = busy;
-  el.downloadScad.disabled = busy;
-}
-
 async function downloadStl() {
   try {
     setExportBusy(true);
@@ -1430,10 +1540,14 @@ async function downloadStl() {
       return;
     }
 
+    setStatus("Loading solid mesh for export…");
+    await ensureShipGeometry();
+    await yieldToUi(50);
+
     const preferBoolean = selectedStyle() === "engraved";
     if (preferBoolean) {
-      setStatus("Boolean engraving… this can take a few seconds.");
-      await yieldToUi();
+      setStatus("Boolean engraving… this can take a few seconds on large meshes.");
+      await yieldToUi(80);
     }
 
     const payload = buildExportMeshes({ preferBoolean });
@@ -1474,6 +1588,10 @@ async function download3mf() {
       return;
     }
 
+    setStatus("Loading solid mesh for export…");
+    await ensureShipGeometry();
+    await yieldToUi(50);
+
     const style = selectedStyle();
     const hullColor = el.color.value;
     const letterColor = el.textColor.value;
@@ -1483,8 +1601,8 @@ async function download3mf() {
     let engravedSolid = false;
 
     if (style === "engraved") {
-      setStatus("Boolean engraving for 3MF…");
-      await yieldToUi();
+      setStatus("Boolean engraving for 3MF… this can take a few seconds.");
+      await yieldToUi(80);
       const payload = buildExportMeshes({ preferBoolean: true });
       if (payload.mode === "boolean") {
         engravedSolid = true;
@@ -1508,21 +1626,21 @@ async function download3mf() {
           : "Packing 3MF (inset fallback)…"
       );
     } else {
-      const { ship, text } = cloneModelSpaceParts();
-      applyScaleToGeometry(ship, scale);
+      const { ship: shipGeo, text } = cloneModelSpaceParts();
+      applyScaleToGeometry(shipGeo, scale);
       if (text) applyScaleToGeometry(text, scale);
       parts = text
         ? [
-            { name: "Hull", geometry: ship, color: hullColor },
+            { name: "Hull", geometry: shipGeo, color: hullColor },
             { name: "Letters", geometry: text, color: letterColor },
           ]
-        : [{ name: "Hull", geometry: ship, color: hullColor }];
+        : [{ name: "Hull", geometry: shipGeo, color: hullColor }];
       setStatus(
         text ? "Packing multi-material 3MF…" : "Packing ship-only 3MF…"
       );
     }
 
-    await yieldToUi();
+    await yieldToUi(50);
     const zipped = build3mf(parts, {
       application: APP_NAME,
       author: `${AUTHOR.name} (${AUTHOR.url})`,
@@ -1539,7 +1657,7 @@ async function download3mf() {
       !parts.some((p) => /Letters/i.test(p.name))
         ? "3MF downloaded — ship only (enter a name for lettering)."
         : style === "raised"
-          ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU)."
+          ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU). Preview steel/tiles coloring is separate from this file."
           : engravedSolid
             ? "3MF downloaded — engraved hull is a single solid (recess cut)."
             : "3MF downloaded — boolean failed; Hull + Letters (cutter) for slicer boolean."
@@ -1715,6 +1833,7 @@ async function boot() {
   }
 
   el.form.addEventListener("submit", (e) => e.preventDefault());
+  setExportBusy(true);
   await loadPrintEnvelope();
   const urlState = stateFromUrl();
   // Drop the old baked-in default so bookmarked/share URLs from v2.0.3 and
@@ -1724,11 +1843,15 @@ async function boot() {
   }
   // Resolve the base ship first — envelope numbers, slider limits, and the
   // default letter size all depend on it.
-  ship = SHIPS[urlState.ship] || SHIPS[DEFAULT_SHIP_ID];
+  const bootShipId =
+    urlState.ship && SHIPS[urlState.ship] ? urlState.ship : DEFAULT_SHIP_ID;
+  ship = SHIPS[bootShipId];
   setShipRadio(ship.id);
   applyEnvelopeForShip();
   if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
   if (urlState.pos == null) el.pos.value = String(ship.defaultPosMm);
+  // Classic remix must start at CORE One % (~215), not the HTML default 100.
+  if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
   mountFontOptions(
     urlState.font && FONT_OPTIONS[urlState.font] ? urlState.font : "optimer-bold"
   );
@@ -1736,6 +1859,7 @@ async function boot() {
   mountPresets(el.textPresets, el.textColor);
   applyState(urlState);
   if (urlState.name == null) el.name.value = "";
+  if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
   updateLabels();
   resize();
   window.addEventListener("resize", resize);
@@ -1761,8 +1885,8 @@ async function boot() {
   for (const radio of document.querySelectorAll('input[name="ship"]')) {
     radio.addEventListener("change", () => {
       applyShipSelection(selectedShipId()).catch((err) => {
+        // applyShipSelection already sets status + rolls back on failure.
         console.error(err);
-        setStatus("Failed to load that base model.", true);
       });
     });
   }
@@ -1797,16 +1921,10 @@ async function boot() {
       ? el.fontStyle.value
       : "optimer-bold";
 
-    const [, geometry, layers] = await Promise.all([
+    await Promise.all([
       applyFontSelection(initialFontId, { rebuild: false }),
-      loadShipGeometry(ship),
-      loadShipLayers(ship),
+      applyShipSelection(bootShipId, { retune: false }),
     ]);
-
-    shipGeometry = geometry;
-    shipMesh = buildShipDisplay(geometry, ship, layers);
-    modelGroup.add(shipMesh);
-    applyModelScale();
 
     ready = true;
     setExportBusy(false);
@@ -1817,7 +1935,12 @@ async function boot() {
     setStatus("Ready — edit the name, then download STL / 3MF / PNG.");
   } catch (err) {
     console.error(err);
-    setStatus("Failed to load ship or font.", true);
+    setStatus(
+      err?.message
+        ? `Failed to load ship or font: ${err.message}`
+        : "Failed to load ship or font.",
+      true
+    );
     setExportBusy(true);
   }
 }

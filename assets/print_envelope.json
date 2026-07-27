@@ -172,34 +172,34 @@
     {
       "file": "assets/starship_ship_print_1_200.stl",
       "aabb_min_mm": [
-        -22.575,
+        -22.5,
         -39.8499,
         0.0
       ],
       "aabb_max_mm": [
-        22.575,
+        22.5,
         39.8499,
         260.5
       ],
       "aabb_size_mm": [
-        45.15,
+        45.0,
         79.6999,
         260.5
       ],
       "height_axis": "Z",
       "height_mm": 260.5,
-      "mid_barrel_diameter_mm": 45.15,
+      "mid_barrel_diameter_mm": 45.0,
       "footprint_max_mm": 79.6999,
-      "footprint_min_mm": 45.15,
+      "footprint_min_mm": 45.0,
       "tip_at_axis_max": true,
       "engines_protrude_past_skirt_mm": 0.0,
       "base_band_inward_extent_mm": 0.0,
       "implied_real_scale_1_to_N": 200.0,
       "at_1_200_from_height": {
         "height_mm": 260.5,
-        "diameter_mm": 45.15,
+        "diameter_mm": 45.0,
         "footprint_max_mm": 79.7,
-        "footprint_min_mm": 45.15,
+        "footprint_min_mm": 45.0,
         "scale_percent_of_mesh": 100.0,
         "fits_core_one": true,
         "z_margin_mm": 9.5
@@ -219,9 +219,9 @@
     "file": "assets/starship_ship_print_1_200.stl",
     "role": "parametric 1:200 CAD solid (true proportions)",
     "height_mm": 260.5,
-    "mid_barrel_diameter_mm": 45.15,
+    "mid_barrel_diameter_mm": 45.0,
     "footprint_max_mm": 79.6999,
     "engines_protrude_past_skirt_mm": 0.0,
-    "customizer_note": "Web tool scales Josh mesh via CORE One 1:200 preset (~215.2893%)"
+    "customizer_note": "Web customizer default is this parametric mesh at 100%. Classic remix (StarShipV2_original.stl) uses the CORE One 1:200 preset (~215.2893%). Customizer 3MF is Hull+Letters, not the steel/tiles Printables MMU."
   }
 }

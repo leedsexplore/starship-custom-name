@@ -14,7 +14,9 @@ These standalone parts are scaled and posed onto the Josh hull by:
 python3 scripts/build_ship_with_cleaned_flaps.py
 ```
 
-→ writes `assets/StarShipV2_cleaned_flaps.stl` for the **Starship Custom Name** web tool.
+→ writes `assets/StarShipV2_cleaned_flaps.stl` (rebuild / experiment mesh).
+
+**Note:** The live web customizer’s classic remix uses `assets/StarShipV2_original.stl`, not the cleaned-flaps rebuild. Keep this tree if you need to regenerate flap solids or compare placements.
 
 Placement (tuned to real Starship proportions on this hull):
 
@@ -39,8 +41,3 @@ From the repo root:
 python3 -m http.server 8080
 # open http://127.0.0.1:8080/assets/flaps_cleaned/preview.html
 ```
-
-### Source / license
-
-[SpaceX Starship Block 2 (1:144)](https://www.printables.com/model/1314176-spacex-starship-block-2-1144-scale) by **anventia** — CC BY-NC.  
-Hull placement follows Josh1297’s [SpaceX Starship](https://www.printables.com/model/225040-spacex-starship) (also CC BY-NC).

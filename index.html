@@ -8,7 +8,7 @@
       name="description"
       content="Put your name on a 3D-printable Starship: original parametric CAD, one-piece print, MMU-ready. Download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=2.0.8" />
+    <link rel="stylesheet" href="styles.css?v=2.0.9" />
   </head>
   <body>
     <div id="app">
@@ -16,14 +16,14 @@
         <header class="brand">
           <p class="eyebrow">
             Printables customizer
-            <span class="version" id="app-version" aria-label="App version">v2.0.8</span>
+            <span class="version" id="app-version" aria-label="App version">v2.0.9</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
-            Put a name on Starship — toggle the original parametric CAD (true 1:200,
-            one-piece) or the classic remix mesh, preview Prusa/space colors, then
-            download STL or multi-material 3MF. Preview colors are a guide — assign
-            filament in your slicer.
+            Put a name on Starship — toggle the original parametric CAD (true 1:200
+            H 260.5 × Ø45 mm) or the classic remix mesh, preview Prusa/space colors,
+            then download STL or Hull+Letters 3MF. Preview steel/tiles coloring is a
+            guide — customizer 3MF is lettering MMU, not the Printables steel/tiles file.
           </p>
         </header>
 
@@ -150,9 +150,9 @@
             CORE One 1:200 (H 260.5 mm)
           </button>
           <p class="field-note">
-            The parametric CAD loads at true 1:200 — 100% is already H 260.5 mm on a
-            Prusa CORE One (250×220×270). The classic mesh needs ~215%. Engines stay
-            recessed inside the skirt.
+            The parametric CAD loads at true 1:200 — 100% is already H 260.5 × Ø45 mm
+            on a Prusa CORE One (250×220×270). The classic mesh needs ~215%. Engines stay
+            recessed inside the skirt. Customizer 3MF = Hull + Letters (not steel/tiles).
           </p>
 
           <div class="actions">
@@ -160,7 +160,7 @@
               Download STL
             </button>
             <button type="button" id="download-3mf" class="primary alt" disabled>
-              Download 3MF (MMU)
+              Download 3MF (Hull + Letters)
             </button>
             <div class="secondary-row">
               <button type="button" id="download-png" class="secondary" disabled>
@@ -200,7 +200,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.0.8</span>)
+            · <span id="footer-version">v2.0.9</span>)
           </p>
           <p>
             The parametric CAD base model is original work — CC BY-NC 4.0
@@ -228,8 +228,8 @@
         </footer>
       </aside>
 
-      <main id="viewport">
-        <div id="hud">Drag to orbit · scroll to zoom</div>
+      <main id="viewport" aria-label="3D Starship preview">
+        <div id="hud">Drag to orbit · scroll / pinch to zoom</div>
       </main>
     </div>
 
@@ -244,6 +244,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.0.8"></script>
+    <script type="module" src="app.js?v=2.0.9"></script>
   </body>
 </html>

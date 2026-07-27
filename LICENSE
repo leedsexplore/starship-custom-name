@@ -1,18 +1,20 @@
-This repository contains works under two Creative Commons licenses.
+This repository contains works under Creative Commons Attribution–NonCommercial 4.0.
 
-1) Original parametric Starship CAD — CC BY 4.0
+1) Original parametric Starship CAD — CC BY-NC 4.0
 
   openscad/starship_parametric.scad and every mesh exported from it
   (assets/starship_ship_print_1_200.stl, assets/starship_print_1_200_steel.stl,
   assets/starship_print_1_200_tiles.stl, assets/starship_print_1_200_mmu.3mf,
-  assets/starship_cad_*.stl, printables/starship-parametric/files/*)
+  assets/starship_*_hex.*, assets/starship_cad_*.stl,
+  printables/starship-parametric/files/*)
 
   by David Leeds (https://github.com/leedsexplore)
 
-  Creative Commons Attribution 4.0 International (CC BY 4.0)
-  https://creativecommons.org/licenses/by/4.0/legalcode
+  Creative Commons Attribution–NonCommercial 4.0 International (CC BY-NC 4.0)
+  https://creativecommons.org/licenses/by-nc/4.0/legalcode
   - Attribution required (credit David Leeds / leedsexplore)
-  - Commercial use, remixing, and redistribution allowed
+  - Non-commercial use only
+  - Remixing and redistribution allowed under the same terms
 
 2) Legacy remixed geometry — CC BY-NC 4.0
 
@@ -23,7 +25,7 @@ This repository contains works under two Creative Commons licenses.
   (flap planforms from anventia's Starship Block 2,
   https://www.printables.com/model/1314176-spacex-starship-block-2-1144-scale)
 
-  Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+  Creative Commons Attribution–NonCommercial 4.0 International (CC BY-NC 4.0)
   https://creativecommons.org/licenses/by-nc/4.0/legalcode
   - Attribution required (credit Josh1297 and anventia)
   - Non-commercial use only

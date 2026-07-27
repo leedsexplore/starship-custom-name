@@ -1,7 +1,7 @@
 import { zipSync, strToU8 } from "fflate";
 
 /** Convert #RRGGBB → 3MF displaycolor #AARRGGBB */
-export function hexToDisplayColor(hex, alpha = "FF") {
+function hexToDisplayColor(hex, alpha = "FF") {
   const h = hex.replace("#", "").toUpperCase();
   return `#${alpha}${h}`;
 }
@@ -18,7 +18,7 @@ function escapeXml(s) {
  * Expand a BufferGeometry into vertex/triangle lists for 3MF.
  * @param {import('three').BufferGeometry} geometry
  */
-export function geometryToMeshData(geometry) {
+function geometryToMeshData(geometry) {
   const geo = geometry.index ? geometry.toNonIndexed() : geometry;
   const pos = geo.attributes.position;
   if (!pos) throw new Error("Geometry has no positions");

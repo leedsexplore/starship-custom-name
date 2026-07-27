@@ -269,7 +269,8 @@ a {
   font-size: 1rem;
 }
 
-.field input[type="text"]:focus {
+.field input[type="text"]:focus,
+.field input[type="text"]:focus-visible {
   outline: 2px solid var(--accent-dim);
   border-color: var(--accent);
 }
@@ -300,9 +301,26 @@ a {
   font-size: 0.95rem;
 }
 
-.field select:focus {
+.field select:focus,
+.field select:focus-visible {
   outline: 2px solid var(--accent-dim);
   border-color: var(--accent);
+}
+
+.primary:focus-visible,
+.secondary:focus-visible,
+.swatch:focus-visible,
+.segmented label:focus-within,
+.field input[type="range"]:focus-visible,
+.field input[type="color"]:focus-visible,
+.field input[type="checkbox"]:focus-visible {
+  outline: 2px solid var(--accent-dim);
+  outline-offset: 2px;
+}
+
+.form.is-busy,
+#controls.is-busy {
+  opacity: 0.92;
 }
 
 .actions {
@@ -397,13 +415,20 @@ a {
 @media (max-width: 860px) {
   #app {
     grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(50vh, 1fr);
+    grid-template-rows: minmax(42vh, 1fr) auto;
+  }
+
+  #viewport {
+    order: -1;
+    min-height: 42vh;
   }
 
   .panel {
     border-right: 0;
-    border-bottom: 1px solid var(--panel-border);
-    max-height: none;
+    border-bottom: 0;
+    border-top: 1px solid var(--panel-border);
+    max-height: 58vh;
+    overflow-y: auto;
   }
 
   .primary,

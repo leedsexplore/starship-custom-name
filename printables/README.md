@@ -10,9 +10,8 @@ available in this cloud agent environment).
 python3 scripts/validate_printables_package.py
 ```
 
-Checks structure, CC BY-NC 4.0 / no-remix flags, required tags, file presence
-(including hex-tile one-piece + MMU variants), that the smooth one-piece STL is
-a single connected shell, and that both MMU 3MFs have both color parts. Run this
+Checks structure, CC BY-NC 4.0 / no-remix flags, required tags, and that the
+package includes the **hex** one-piece STL + hex MMU 3MF (+ `.scad`). Run this
 before every publish.
 
 ## Publish `starship-parametric` (Mac only)
@@ -45,10 +44,14 @@ Notes:
 - This listing is an ORIGINAL model (no `remix_of`), licensed CC BY-NC 4.0. Keep it
   separate from the legacy `starship-custom-name` remix package, which stays
   CC BY-NC with Josh1297/anventia attribution.
+- Package `files/` is hex one-piece STL + hex MMU 3MF + parametric `.scad` (not the
+  web customizer sample, and not the smooth MMU).
 - If the CLI's `printables.toml` schema differs from this file's keys, keep the
   values and rename keys to match `examples/sample-model/printables.toml`.
 - Regenerate files after CAD changes:
   `python3 scripts/build_starship_cad.py --export --skip-render`,
   `openscad -o assets/starship_print_1_200_steel.stl openscad/export_print_steel.scad`,
   `openscad -o assets/starship_print_1_200_tiles.stl openscad/export_print_tiles.scad`,
-  `python3 scripts/build_mmu_3mf.py`, `node scripts/build_sample_stl.mjs`.
+  `python3 scripts/build_mmu_3mf.py`,
+  `python3 scripts/emboss_hex_tiles.py`,
+  then copy the hex outputs into `printables/starship-parametric/files/`.

@@ -121,13 +121,6 @@ def export(exe: str, *, full_meters: bool = False) -> None:
     if not ok:
         print("        (skipping 3mf — this OpenSCAD build may lack lib3mf)")
 
-    # CAD preview used by the web/docs path (measured 1:200 solid, no tile shell)
-    preview_src = RENDERS / "cad_threequarter.png"
-    preview_dst = ASSETS / "starship-cad-preview-1-200.png"
-    if preview_src.exists():
-        shutil.copy2(preview_src, preview_dst)
-        print(f"  ok    copied {preview_dst.relative_to(ROOT)}")
-
     for f in sorted(ASSETS.glob("starship_ship_p*")):
         print(f"        {f.name}  {f.stat().st_size / 1e6:.2f} MB")
 
