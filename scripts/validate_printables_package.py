@@ -104,6 +104,8 @@ def main() -> None:
     required_files = [
         "starship_1_200_one_piece.stl",
         "starship_1_200_two_color_mmu.3mf",
+        "starship_1_200_hex_tiles_one_piece.stl",
+        "starship_1_200_hex_tiles_mmu.3mf",
         "starship_custom_name_sample.stl",
         "starship_parametric.scad",
     ]
@@ -141,6 +143,17 @@ def main() -> None:
             if part not in model_xml:
                 fail(f"3MF missing part name {part!r}")
     ok("MMU 3MF has stainless + heat-shield parts")
+
+    with zipfile.ZipFile(files_dir / "starship_1_200_hex_tiles_mmu.3mf") as z:
+        model_xml = z.read("3D/3dmodel.model").decode("utf-8", "replace")
+        for part in ("Stainless hull", "Heat shield + Raptors"):
+            if part not in model_xml:
+                fail(f"hex MMU 3MF missing part name {part!r}")
+    ok("hex-tile MMU 3MF has stainless + heat-shield parts")
+
+    if "hex" not in desc.lower() or "groove" not in desc.lower():
+        fail("DESCRIPTION.md should mention the hex-tile groove variant")
+    ok("DESCRIPTION mentions hex-tile variant")
 
     print("\nVALIDATE OK — package is ready to publish.")
     print("Live publish still needs the printables-integration CLI + session cookie")

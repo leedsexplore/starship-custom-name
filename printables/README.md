@@ -10,9 +10,10 @@ available in this cloud agent environment).
 python3 scripts/validate_printables_package.py
 ```
 
-Checks structure, CC BY 4.0 / no-remix flags, required tags, file presence, that
-the one-piece STL is a single connected shell, and that the MMU 3MF has both
-color parts. Run this before every publish.
+Checks structure, CC BY 4.0 / no-remix flags, required tags, file presence
+(including hex-tile one-piece + MMU variants), that the smooth one-piece STL is
+a single connected shell, and that both MMU 3MFs have both color parts. Run this
+before every publish.
 
 ## Publish `starship-parametric` (Mac only)
 

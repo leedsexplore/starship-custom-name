@@ -9,6 +9,7 @@ as ONE print job — the bodies exist purely for MMU3 / color-change assignment.
   python3 scripts/build_mmu_3mf.py
 """
 
+import argparse
 import struct
 import sys
 import zipfile
@@ -18,12 +19,12 @@ from xml.sax.saxutils import escape
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS = ROOT / "assets"
 
-PARTS = [
+DEFAULT_PARTS = [
     ("Stainless hull", ASSETS / "starship_print_1_200_steel.stl", "#FFC8CED6"),
     ("Heat shield + Raptors", ASSETS / "starship_print_1_200_tiles.stl", "#FF17191D"),
 ]
 
-OUT = ASSETS / "starship_print_1_200_mmu.3mf"
+DEFAULT_OUT = ASSETS / "starship_print_1_200_mmu.3mf"
 
 
 def read_binary_stl(path: Path):
@@ -62,10 +63,10 @@ def mesh_xml(verts, tris) -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
+def build(parts, out: Path) -> None:
     bases, objects, components = [], [], []
     next_id = 2
-    for i, (name, path, color) in enumerate(PARTS):
+    for i, (name, path, color) in enumerate(parts):
         if not path.exists():
             sys.exit(f"missing {path} — run the print exports first")
         verts, tris = read_binary_stl(path)
@@ -114,11 +115,34 @@ def main() -> None:
 </Relationships>
 """
 
-    with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED) as z:
+    with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         z.writestr("[Content_Types].xml", content_types)
         z.writestr("_rels/.rels", rels)
         z.writestr("3D/3dmodel.model", model)
-    print(f"wrote {OUT.relative_to(ROOT)}  {OUT.stat().st_size / 1e6:.2f} MB")
+    print(f"wrote {out.relative_to(ROOT)}  {out.stat().st_size / 1e6:.2f} MB")
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument(
+        "--tiles",
+        type=Path,
+        default=DEFAULT_PARTS[1][1],
+        help="black body STL (smooth or hex)",
+    )
+    ap.add_argument(
+        "--steel",
+        type=Path,
+        default=DEFAULT_PARTS[0][1],
+        help="stainless hull STL",
+    )
+    ap.add_argument("--out", type=Path, default=DEFAULT_OUT)
+    args = ap.parse_args()
+    parts = [
+        ("Stainless hull", args.steel, "#FFC8CED6"),
+        ("Heat shield + Raptors", args.tiles, "#FF17191D"),
+    ]
+    build(parts, args.out)
 
 
 if __name__ == "__main__":

@@ -8,7 +8,7 @@
       name="description"
       content="Put your name on a 3D-printable Starship: original parametric CAD, one-piece print, MMU-ready. Download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=2.0.5" />
+    <link rel="stylesheet" href="styles.css?v=2.0.6" />
   </head>
   <body>
     <div id="app">
@@ -16,7 +16,7 @@
         <header class="brand">
           <p class="eyebrow">
             Printables customizer
-            <span class="version" id="app-version" aria-label="App version">v2.0.5</span>
+            <span class="version" id="app-version" aria-label="App version">v2.0.6</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -43,6 +43,23 @@
             <p class="field-note">
               Original = parametric 1:200 (CC BY). Classic = Josh1297 + anventia
               mesh (CC BY-NC).
+            </p>
+          </fieldset>
+
+          <fieldset class="field fieldset" id="tiles-field">
+            <legend>Heat shield</legend>
+            <div class="segmented">
+              <label
+                ><input type="radio" name="tiles" value="hex" checked />
+                Hex relief</label
+              >
+              <label
+                ><input type="radio" name="tiles" value="flat" /> Flat</label
+              >
+            </div>
+            <p class="field-note">
+              Hex relief is real groove geometry in the print mesh. Flat is a
+              smooth black shell (lighter file; preview uses a bump map).
             </p>
           </fieldset>
 
@@ -200,7 +217,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.0.5</span>)
+            · <span id="footer-version">v2.0.6</span>)
           </p>
           <p>
             The parametric CAD base model is original work — CC BY 4.0, remix away.
@@ -244,6 +261,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.0.5"></script>
+    <script type="module" src="app.js?v=2.0.6"></script>
   </body>
 </html>

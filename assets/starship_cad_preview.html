@@ -15,7 +15,10 @@ h1{margin:0;font-size:16px} p{margin:4px 0 0;color:#9aa6bd;font-size:12px}
 </head>
 <body>
 <div id="app">
-<header><h1>Starship — parametric CAD (52.1 m × 9 m)</h1><p>openscad/starship_parametric.scad · drag to orbit · scroll to zoom</p></header>
+<header>
+  <h1 id="title">Starship — parametric CAD (52.1 m × 9 m)</h1>
+  <p id="subtitle">openscad/starship_parametric.scad · drag to orbit · scroll to zoom</p>
+</header>
 <div id="viewport"><div id="hud">Loading…</div></div>
 </div>
 <script type="importmap">{"imports":{"three":"../vendor/three/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
@@ -23,6 +26,11 @@ h1{margin:0;font-size:16px} p{margin:4px 0 0;color:#9aa6bd;font-size:12px}
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { STLLoader } from "three/addons/loaders/STLLoader.js";
+
+// ?tiles=hex loads the printable embossed heat-shield mesh (real grooves).
+// Default keeps the smooth shell + bump-map sugar for a light meter-scale preview.
+const qs = new URLSearchParams(location.search);
+const HEX_RELIEF = qs.get("tiles") === "hex" || qs.get("hex") === "1";
 
 // Procedural hexagonal heat-tile pattern (bump map), like the real ship's
 // tiled windward side. The canvas tiles seamlessly: 6 hex columns x 7 rows.
@@ -77,20 +85,86 @@ function shipUVs(geom, scale){
   geom.setAttribute("uv", new THREE.BufferAttribute(uv,2));
 }
 
-const hexTex=hexTileTexture();
+const hexTex = HEX_RELIEF ? null : hexTileTexture();
+// Print-scale STLs are mm at 1:200 (= 5 mm per meter). Scale back to meters
+// so the hex relief sits in the same scene as the meter-scale CAD parts.
+const PRINT_TO_M = 1 / 5;
 
-const PARTS = [
-  { label:"steel hull + flaps", url:"./starship_cad_steel.stl?v=25",
-    mat:new THREE.MeshStandardMaterial({color:0x8a929c, metalness:0.95, roughness:0.2,
-      envMapIntensity:0.7}) },
-  { label:"heat-shield tiles", url:"./starship_cad_tiles.stl?v=25", hexUV:true,
-    mat:new THREE.MeshStandardMaterial({color:0x1e2126, metalness:0.2, roughness:0.62,
-      envMapIntensity:0.35, bumpMap:hexTex, bumpScale:1.1}) },
-  { label:"bay interior", url:"./starship_cad_bay.stl?v=25",
-    mat:new THREE.MeshStandardMaterial({color:0xaab0ba, metalness:0.55, roughness:0.5}) },
-  { label:"raptor bells", url:"./starship_cad_engines.stl?v=25",
-    mat:new THREE.MeshStandardMaterial({color:0x0b0c0e, metalness:0.45, roughness:0.55}) },
-];
+const PARTS = HEX_RELIEF
+  ? [
+      {
+        label: "stainless hull",
+        url: "./starship_print_1_200_steel.stl?v=hex1",
+        scale: PRINT_TO_M,
+        mat: new THREE.MeshStandardMaterial({
+          color: 0x8a929c,
+          metalness: 0.95,
+          roughness: 0.2,
+          envMapIntensity: 0.7,
+        }),
+      },
+      {
+        label: "hex heat shield + Raptors",
+        url: "./starship_print_1_200_tiles_hex.stl?v=hex1",
+        scale: PRINT_TO_M,
+        mat: new THREE.MeshStandardMaterial({
+          color: 0x1e2126,
+          metalness: 0.2,
+          roughness: 0.62,
+          envMapIntensity: 0.35,
+        }),
+      },
+    ]
+  : [
+      {
+        label: "steel hull + flaps",
+        url: "./starship_cad_steel.stl?v=25",
+        mat: new THREE.MeshStandardMaterial({
+          color: 0x8a929c,
+          metalness: 0.95,
+          roughness: 0.2,
+          envMapIntensity: 0.7,
+        }),
+      },
+      {
+        label: "heat-shield tiles",
+        url: "./starship_cad_tiles.stl?v=25",
+        hexUV: true,
+        mat: new THREE.MeshStandardMaterial({
+          color: 0x1e2126,
+          metalness: 0.2,
+          roughness: 0.62,
+          envMapIntensity: 0.35,
+          bumpMap: hexTex,
+          bumpScale: 1.1,
+        }),
+      },
+      {
+        label: "bay interior",
+        url: "./starship_cad_bay.stl?v=25",
+        mat: new THREE.MeshStandardMaterial({
+          color: 0xaab0ba,
+          metalness: 0.55,
+          roughness: 0.5,
+        }),
+      },
+      {
+        label: "raptor bells",
+        url: "./starship_cad_engines.stl?v=25",
+        mat: new THREE.MeshStandardMaterial({
+          color: 0x0b0c0e,
+          metalness: 0.45,
+          roughness: 0.55,
+        }),
+      },
+    ];
+
+if (HEX_RELIEF) {
+  document.getElementById("title").textContent =
+    "Starship — printable hex-tile heat shield (1:200 mesh)";
+  document.getElementById("subtitle").textContent =
+    "Real embossed grooves · starship_print_1_200_tiles_hex.stl · drag to orbit · scroll to zoom";
+}
 
 const viewport=document.getElementById("viewport"), hud=document.getElementById("hud");
 const scene=new THREE.Scene(); scene.background=new THREE.Color(0x12151c);
@@ -134,6 +208,7 @@ scene.add(ship);
 
 const results=await Promise.all(PARTS.map(async part=>{
   const geom=await loader.loadAsync(part.url);
+  if (part.scale && part.scale !== 1) geom.scale(part.scale, part.scale, part.scale);
   geom.computeVertexNormals();
   if(part.hexUV) shipUVs(geom, 2.6);   // texture spans 2.6 m → ~0.43 m hexes
   ship.add(new THREE.Mesh(geom, part.mat));
@@ -146,10 +221,20 @@ const box=new THREE.Box3().setFromObject(ship);
 const center=box.getCenter(new THREE.Vector3()), size=box.getSize(new THREE.Vector3());
 const m=Math.max(size.x,size.y,size.z);
 grid.position.y=box.min.y;
-// Frame the engine bay: look at the base from below-aft so hanging bells are clear.
-const base=new THREE.Vector3(center.x, box.min.y + size.y*0.02, center.z);
-controls.target.copy(base);
-camera.position.set(base.x - m*0.35, box.min.y - m*0.28, base.z + m*0.35);
+if (HEX_RELIEF) {
+  // Full-ship windward three-quarter: hex grooves face the camera.
+  controls.target.copy(center);
+  camera.position.set(
+    center.x + m * 0.95,
+    center.y + size.y * 0.08,
+    center.z + m * 1.35
+  );
+} else {
+  // Frame the engine bay: look at the base from below-aft so hanging bells are clear.
+  const base=new THREE.Vector3(center.x, box.min.y + size.y*0.02, center.z);
+  controls.target.copy(base);
+  camera.position.set(base.x - m*0.35, box.min.y - m*0.28, base.z + m*0.35);
+}
 controls.update();
 
 function resize(){ const w=viewport.clientWidth,h=viewport.clientHeight; camera.aspect=w/Math.max(h,1); camera.updateProjectionMatrix(); renderer.setSize(w,h,false); }

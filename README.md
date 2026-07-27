@@ -7,8 +7,9 @@ plus a **web customizer** that puts any name on the hull and exports print-ready
 
 - **One single print file** — hull, flaps, engine bay, and all six Raptors in one
   watertight body. Zero assembly.
-- **MMU3 / multi-color ready** — a two-body 3MF (stainless hull + black hex-tile
-  heat shield & Raptor bells) that still prints as one job.
+- **MMU3 / multi-color ready** — a two-body 3MF (stainless hull + black
+  heat shield & Raptor bells) that still prints as one job. Optional **hex-tile
+  relief** files emboss real grooves into the windward shell.
 - **Type a name → preview colors → download STL, multi-material 3MF, or a PNG cover.**
 
 ## Licenses (read this)
@@ -40,11 +41,12 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 
 Shareable URLs look like:
 
-`https://leedsexplore.github.io/starship-custom-name/?ship=parametric&name=Alex&color=c8ced6&text=e10600&font=optimer-bold&size=8&pos=-10&depth=0.5&scale=100&side=right&style=raised&wrap=1`
+`https://leedsexplore.github.io/starship-custom-name/?ship=parametric&tiles=hex&name=Alex&color=c8ced6&text=e10600&font=optimer-bold&size=8&pos=-10&depth=0.5&scale=100&side=right&style=raised&wrap=1`
 
 | Control | Notes |
 |--------|--------|
 | Base design | `ship=parametric` (default, original CAD) or `ship=legacy` (classic remix) — segmented toggle in the UI |
+| Heat shield | `tiles=hex` (default on parametric — printable grooves) or `tiles=flat` (smooth shell + preview bump) |
 | Hull side | `side=right` = leeward (SpaceX S## face) · `side=left` = windward |
 | Position | Default `pos=-10` (parametric) / `-2` (legacy) — S## mid-barrel band |
 | Font style | Classic (Optimer/Helvetiker/Gentilis/Droid) + popular (Roboto, Open Sans, Montserrat, Inter, …) + display (Oswald, Bebas Neue) |
@@ -77,6 +79,9 @@ openscad -o assets/starship_print_1_200_steel.stl --export-format binstl opensca
 openscad -o assets/starship_print_1_200_tiles.stl --export-format binstl openscad/export_print_tiles.scad
 python3 scripts/build_mmu_3mf.py
 
+# Printable hex-tile relief (real grooves on the black body)
+python3 scripts/emboss_hex_tiles.py
+
 # Sample STL with default raised name (parametric base)
 node scripts/build_sample_stl.mjs
 ```
@@ -84,7 +89,10 @@ node scripts/build_sample_stl.mjs
 | Asset | Role |
 |-------|------|
 | `assets/starship_ship_print_1_200.stl` | **One-piece print file** — H 260.5 mm, engines flush |
-| `assets/starship_print_1_200_mmu.3mf` | Two-color MMU 3MF (steel + heat shield/Raptors) |
+| `assets/starship_print_1_200_mmu.3mf` | Two-color MMU 3MF (steel + smooth heat shield/Raptors) |
+| `assets/starship_print_1_200_tiles_hex.stl` | Black body with embossed hex grooves |
+| `assets/starship_ship_print_1_200_hex.stl` | One-piece merge with hex heat shield |
+| `assets/starship_print_1_200_mmu_hex.3mf` | Two-color MMU with hex heat shield |
 | `assets/starship_cad_preview.html` | Interactive three.js viewer (steel/tiles/bay/engines layers) |
 | `assets/StarShipV2_original.stl` | Legacy customizer mesh (remix, CC BY-NC) — same as v1.1.x |
 

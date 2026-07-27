@@ -2,37 +2,53 @@
 
 **One single print file.** The whole ship — hull, forward and aft flaps, engine bay, and all six Raptors — is one monolithic body. No hunting for separate flap/nose/engine parts, no glue, no alignment pins. Drop the STL in your slicer and print.
 
-**MMU3 / multi-color ready.** The 3MF splits the exact same geometry into two bodies: stainless hull and a black body carrying the hexagonal-tile heat shield, the windward flap faces, and the Raptor bells. Still one print job — assign two filaments and you get the iconic black windward side straight off the printer. (The color split is radial, so it needs a multi-material or toolchanger setup — single-extruder users should print the one-piece STL in silver.)
+## Which file should I print?
+
+Pick **one** print path. Everything is already true **1:200** (H **260.5 mm**).
+
+| If you want… | Download this | What comes off the printer |
+|---|---|---|
+| **Simplest** — one body, one filament | `starship_1_200_one_piece.stl` | Full ship in one color. Windward heat shield is a **smooth raised black-ready shell** (no hex grooves). Print silver/steel-looking filament. |
+| **Two-color MMU3** — steel + black, smooth shield | `starship_1_200_two_color_mmu.3mf` | Same geometry as the one-piece, split into **two bodies** in one job: stainless hull + black heat shield / windward flap faces / Raptors. Heat shield is still **smooth** (proud shell, no hex texture). |
+| **Hex tiles you can feel** — one body | `starship_1_200_hex_tiles_one_piece.stl` | Full ship with **real embossed hexagon grooves** on the windward heat shield (~2.8 mm tiles, ~0.2 mm deep). Not a painted texture — the STL has the grooves. |
+| **Hex tiles + two-color MMU3** | `starship_1_200_hex_tiles_mmu.3mf` | Same embossed hex heat shield as above, as a two-body MMU 3MF (steel + black). |
+
+**Important:** the default one-piece / MMU files do **not** print a hexagon pattern. Only the files with `hex_tiles` in the name have printable grooves. Gallery closeups of hexes match those hex files (or the web customizer’s Hex relief mode).
+
+**MMU note:** the color split is radial (windward vs leeward), so you need a multi-material / toolchanger setup. Single-extruder → use a one-piece STL.
 
 ## ✏️ Put YOUR name on it — free web customizer
 
 **[leedsexplore.github.io/starship-custom-name](https://leedsexplore.github.io/starship-custom-name/)**
 
-Type any name, pick colors and font, choose raised or engraved lettering wrapped to the hull curve, and download a print-ready STL or multi-material 3MF in your browser. Nothing to install. (Scan the QR code in the gallery.)
+Type any name, pick colors and font, raised or engraved lettering, and on Original CAD choose **Heat shield: Hex relief** or **Flat**. Download STL / multi-material 3MF in the browser. (Scan the QR code in the gallery.)
 
-## What's in the files
+## All files
 
-| File | What it is |
-|------|------------|
-| `starship_1_200_one_piece.stl` | The headline: complete ship, one body, 260.5 mm tall |
-| `starship_1_200_two_color_mmu.3mf` | Same ship as two color-assigned bodies (steel + black) for MMU3/toolchanger |
-| `starship_custom_name_sample.stl` | Example output of the web customizer ("Custom Name" on the hull) |
-| `starship_parametric.scad` | The full OpenSCAD source — remix at any scale |
+| File | Role |
+|------|------|
+| `starship_1_200_one_piece.stl` | Headline: complete ship, **smooth** heat-shield shell, one body |
+| `starship_1_200_two_color_mmu.3mf` | Same ship, two MMU bodies, **smooth** black shield |
+| `starship_1_200_hex_tiles_one_piece.stl` | Complete ship with **embossed hex grooves** |
+| `starship_1_200_hex_tiles_mmu.3mf` | Two-color MMU with **embossed hex** black body |
+| `starship_custom_name_sample.stl` | Example customizer output |
+| `starship_parametric.scad` | OpenSCAD source (smooth shell; hex relief is built in the repo pipeline) |
 
 ## Printing
 
 - **Scale:** true 1:200 of the 52.1 m × 9 m vehicle → **H 260.5 mm × Ø 45 mm**, flap footprint ~80 mm. Fits a Prusa CORE One (250×220×270) standing nose-up with ~9.5 mm to spare.
-- **Orientation:** nose up, as exported. The engine bells are recessed flush with the skirt — nothing pokes below the base plane.
-- **Supports:** the hull and nose need none, and the aft flaps start right on the build plate. Add light supports under the forward flaps' flat undersides (a small ledge at ~194 mm height).
-- **Two-color:** open the 3MF, assign "Stainless hull" to silver and "Heat shield + Raptors" to black. The tile shell is 0.45 mm proud — one clean perimeter with a 0.4 mm nozzle.
-- **Rescale freely:** the model is a single watertight body, so 50%–200% both slice fine.
+- **Orientation:** nose up, as exported. Engine bells sit flush with the skirt — nothing below the base plane.
+- **Supports:** hull/nose need none; aft flaps sit on the plate. Light supports under the forward flaps (~194 mm height).
+- **Two-color:** assign "Stainless hull" → silver, "Heat shield + Raptors" → black. Smooth shell is **0.45 mm proud** (one perimeter at 0.4 mm). Hex grooves cut an extra **~0.2 mm** into that shell — use a 0.4 mm nozzle or finer.
+- **Hex tip:** if grooves look soft, drop layer height to **0.15 mm** on outer walls; don’t iron the windward face flat.
+- **Rescale:** 50%–200% both slice fine (hex detail gets harder below ~75%).
 
 ## Why this one is different
 
-This is **not a mesh remix** — it's an original parametric CAD model written in OpenSCAD from published dimensions. Every dimension is a named variable: fork the `.scad`, change one number, and re-export at any scale or detail level.
+This is **not a mesh remix** — original parametric CAD in OpenSCAD from published dimensions. Fork the `.scad`, change a variable, re-export.
 
-Source, build pipeline, and the customizer web app: [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
+Source + customizer: [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
 
 ## License
 
-**CC BY 4.0** — print it, remix it, sell prints of it. Just credit "David Leeds (leedsexplore)" with a link back. Have fun.
+**CC BY 4.0** — print it, remix it, sell prints. Credit "David Leeds (leedsexplore)" with a link back.
