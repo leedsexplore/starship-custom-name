@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.5";
+import { build3mf } from "./export3mf.js?v=2.4.6";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.5";
+} from "./version.js?v=2.4.6";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -58,7 +58,7 @@ const SHIPS = {
     safeSpanMm: 100,
     hardSpanMm: 120,
     flapZoneYMm: 60,
-    defaultSizeMm: 8,
+    defaultSizeMm: 5,
     /**
      * SpaceX-style S## marking (S40 FS-13 still): leeward stainless, mid-barrel,
      * biased toward the tile/steel seam — not centered on the bare face.
