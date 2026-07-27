@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.1.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.1.2** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
@@ -98,7 +98,7 @@ node scripts/build_sample_stl.mjs
 |-------|------|
 | `assets/starship_ship_print_1_200.stl` | **One-piece print file** — H 260.5 mm, engines flush |
 | `assets/starship_print_1_200_mmu.3mf` | Two-color MMU 3MF (steel + smooth heat shield/Raptors) |
-| `assets/starship_print_1_200_tiles_hex.stl` | Black body with embossed hex grooves |
+| `assets/starship_print_1_200_tiles_hex.stl` | Black body with embossed hex grooves (2.0 mm tiles, calibrated to a reference tile scan) |
 | `assets/starship_ship_print_1_200_hex.stl` | One-piece merge with hex heat shield |
 | `assets/starship_print_1_200_mmu_hex.3mf` | Two-color MMU with hex heat shield |
 | `assets/starship_cad_preview.html` | Interactive three.js viewer (steel/tiles/bay/engines layers) |

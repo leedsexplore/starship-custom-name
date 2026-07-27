@@ -2,7 +2,7 @@
 
 **One print job — no assembly.** Hull, forward and aft flaps, engine bay, and all six Raptors in a single nose-up print. True **1:200** (H **260.5 mm**).
 
-This listing is the **embossed hex-tile** print: real grooves on the windward heat shield (~2.8 mm tiles, ~0.2 mm deep) — not a painted texture.
+This listing is the **embossed hex-tile** print: real grooves on the windward heat shield (~2.0 mm tiles, ~0.2 mm deep, calibrated to a reference Starship tile scan) — not a painted texture.
 
 ## Files
 

@@ -47,11 +47,15 @@ NOSE_LEN = 12.97 * S
 NOSE_TIP_R = 0.60 * S
 
 # Printable hero tiles (readable on a 0.4 mm nozzle).
-HEX_FTF = 2.8
-GROOVE_W = 0.30
-GROOVE_DEPTH = 0.20
-SHELL_DU = 0.70  # arc-length sample pitch (mm)
-SHELL_DZ = 0.70
+# Calibrated against the Fusion reference mesh
+# ~/Desktop/SpaceX AI Engineer/tiles_combined.stl (H≈360 mm, R≈31.5 mm, ~1:145):
+# measured circ tile pitch ≈2.79 mm and groove depth ≈0.30 mm, which scale to
+# ≈2.0 mm FTF and ≈0.21 mm depth at our 1:200 (R 22.5 mm) barrel.
+HEX_FTF = 2.0
+GROOVE_W = 0.35
+GROOVE_DEPTH = 0.21
+SHELL_DU = 0.50  # arc-length sample pitch (mm)
+SHELL_DZ = 0.50
 FLAP_MAX_EDGE = 1.20
 FLAP_Y_THRESH = 24.0
 

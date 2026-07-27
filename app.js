@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.1.1";
+import { build3mf } from "./export3mf.js?v=2.1.2";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.1.1";
+} from "./version.js?v=2.1.2";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -492,7 +492,12 @@ const steelMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.2,
   envMapIntensity: 0.7,
 });
-/** Seamless hexagonal heat-tile bump map (same recipe as starship_cad_preview.html). */
+/**
+ * Seamless hexagonal heat-tile bump map, calibrated to the print emboss:
+ * 6 hex columns per repeat with applyTileUVs scale 12 mm → 2.0 mm flat-to-flat
+ * and ~0.35 mm grooves, matching HEX_FTF / GROOVE_W in emboss_hex_tiles.py
+ * (measured off the Fusion tiles_combined.stl reference at 1:200).
+ */
 function makeHexTileTexture() {
   const S = 512;
   const c = document.createElement("canvas");
@@ -502,14 +507,17 @@ function makeHexTileTexture() {
   g.fillRect(0, 0, S, S);
   const px = S / 6;
   const py = S / 7;
-  const R = (py / 1.5) * 0.94;
+  // Circumradius sized so the inter-tile gap ≈ 0.35 mm of the 2.0 mm pitch.
+  const R = (py / 1.5) * 0.83;
   for (let j = -1; j <= 8; j++) {
     for (let i = -1; i <= 7; i++) {
       const cx = i * px + (j % 2 ? px / 2 : 0);
       const cy = j * py;
+      // Flat tile face with a short falloff at the rim — reads like the
+      // shallow radial carve in the reference mesh, not a domed button.
       const grad = g.createRadialGradient(cx, cy, R * 0.15, cx, cy, R);
-      grad.addColorStop(0, "#c8c8c8");
-      grad.addColorStop(0.8, "#a8a8a8");
+      grad.addColorStop(0, "#c2c2c2");
+      grad.addColorStop(0.85, "#b6b6b6");
       grad.addColorStop(1, "#6a6a6a");
       g.fillStyle = grad;
       g.beginPath();
@@ -538,7 +546,8 @@ const tilesMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.62,
   envMapIntensity: 0.35,
   bumpMap: tilesBumpMap,
-  bumpScale: 1.1,
+  // Denser tiles need less per-texel relief; visual target ≈0.2 mm grooves.
+  bumpScale: 0.85,
 });
 /** Raptor bells — smooth black, no heat-tile bump. */
 const enginesMaterial = new THREE.MeshStandardMaterial({
@@ -578,8 +587,9 @@ csgEvaluator.useGroups = false;
 /**
  * Cylindrical UV unwrap for the tile shell (print-scale, Z-up, before orient()).
  * Flap faces keep a planar map so the hex pattern doesn't smear.
+ * scaleMm 12 = one texture repeat per 12 mm → 2.0 mm hex pitch (6 columns).
  */
-function applyTileUVs(geom, hullRadiusZ, scaleMm = 13) {
+function applyTileUVs(geom, hullRadiusZ, scaleMm = 12) {
   const HULL_R = hullRadiusZ;
   const p = geom.attributes.position;
   const n = p.count;
