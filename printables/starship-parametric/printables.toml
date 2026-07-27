@@ -23,9 +23,11 @@ tags = [
   "parametric",
   "openscad",
   "multimaterial",
+#   "heatshield",
   "mmu3",
   "singlepiece",
   "noassembly",
+  "scalemodel",
 ]
 
 files = ["files/**/*.stl", "files/**/*.3mf", "files/**/*.scad"]

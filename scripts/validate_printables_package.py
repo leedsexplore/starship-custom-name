@@ -95,6 +95,8 @@ def main() -> None:
         "260.5",
         "byte-for-byte",
         "GitHub Releases",
+        "Unofficial fan model",
+        "Block 2",
     ):
         if needle.lower() not in desc.lower() and needle not in desc:
             # case-insensitive for prose hooks

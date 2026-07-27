@@ -174,7 +174,7 @@ def main() -> int:
         "real_ship": {
             "height_m": REAL_HEIGHT_M,
             "diameter_m": REAL_DIAMETER_M,
-            "variant": "Starship V3 / Block 2 ship (public approx)",
+            "variant": "Block 2/3 ship (52.1 m × Ø9 m; public approx — not full V3 stack)",
         },
         "target_print": {
             "scale": f"1:{TARGET_SCALE}",

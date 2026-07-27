@@ -1,6 +1,7 @@
 // Parametric SpaceX Starship (ship only), in meters.
 //
-// Geometry is original CAD from published vehicle dimensions (52.1 m × Ø9 m).
+// Outer envelope from published Block 2 / Block 3 ship dimensions (52.1 m × Ø9 m).
+// (Full V3 stack ≈124.4 m — Super Heavy grew; this file is the ship alone.)
 // Vertical feature proportions use DRAW_K so the model lands at true spec height.
 //
 // Build previews and meshes with: python3 scripts/build_starship_cad.py
@@ -12,8 +13,8 @@ $fa = 0.5;
 $fs = 0.03;
 
 // ---- master dimensions ----
-ship_h  = 52.1;   // published ship height
-hull_d  = 9.0;    // published hull diameter
+ship_h  = 52.1;   // Block 2/3 published ship height (m)
+hull_d  = 9.0;    // published hull diameter (m)
 hull_r  = hull_d / 2;
 
 DRAWN_H = 48.90;  // historical proportion lock (model lands at ship_h via DRAW_K)

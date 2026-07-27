@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.1.8** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.1.9** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
@@ -114,7 +114,7 @@ Measured via `python3 scripts/measure_ship_mesh.py` → `assets/print_envelope.j
 
 | | Value |
 |--|--|
-| Real ship (V3 / Block 2 public) | **52.1 m** tall × **Ø9.0 m** |
+| Real ship (Block 2/3 ship, public) | **52.1 m** tall × **Ø9.0 m** (full V3 *stack* ≈124.4 m) |
 | Parametric `starship_ship_print_1_200.stl` at 100% | **H 260.5 mm**, Ø **45.0 mm**, flaps ≈**79.7 mm**, engines protrude **0 mm** |
 | Legacy mesh at 100% | **121.0 mm** tall (≈1:431); CORE One preset scales it **215.2893%** |
 | Printer envelope | CORE One **250 × 220 × 270 mm**, nose-up; **Z margin 9.5 mm** |
