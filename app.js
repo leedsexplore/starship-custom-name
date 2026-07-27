@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.15";
+import { build3mf } from "./export3mf.js?v=2.4.16";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.15";
+} from "./version.js?v=2.4.16";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -60,12 +60,12 @@ const SHIPS = {
     flapZoneYMm: 60,
     defaultSizeMm: 3.5,
     /**
-     * Default on the windward face (180° from the classic leeward S## band).
+     * Leeward stainless, toward the nose; letters run nose→engines (first char at top).
      */
     defaultPosMm: 30,
-    defaultSide: "left",
-    /** Circumferential offset (mm along hull); mirrored with windward default. */
-    markingAcrossMm: 16,
+    defaultSide: "right",
+    /** Circumferential offset (mm along hull) toward the opposite TPS seam (−X). */
+    markingAcrossMm: -16,
     /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
@@ -1215,8 +1215,9 @@ function buildFlatTextGeometry(text, size, extrudeMm) {
     -(bb.min.y + bb.max.y) / 2,
     0
   );
-  // Letters run along +Y (ship length); letter height along ±X; extrude +Z.
-  geometry.rotateZ(Math.PI / 2);
+  // Letters run along the hull: first glyph toward the nose (+Y), last toward
+  // the engines (−Y). Letter height along +X; extrude +Z.
+  geometry.rotateZ(-Math.PI / 2);
   // Flight-style italic: slant tops toward the nose (+Y), matching S40 FS-13.
   if (el.italic?.checked) {
     applyFlightItalicShear(geometry);
