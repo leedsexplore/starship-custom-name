@@ -20,7 +20,7 @@ const HULL_RADIUS_Z = 22.5;
 const EMBED_MM = 0.35;
 const LETTER_MM = 3.5;
 const TEXT_Y = 30;
-const MARKING_ACROSS_MM = -16;
+const MARKING_ACROSS_MM = 16;
 const MESH_HEIGHT_MM = 260.5;
 
 function loadBinarySTL(filePath) {
@@ -84,7 +84,7 @@ const shipGeo = orientParametric(
 );
 const font = loadFont(path.join(ROOT, "fonts/optimer_bold.typeface.json"));
 const textGeo = buildFlatTextGeometry(font, "S40", LETTER_MM, EMBED_MM + 0.5);
-wrapGeometryToHull(textGeo, "right", TEXT_Y, "raised");
+wrapGeometryToHull(textGeo, "left", TEXT_Y, "raised");
 
 const group = new THREE.Group();
 group.add(new THREE.Mesh(shipGeo));

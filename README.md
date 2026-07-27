@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.4.14** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.4.15** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 **North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
 real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.
@@ -48,12 +48,12 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 
 Shareable URLs look like:
 
-`https://leedsexplore.github.io/starship-custom-name/?ship=parametric&name=Alex&color=c8ced6&text=1c1c1c&font=oswald-bold&size=3.5&pos=30&depth=0.5&scale=100&side=right&style=raised&wrap=1`
+`https://leedsexplore.github.io/starship-custom-name/?ship=parametric&name=Alex&color=c8ced6&text=1c1c1c&font=oswald-bold&size=3.5&pos=30&depth=0.5&scale=100&side=left&style=raised&wrap=1`
 
 | Control | Notes |
 |--------|--------|
 | Base design | `ship=parametric` (default, Original CAD) or `ship=legacy` (classic remix) — segmented toggle in the UI |
-| Hull side | `side=right` = leeward (stainless) · `side=left` = windward (tiles) |
+| Hull side | Default `side=left` = windward (tiles) · `side=right` = leeward (stainless) |
 | Position | Default `pos=30` (parametric) / `-2` (legacy); slider ±60 mm along the hull (nose +) |
 | Font style | Classic (Optimer/Helvetiker/Gentilis/Droid) + popular (Roboto, Open Sans, Montserrat, Inter, …) + display (Oswald, Bebas Neue) |
 | Model scale | Baked into STL/3MF; **CORE One 1:200** preset (100% parametric / ~215% legacy) → H 260.5 mm |
