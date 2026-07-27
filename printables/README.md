@@ -10,7 +10,7 @@ available in this cloud agent environment).
 python3 scripts/validate_printables_package.py
 ```
 
-Checks structure, CC BY 4.0 / no-remix flags, required tags, file presence
+Checks structure, CC BY-NC 4.0 / no-remix flags, required tags, file presence
 (including hex-tile one-piece + MMU variants), that the smooth one-piece STL is
 a single connected shell, and that both MMU 3MFs have both color parts. Run this
 before every publish.
@@ -42,7 +42,7 @@ printables publish packages/starship-parametric --no-dry-run --confirm
 
 Notes:
 
-- This listing is an ORIGINAL model (no `remix_of`), licensed CC BY 4.0. Keep it
+- This listing is an ORIGINAL model (no `remix_of`), licensed CC BY-NC 4.0. Keep it
   separate from the legacy `starship-custom-name` remix package, which stays
   CC BY-NC with Josh1297/anventia attribution.
 - If the CLI's `printables.toml` schema differs from this file's keys, keep the

@@ -29,4 +29,4 @@ Source: [github.com/leedsexplore/starship-custom-name](https://github.com/leedse
 
 ## License
 
-**CC BY 4.0** — print, remix, sell prints. Credit "David Leeds (leedsexplore)" with a link back.
+**CC BY-NC 4.0** — remix and share with credit; non-commercial only. Credit "David Leeds (leedsexplore)" with a link back.

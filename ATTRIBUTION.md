@@ -10,9 +10,9 @@ https://leedsexplore.github.io/starship-custom-name/
 The **parametric CAD model** (`openscad/starship_parametric.scad` and every mesh
 exported from it — the one-piece 1:200 print STL, the split steel/tile bodies,
 and the MMU 3MF) is original work modeled from published vehicle dimensions.
-It is licensed **CC BY 4.0**
-(https://creativecommons.org/licenses/by/4.0/): remix it, print it, sell prints —
-just credit David Leeds (leedsexplore) with a link.
+It is licensed **CC BY-NC 4.0**
+(https://creativecommons.org/licenses/by-nc/4.0/): remix and share with credit —
+non-commercial only. Credit David Leeds (leedsexplore) with a link.
 
 ## Legacy remix mesh (v1.x customizer option)
 
@@ -38,8 +38,8 @@ https://creativecommons.org/licenses/by-nc/4.0/
 
 You must credit **Josh1297** and **anventia** when you share remixed files or
 prints derived from the legacy mesh. Commercial use of that mesh is not allowed
-under the parent licenses. These restrictions do **not** apply to the original
-parametric model above.
+under the parent licenses. The original parametric model above is also
+**CC BY-NC** (credit David Leeds / leedsexplore; non-commercial).
 
 ## Fonts
 

@@ -5,11 +5,12 @@
 #   printables publish packages/starship-parametric --no-dry-run --confirm
 #
 # This is original work (openscad/starship_parametric.scad, built from published
-# dimensions) — NOT a remix, so there is no remix_of and the license is CC BY 4.0.
+# dimensions) — NOT a remix, so there is no remix_of. License: CC BY-NC 4.0
+# (attribution required, remix OK, no commercial use).
 
 [listing]
 title = "SpaceX Starship 1:200 — Embossed Hex-Tile Heat Shield, One-Piece / MMU"
-license = "CC BY 4.0"
+license = "CC BY-NC"
 category = "Other Ideas"
 category_id = "82"
 tags = [

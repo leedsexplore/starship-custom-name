@@ -16,7 +16,7 @@ plus a **web customizer** that puts any name on the hull and exports print-ready
 
 | What | License |
 |------|---------|
-| Parametric CAD model (`openscad/starship_parametric.scad` and every mesh exported from it, incl. `assets/starship_ship_print_1_200.stl`, the split print bodies, and the MMU 3MF) | **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)** — original work by David Leeds; remix and sell prints freely with credit |
+| Parametric CAD model (`openscad/starship_parametric.scad` and every mesh exported from it, incl. `assets/starship_ship_print_1_200.stl`, the split print bodies, and the MMU 3MF) | **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)** — original work by David Leeds; remix with credit, non-commercial only |
 | Legacy customizer mesh (`assets/StarShipV2_*.stl`, remix of Josh1297 + anventia flaps) | **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)** — credit Josh1297 and anventia, non-commercial only |
 | Tooling code (HTML/CSS/JS/Python/OpenSCAD wrappers) | Reuse with attribution |
 
@@ -28,7 +28,7 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 **Source:** [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
 
 1. Open the site above (or run locally — see below).
-2. Pick a base model: **Parametric CAD 1:200** (default, CC BY) or the classic
+2. Pick a base model: **Parametric CAD 1:200** (default, CC BY-NC) or the classic
    v1.x remix mesh (CC BY-NC).
 3. Enter hull text, fonts, colors, and placement.
 4. Download:

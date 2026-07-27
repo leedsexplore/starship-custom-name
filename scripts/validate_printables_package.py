@@ -75,8 +75,8 @@ def main() -> None:
     for key in ("title", "license", "tags"):
         if key not in listing:
             fail(f"printables.toml missing listing.{key}")
-    if listing.get("license") != "CC BY 4.0":
-        fail(f"expected CC BY 4.0, got {listing.get('license')!r}")
+    if listing.get("license") not in ("CC BY-NC", "CC BY-NC 4.0"):
+        fail(f"expected CC BY-NC, got {listing.get('license')!r}")
     if "remix_of" in listing or "remix_of" in meta:
         fail("original listing must not set remix_of")
     tags = set(listing["tags"])
@@ -91,7 +91,7 @@ def main() -> None:
         "one single print file",
         "MMU3",
         "leedsexplore.github.io/starship-custom-name",
-        "CC BY 4.0",
+        "CC BY-NC",
         "260.5",
     ):
         if needle.lower() not in desc.lower() and needle not in desc:
