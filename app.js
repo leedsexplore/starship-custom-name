@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.7";
+import { build3mf } from "./export3mf.js?v=2.4.8";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.7";
+} from "./version.js?v=2.4.8";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -1581,8 +1581,10 @@ function applyState(state) {
   if (state.wrap === "0" || state.wrap === "false") el.wrap.checked = false;
   if (state.wrap === "1" || state.wrap === "true") el.wrap.checked = true;
   if (el.italic) {
-    if (state.italic === "0" || state.italic === "false") el.italic.checked = false;
-    if (state.italic === "1" || state.italic === "true") el.italic.checked = true;
+    // Default OFF. Only enable when the share URL explicitly asks for italic=1
+    // (old bookmarks from when italic was the default must not stick).
+    el.italic.checked =
+      state.italic === "1" || state.italic === "true";
   }
   updateLabels();
   applyModelScale();
@@ -1627,7 +1629,7 @@ function writeUrl(replace = true) {
   q.set("side", s.side);
   q.set("style", s.style);
   q.set("wrap", s.wrap);
-  q.set("italic", s.italic);
+  if (s.italic === "1") q.set("italic", "1");
   const url = `${window.location.pathname}?${q.toString()}`;
   if (replace) history.replaceState(null, "", url);
   return `${window.location.origin}${url}`;
@@ -2177,6 +2179,11 @@ async function boot() {
   }
   if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
   if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
+  // Italic is opt-in only (default off). Explicit italic=1 in the URL still works.
+  if (el.italic) {
+    el.italic.checked =
+      urlState.italic === "1" || urlState.italic === "true";
+  }
   updateLabels();
   resize();
   window.addEventListener("resize", resize);
