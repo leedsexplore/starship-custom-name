@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.13";
+import { build3mf } from "./export3mf.js?v=2.4.14";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.13";
+} from "./version.js?v=2.4.14";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -64,6 +64,7 @@ const SHIPS = {
      * nose, biased toward the opposite tile/steel seam from the +X flap edge.
      */
     defaultPosMm: 30,
+    defaultSide: "right",
     /** Circumferential offset (mm along hull) toward the opposite TPS seam (−X). */
     markingAcrossMm: -16,
     /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
@@ -97,6 +98,7 @@ const SHIPS = {
     defaultSizeMm: 5,
     /** Same S##-style band, scaled to the shorter remix mesh. */
     defaultPosMm: -2,
+    defaultSide: "right",
     markingAcrossMm: 0,
     orient() {},
     meshDefaults: {
@@ -119,6 +121,10 @@ const PRINT_DEFAULTS = {
   targetScale: 200,
   targetHeightMm: 260.5,
   coreOne: { x_mm: 250, y_mm: 220, z_mm: 270 },
+  /** Fallback mesh envelope (parametric 1:200) if ship.meshDefaults / JSON missing. */
+  meshHeightMm: 260.5,
+  meshDiameterMm: 45.0,
+  meshFootprintMaxMm: 79.7,
 };
 
 let envelopeData = null;
@@ -717,10 +723,6 @@ function selectedStyle() {
     : "raised";
 }
 
-function shipCacheKey(shipDef) {
-  return shipDef.id;
-}
-
 function modelScale() {
   return Number(el.scale.value) / 100;
 }
@@ -839,7 +841,7 @@ const shipGeometryCache = new Map();
 const shipLayerCache = new Map();
 
 async function loadShipGeometry(shipDef) {
-  const key = shipCacheKey(shipDef);
+  const key = shipDef.id;
   if (shipGeometryCache.has(key)) {
     return shipGeometryCache.get(key);
   }
@@ -853,7 +855,7 @@ async function loadShipGeometry(shipDef) {
 async function loadShipLayers(shipDef) {
   const layerDefs = shipDef.layers;
   if (!layerDefs?.length) return null;
-  const key = shipCacheKey(shipDef);
+  const key = shipDef.id;
   if (shipLayerCache.has(key)) {
     return shipLayerCache.get(key);
   }
@@ -879,7 +881,7 @@ async function loadShipLayers(shipDef) {
   return group;
 }
 
-function buildShipDisplay(geometry, shipDef, layers) {
+function buildShipDisplay(geometry, layers) {
   if (layers) return layers;
   return new THREE.Mesh(geometry, shipMaterial);
 }
@@ -889,7 +891,7 @@ function buildShipDisplay(geometry, shipDef, layers) {
  * first paint; call before any export that needs a single hull volume.
  */
 async function ensureShipGeometry(shipDef = ship) {
-  const key = shipCacheKey(shipDef);
+  const key = shipDef.id;
   if (shipGeometryCache.has(key)) {
     const geo = shipGeometryCache.get(key);
     if (shipDef.id === ship.id) shipGeometry = geo;
@@ -968,7 +970,7 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
 
     if (shipMesh) modelGroup.remove(shipMesh);
     shipGeometry = geometry;
-    shipMesh = buildShipDisplay(geometry, next, layers);
+    shipMesh = buildShipDisplay(geometry, layers);
     modelGroup.add(shipMesh);
 
     // Combined solid (~10 MB) loads only on first named export / CSG via
@@ -978,6 +980,11 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
       el.scale.value = String(coreOneScalePercent());
       el.size.value = String(ship.defaultSizeMm);
       el.pos.value = String(ship.defaultPosMm);
+      const side = ship.defaultSide === "left" ? "left" : "right";
+      const sideRadio = document.querySelector(
+        `input[name="side"][value="${side}"]`
+      );
+      if (sideRadio) sideRadio.checked = true;
       if (ship.layers?.length) {
         el.color.value = "#c8ced6";
       }
@@ -1021,7 +1028,7 @@ function resize() {
 
 function updateLabels() {
   el.sizeLabel.textContent = `${Number(el.size.value).toFixed(1)} mm`;
-  el.posLabel.textContent = el.pos.value;
+  el.posLabel.textContent = `${el.pos.value} mm`;
   el.depthLabel.textContent = `${Number(el.depth.value).toFixed(2)} mm`;
   const pct = Number(el.scale.value);
   const sz = scaledPrintSize(pct);
@@ -1412,7 +1419,9 @@ function nameSlug() {
 /** Byte-identical to the Printables listing files (hex one-piece + hex MMU). */
 const PRINTABLES_HEX_STL_NAME = "starship_1_200_hex_tiles_one_piece.stl";
 const PRINTABLES_HEX_3MF_NAME = "starship_1_200_hex_tiles_mmu.3mf";
-/** Last GitHub Release that ships the hex print files (Pages slim omits them). */
+/** Last GitHub Release that ships the hex print files (Pages slim omits them).
+ *  Do not bump this when bumping APP_VERSION — only when a new Release uploads
+ *  the Printables hex STL/3MF assets. */
 const PRINTABLES_HEX_RELEASE = "v2.4.2";
 const PRINTABLES_HEX_STL_LOCAL = `./assets/starship_ship_print_1_200_hex.stl?v=${CACHE_BUST}`;
 const PRINTABLES_HEX_3MF_LOCAL = `./assets/starship_print_1_200_mmu_hex.3mf?v=${CACHE_BUST}`;
@@ -2072,7 +2081,7 @@ Style = "${s.style}"; // [raised, engraved]
 /* [Placement] */
 Text_Y = ${Number(s.pos)}; // [-60:1:60]
 Side = "${s.side}"; // [right, left]
-Text_X_Offset = 0;
+Text_X_Offset = ${Number(ship.markingAcrossMm) || 0}; // web circumferential bias (approx on classic mesh)
 Surface_Offset = -${ship.embedMm};
 
 /* [Export] */
@@ -2165,6 +2174,13 @@ async function boot() {
   applyEnvelopeForShip();
   if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
   if (urlState.pos == null) el.pos.value = String(ship.defaultPosMm);
+  if (urlState.side == null) {
+    const side = ship.defaultSide === "left" ? "left" : "right";
+    const sideRadio = document.querySelector(
+      `input[name="side"][value="${side}"]`
+    );
+    if (sideRadio) sideRadio.checked = true;
+  }
   // Classic remix must start at CORE One % (~215), not the HTML default 100.
   if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
   mountFontOptions(
@@ -2177,8 +2193,6 @@ async function boot() {
   if (!urlState.name || !String(urlState.name).trim()) {
     el.name.value = "";
   }
-  if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
-  if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
   // Italic is opt-in only (default off). Explicit italic=1 in the URL still works.
   if (el.italic) {
     el.italic.checked =

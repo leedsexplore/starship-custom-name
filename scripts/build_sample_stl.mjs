@@ -1,6 +1,8 @@
 /**
  * Headless sample STL: parametric CAD ship + raised wrapped "S40"
  * (optional local artifact — output path is gitignored).
+ *
+ * Placement mirrors SHIPS.parametric in app.js.
  */
 import * as fs from "fs";
 import * as path from "path";
@@ -12,13 +14,14 @@ import { FontLoader } from "../vendor/three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "../vendor/three/examples/jsm/geometries/TextGeometry.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-// Parametric CAD 1:200 placement (see SHIPS.parametric in app.js).
+// Keep in sync with SHIPS.parametric in app.js.
 const BODY_CENTER_X = 0;
-const HULL_RADIUS_Z = 22.575;
+const HULL_RADIUS_Z = 22.5;
 const EMBED_MM = 0.35;
-const LETTER_MM = 8;
-/** SpaceX-style S## band on the leeward mid-barrel (see SHIPS.parametric.defaultPosMm). */
-const TEXT_Y = -10;
+const LETTER_MM = 3.5;
+const TEXT_Y = 30;
+const MARKING_ACROSS_MM = -16;
+const MESH_HEIGHT_MM = 260.5;
 
 function loadBinarySTL(filePath) {
   const buf = fs.readFileSync(filePath);
@@ -30,9 +33,8 @@ function loadBinarySTL(filePath) {
 function orientParametric(geometry) {
   geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
   geometry.rotateY(Math.PI / 2); // flaps ±Z → ±X
-  geometry.computeBoundingBox();
-  const bb = geometry.boundingBox;
-  geometry.translate(0, -(bb.min.y + bb.max.y) / 2, 0);
+  const halfH = MESH_HEIGHT_MM / 2;
+  geometry.translate(0, -halfH, 0);
   return geometry;
 }
 
@@ -63,7 +65,7 @@ function wrapGeometryToHull(geometry, side, textY, style) {
   const v = new THREE.Vector3();
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i);
-    const across = side === "left" ? -v.x : v.x;
+    const across = (side === "left" ? -v.x : v.x) + MARKING_ACROSS_MM;
     const along = v.y;
     const radial = style === "raised" ? R - EMBED_MM + v.z : R - v.z;
     const theta = across / R;
@@ -101,7 +103,7 @@ if (buffer instanceof DataView) {
   throw new Error("Unexpected STLExporter output");
 }
 const header = Buffer.alloc(80, 0);
-header.write("Starship sample v2.1.11 parametric CAD 1:200");
+header.write("Starship sample parametric CAD 1:200");
 bytes.set(header, 0);
 
 const outPath = path.join(ROOT, "assets/starship_custom_name_sample.stl");

@@ -23,6 +23,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check version sync
+        run: python3 scripts/check_version_sync.py
+
       - name: Assemble slim customizer site
         run: |
           set -euo pipefail

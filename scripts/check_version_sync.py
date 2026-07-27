@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fail if cache-bust / version strings drift across version.js, package.json, index.html, app.js."""
+"""Fail if cache-bust / version strings drift across release surfaces."""
 
 from __future__ import annotations
 
@@ -44,11 +44,23 @@ def main() -> None:
             raise SystemExit(1)
 
     readme = (ROOT / "README.md").read_text()
-    if f"**v{ver}**" not in readme and f"v{ver}" not in readme.split("\n", 3)[0]:
-        # Require the badge line at the top
-        if not readme.startswith(f"# Starship Custom Name\n\n**v{ver}**"):
-            print(f"FAIL  README.md should start with **v{ver}** badge")
-            raise SystemExit(1)
+    if not readme.startswith(f"# Starship Custom Name\n\n**v{ver}**"):
+        print(f"FAIL  README.md should start with **v{ver}** badge")
+        raise SystemExit(1)
+
+    scad_header = (ROOT / "openscad" / "starship_custom_name.scad").read_text().splitlines()[
+        0
+    ]
+    if f"(v{ver})" not in scad_header:
+        print(
+            f"FAIL  openscad/starship_custom_name.scad header should mention v{ver}"
+        )
+        raise SystemExit(1)
+
+    preview = (ROOT / "assets" / "starship_cad_preview.html").read_text()
+    if f"?v={ver}" not in preview:
+        print(f"FAIL  assets/starship_cad_preview.html missing ?v={ver} cache-bust")
+        raise SystemExit(1)
 
     print(f"ok    version sync {ver}")
 
