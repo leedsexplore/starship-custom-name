@@ -66,9 +66,10 @@ const SHIPS = {
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
       geometry.rotateY(Math.PI / 2); // flaps ±Z → ±X
-      geometry.computeBoundingBox();
-      const bb = geometry.boundingBox;
-      geometry.translate(0, -(bb.min.y + bb.max.y) / 2, 0);
+      // Center on the full print height — NOT this mesh's AABB. Engines / partial
+      // layers only span a slice; AABB-centering buried them inside the hull.
+      const halfH = (this.meshDefaults?.meshHeightMm ?? 260.5) / 2;
+      geometry.translate(0, -halfH, 0);
     },
     meshDefaults: {
       meshHeightMm: 260.5,
