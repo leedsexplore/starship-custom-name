@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.4.16** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.4.17** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 **North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
 real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.
@@ -60,6 +60,7 @@ Shareable URLs look like:
 | Color presets | Prusament-oriented names on hover (approx where noted) |
 | Engraved | Preview is inset; export runs CSG boolean |
 | Wrap | Web-only cylindrical bend |
+| Bare stainless | `bare=1` — Original CAD preview paints the whole ship stainless (no heat-tile look); empty-name downloads use the smooth mesh |
 
 ### Run locally
 

@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.16";
+import { build3mf } from "./export3mf.js?v=2.4.17";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.16";
+} from "./version.js?v=2.4.17";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -408,6 +408,9 @@ const el = {
   scale: document.getElementById("scale"),
   wrap: document.getElementById("wrap"),
   italic: document.getElementById("italic"),
+  bareStainless: document.getElementById("bare-stainless"),
+  bareStainlessField: document.getElementById("bare-stainless-field"),
+  bareStainlessNote: document.getElementById("bare-stainless-note"),
   sizeLabel: document.getElementById("size-label"),
   posLabel: document.getElementById("pos-label"),
   depthLabel: document.getElementById("depth-label"),
@@ -578,7 +581,38 @@ const enginesMaterial = new THREE.MeshStandardMaterial({
   roughness: 0.55,
   envMapIntensity: 0.25,
 });
-const textMaterial = new THREE.MeshStandardMaterial({
+
+const TILES_DEFAULT = {
+  color: 0x1e2126,
+  metalness: 0.2,
+  roughness: 0.62,
+  envMapIntensity: 0.35,
+  bumpScale: 0.85,
+};
+const ENGINES_DEFAULT = {
+  color: 0x121417,
+  metalness: 0.35,
+  roughness: 0.55,
+  envMapIntensity: 0.25,
+};
+
+function bareStainlessOn() {
+  return Boolean(el.bareStainless?.checked) && Boolean(ship.layers?.length);
+}
+
+function syncBareStainlessControl() {
+  const available = Boolean(ship.layers?.length);
+  if (el.bareStainless) {
+    el.bareStainless.disabled = !available;
+    if (!available) el.bareStainless.checked = false;
+  }
+  if (el.bareStainlessField) {
+    el.bareStainlessField.hidden = !available;
+  }
+  if (el.bareStainlessNote) {
+    el.bareStainlessNote.hidden = !available;
+  }
+}const textMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.textColor.value),
   metalness: 0.15,
   roughness: 0.45,
@@ -966,6 +1000,7 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
 
     ship = next;
     applyEnvelopeForShip();
+    syncBareStainlessControl();
 
     if (shipMesh) modelGroup.remove(shipMesh);
     shipGeometry = geometry;
@@ -1105,12 +1140,40 @@ function applyColor() {
   const hull = el.color.value;
   shipMaterial.color.set(hull);
   steelMaterial.color.set(hull);
-  // Layered parametric preview keeps tiles black; hull picker only tints steel.
   textMaterial.color.set(el.textColor.value);
   // Slight lift on dark letter colors so they stay readable on Signal Red.
   const hsl = { h: 0, s: 0, l: 0 };
   textMaterial.color.getHSL(hsl);
   textMaterial.emissive.setHex(hsl.l < 0.28 ? 0x222222 : 0x000000);
+
+  if (bareStainlessOn()) {
+    // Whole ship reads as hull stainless — hide heat-tile look (bump + black).
+    tilesMaterial.color.set(hull);
+    tilesMaterial.metalness = steelMaterial.metalness;
+    tilesMaterial.roughness = steelMaterial.roughness;
+    tilesMaterial.envMapIntensity = steelMaterial.envMapIntensity;
+    tilesMaterial.bumpMap = null;
+    tilesMaterial.bumpScale = 0;
+    enginesMaterial.color.set(hull);
+    enginesMaterial.metalness = steelMaterial.metalness;
+    enginesMaterial.roughness = steelMaterial.roughness;
+    enginesMaterial.envMapIntensity = steelMaterial.envMapIntensity;
+  } else {
+    tilesMaterial.color.setHex(TILES_DEFAULT.color);
+    tilesMaterial.metalness = TILES_DEFAULT.metalness;
+    tilesMaterial.roughness = TILES_DEFAULT.roughness;
+    tilesMaterial.envMapIntensity = TILES_DEFAULT.envMapIntensity;
+    tilesMaterial.bumpMap = tilesBumpMap;
+    tilesMaterial.bumpScale = TILES_DEFAULT.bumpScale;
+    enginesMaterial.color.setHex(ENGINES_DEFAULT.color);
+    enginesMaterial.metalness = ENGINES_DEFAULT.metalness;
+    enginesMaterial.roughness = ENGINES_DEFAULT.roughness;
+    enginesMaterial.envMapIntensity = ENGINES_DEFAULT.envMapIntensity;
+  }
+  tilesMaterial.needsUpdate = true;
+  enginesMaterial.needsUpdate = true;
+  if (tileLight) tileLight.visible = !bareStainlessOn();
+
   syncPresetActive(el.hullPresets, el.color.value);
   syncPresetActive(el.textPresets, el.textColor.value);
 }
@@ -1463,13 +1526,14 @@ function wantsPrintablesDefault() {
   return (
     ship.id === "parametric" &&
     !hasHullName() &&
+    !bareStainlessOn() &&
     Math.abs(Number(el.scale.value) - coreOneScalePercent()) < 0.05
   );
 }
 
 /** @returns {250|300|null} */
 function printablesMiniDenom() {
-  if (ship.id !== "parametric" || hasHullName()) return null;
+  if (ship.id !== "parametric" || hasHullName() || bareStainlessOn()) return null;
   const pct = Number(el.scale.value);
   for (const denom of [250, 300]) {
     if (Math.abs(pct - miniScalePercent(denom)) < 0.05) return denom;
@@ -1520,6 +1584,14 @@ function updateDownloadLabels() {
     el.download.textContent = `Download STL (1:${miniDenom} mini hex)`;
     el.download3mf.textContent = "MMU is 1:200 only";
     el.download3mf.disabled = true;
+  } else if (
+    ship.id === "parametric" &&
+    !hasHullName() &&
+    bareStainlessOn()
+  ) {
+    el.download.textContent = "Download STL (smooth stainless)";
+    el.download3mf.textContent = "Download 3MF (smooth stainless)";
+    el.download3mf.disabled = false;
   } else {
     el.download.textContent = "Download STL";
     el.download3mf.textContent = "Download 3MF (Hull + Letters)";
@@ -1548,6 +1620,7 @@ function readState() {
     style: selectedStyle(),
     wrap: el.wrap.checked ? "1" : "0",
     italic: el.italic?.checked ? "1" : "0",
+    bare: el.bareStainless?.checked ? "1" : "0",
   };
 }
 
@@ -1595,6 +1668,11 @@ function applyState(state) {
     el.italic.checked =
       state.italic === "1" || state.italic === "true";
   }
+  if (el.bareStainless) {
+    el.bareStainless.checked =
+      state.bare === "1" || state.bare === "true";
+  }
+  syncBareStainlessControl();
   updateLabels();
   applyModelScale();
   applyColor();
@@ -1617,6 +1695,7 @@ function stateFromUrl() {
     "style",
     "wrap",
     "italic",
+    "bare",
   ]) {
     if (q.has(key)) state[key] = q.get(key);
   }
@@ -1639,6 +1718,7 @@ function writeUrl(replace = true) {
   q.set("style", s.style);
   q.set("wrap", s.wrap);
   if (s.italic === "1") q.set("italic", "1");
+  if (s.bare === "1") q.set("bare", "1");
   const url = `${window.location.pathname}?${q.toString()}`;
   if (replace) history.replaceState(null, "", url);
   return `${window.location.origin}${url}`;
@@ -2233,6 +2313,11 @@ async function boot() {
   }
   el.wrap.addEventListener("change", onControlChange);
   el.italic?.addEventListener("change", onControlChange);
+  el.bareStainless?.addEventListener("change", () => {
+    applyColor();
+    updateDownloadLabels();
+    writeUrl();
+  });
   el.fontStyle.addEventListener("change", () => {
     applyFontSelection(el.fontStyle.value).catch((err) => {
       console.error(err);
