@@ -106,6 +106,8 @@ def main() -> None:
         "GitHub Releases",
         "Unofficial fan model",
         "Block 2",
+        "your name",
+        "desk model",
     ):
         if needle.lower() not in desc.lower():
             fail(f"DESCRIPTION.md missing required phrase: {needle!r}")

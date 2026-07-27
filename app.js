@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.2.2";
+import { build3mf } from "./export3mf.js?v=2.3.0";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.2.2";
+} from "./version.js?v=2.3.0";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -2054,7 +2054,7 @@ async function boot() {
     await rebuildText();
     frameCamera();
     writeUrl();
-    setStatus("Ready — edit the name, then download STL / 3MF / PNG.");
+    setStatus("Ready — type a name for your ship, then download STL / 3MF / PNG.");
   } catch (err) {
     console.error(err);
     setStatus(

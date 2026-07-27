@@ -1,30 +1,31 @@
-# SpaceX Starship 1:200 — embossed hex-tile heat shield
+# Starship 1:200 — put your name on it
 
-**One print job — no assembly.** Hull, forward and aft flaps, engine bay, and all six Raptors in a single nose-up print. True **1:200** (H **260.5 mm** × Ø **45 mm**).
+**The Starship with *your* name on the hull.** One print job — no assembly — then a free web tool to raise or engrave any callsign on a nose-up desk model.
 
-This listing is the **embossed hex-tile** print: thousands of real hexagonal tile plates on the windward heat shield — scale-true ~0.29 m Starship tiles (1.45 mm across flats at 1:200), ~0.2 mm proud with crisp grooves. Real geometry, not a painted texture.
+True **1:200** (H **260.5 mm** × Ø **45 mm**). Fits a Prusa CORE One with ~9.5 mm Z margin.
 
-**Unofficial fan model** — not affiliated with or endorsed by SpaceX. Outer envelope matches published **Block 2 / Block 3 ship** dimensions (**52.1 m × Ø9 m**). The full V3 *stack* is taller (~124.4 m) because Super Heavy grew; this file is the **ship only**. Silhouette CAD: flap planform, nose, and tile layout are approximate (no docking ports / catch hardware).
+This is a **print-first desk model**, not a rivet-count replica: hull, flaps, engine bay, and all six Raptors in one body. The windward side carries thousands of **hex tile plates** — scale-true ~0.29 m tiles (1.45 mm across flats), ~0.2 mm proud with crisp grooves. Real geometry, not a painted texture. MMU 3MF splits **Stainless hull** vs **Heat shield + Raptors** for silver + matte black off the printer.
+
+**Unofficial fan model** — not affiliated with or endorsed by SpaceX. Envelope matches published **Block 2 / Block 3 ship** dimensions (**52.1 m × Ø9 m**). Ship only (full V3 stack ≈124.4 m). Flap planform, nose, and tile layout are approximate — no docking ports or catch hardware. Honest silhouette; the magic is **your name** and tiles you can feel.
 
 ## Files
 
-- `starship_1_200_hex_tiles_one_piece.stl` — full ship, embossed hex heat shield, one filament (~36 MB; many discrete tile plates — PrusaSlicer handles this; give it a minute to load)
-- `starship_1_200_hex_tiles_mmu.3mf` — same ship as two MMU3 bodies: **Stainless hull** + **Heat shield + Raptors**
-- `starship_parametric.scad` — OpenSCAD source (smooth shell in CAD; hex relief is generated in the build pipeline)
+- `starship_1_200_hex_tiles_one_piece.stl` — full ship, embossed hex heat shield, one filament (~36 MB; PrusaSlicer may need a minute to load)
+- `starship_1_200_hex_tiles_mmu.3mf` — two MMU3 bodies: **Stainless hull** + **Heat shield + Raptors**
+- `starship_parametric.scad` — OpenSCAD source (smooth shell in CAD; hex relief from the build pipeline)
 
-**Want a custom name on the hull?** Use the free web customizer:
+## Custom name (the product)
 
 **[leedsexplore.github.io/starship-custom-name](https://leedsexplore.github.io/starship-custom-name/)**
 
-With **Original CAD** selected, an empty name at the CORE One 1:200 preset downloads these same hex STL / MMU 3MF files byte-for-byte. Enter a name to emboss or raise lettering on the smooth hull (named exports are separate from this listing). The same hex files are also on the project’s [GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
+Type a name → preview on the leeward face → download STL or Hull+Letters 3MF. Empty name + Original CAD at the CORE One 1:200 preset downloads these same hex files **byte-for-byte**. Named exports use the smooth hull so lettering stays clean. Hex files also on [GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
 
 ## Printing
 
 - **Orientation:** nose up. Engines flush with the skirt.
 - **Supports:** hull/nose none; aft flaps on the plate; light supports under forward flaps (~194 mm up).
-- **Recommended:** 0.4 mm nozzle (or finer), **0.15–0.20 mm** layers for groove readability, 15% gyroid/cubic infill, PLA or PETG. Silver/steel filament for the hull; matte black for tiles + bells.
-- **MMU3:** assign **Stainless hull** → silver, **Heat shield + Raptors** → black. Shell ~0.45 mm proud; tile plates ~0.2 mm above the groove floor.
-- **Fits** Prusa CORE One (250×220×270) with ~9.5 mm Z margin at 100% / true 1:200.
+- **Recommended:** 0.4 mm nozzle, **0.15–0.20 mm** layers for groove readability, 15% gyroid/cubic, PLA or PETG. Silver hull · matte black tiles + bells.
+- **MMU3:** **Stainless hull** → silver, **Heat shield + Raptors** → black.
 
 Source: [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
 

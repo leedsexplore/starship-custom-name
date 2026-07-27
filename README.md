@@ -1,21 +1,18 @@
 # Starship Custom Name
 
-**v2.2.2** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.3.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
-An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
-plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
+**North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
+real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.
 
 **Unofficial fan model** — not affiliated with or endorsed by SpaceX. Outer envelope
 matches the **Block 2 / Block 3 ship** (52.1 m × Ø9 m), not the full V3 stack
 (~124.4 m). SpaceX and Starship are trademarks of their respective owners.
 
-- **One single print file** — hull, flaps, engine bay, and all six Raptors in one
-  watertight body. Zero assembly.
-- **MMU3 / multi-color ready** — Printables ships a two-body 3MF (stainless hull +
-  black heat shield & Raptor bells) that still prints as one job, plus optional
-  **hex-tile relief** files. The web customizer’s 3MF is separate: Hull + Letters
-  for name coloring.
-- **Type a name → preview colors → download STL, Hull+Letters 3MF, or a PNG cover.**
+- **Your name on the hull** — type → preview → STL / Hull+Letters 3MF / PNG cover.
+- **One print job** — hull, flaps, bay, six Raptors; zero assembly.
+- **Real hex tiles** — embossed plates on the windward shield (Printables hex files;
+  empty-name Original CAD @ 1:200 downloads them byte-for-byte).
 
 ## Licenses (read this)
 
