@@ -1,12 +1,13 @@
 # Printables listing for the ORIGINAL parametric Starship CAD.
 # Publish with printables-integration CLI:
 #   printables validate packages/starship-parametric
-#   printables publish packages/starship-parametric --draft --no-dry-run --confirm
-#   printables publish packages/starship-parametric --no-dry-run --confirm
+#   printables publish packages/starship-parametric --model-id 1792413 --no-dry-run --confirm
 #
 # This is original work (openscad/starship_parametric.scad, built from published
 # dimensions) — NOT a remix, so there is no remix_of. License: CC BY-NC 4.0
 # (attribution required, remix OK, no commercial use).
+#
+# Live model: https://www.printables.com/model/1792413
 
 [listing]
 title = "SpaceX Starship 1:200 — Embossed Hex-Tile Heat Shield, One-Piece / MMU"

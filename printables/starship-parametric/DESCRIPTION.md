@@ -14,7 +14,7 @@ This listing is the **embossed hex-tile** print: thousands of real hexagonal til
 
 **[leedsexplore.github.io/starship-custom-name](https://leedsexplore.github.io/starship-custom-name/)**
 
-The customizer puts a name on the **smooth** Original CAD (or classic remix) and exports your STL/3MF. It does **not** currently export this embossed-hex listing — grab the hex files here when you want the grooved heat shield without a name.
+With **Original CAD** selected, an empty name at the CORE One 1:200 preset downloads these same hex STL / MMU 3MF files byte-for-byte. Enter a name to emboss or raise lettering on the smooth hull (named exports are separate from this listing).
 
 ## Printing
 

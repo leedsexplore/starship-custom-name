@@ -93,7 +93,7 @@ def main() -> None:
         "leedsexplore.github.io/starship-custom-name",
         "CC BY-NC",
         "260.5",
-        "does **not** currently export this embossed-hex",
+        "byte-for-byte",
     ):
         if needle.lower() not in desc.lower() and needle not in desc:
             # case-insensitive for prose hooks

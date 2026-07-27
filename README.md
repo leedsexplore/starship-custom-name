@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.1.6** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.1.7** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
@@ -33,8 +33,12 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
    v1.x remix mesh (CC BY-NC).
 3. Enter hull text, fonts, colors, and placement.
 4. Download:
-   - **STL** — engraved uses a true boolean subtract. Raised overlays letters on the hull (prefer **3MF** for clean multi-material).
-   - **3MF (Hull + Letters)** — raised: separate objects for lettering MMU. Engraved: booleaned solid (or Hull + cutter fallback if CSG fails). Not the Printables steel/tiles MMU.
+   - **Empty name + Original CAD at 100%** — exact Printables hex one-piece STL /
+     hex MMU 3MF (byte-identical to the listing files).
+   - **With a name — STL** — engraved uses a true boolean subtract. Raised overlays
+     letters on the smooth hull (prefer **3MF** for clean multi-material).
+   - **With a name — 3MF (Hull + Letters)** — raised: separate objects for lettering
+     MMU. Engraved: booleaned solid (or Hull + cutter fallback if CSG fails).
    - **PNG cover** — square full-ship snapshot for Printables gallery images.
    - **OpenSCAD params** *(optional)* — settings snippet for the advanced flat path in `openscad/` (GitHub only; not needed for most users).
 5. Slice and print nose-up. The parametric ship at 100% is already true 1:200

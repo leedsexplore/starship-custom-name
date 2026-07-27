@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.1.6";
+import { build3mf } from "./export3mf.js?v=2.1.7";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.1.6";
+} from "./version.js?v=2.1.7";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -975,6 +975,7 @@ function updateLabels() {
   el.scaleLabel.textContent = isCore
     ? `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm (CORE One 1:200)`
     : `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm`;
+  updateDownloadLabels();
 }
 
 function mountFontOptions(selectedId = "optimer-bold") {
@@ -1322,6 +1323,46 @@ function nameSlug() {
   );
 }
 
+/** Byte-identical to the Printables listing files (hex one-piece + hex MMU). */
+const PRINTABLES_HEX_STL_URL = `./assets/starship_ship_print_1_200_hex.stl?v=${CACHE_BUST}`;
+const PRINTABLES_HEX_3MF_URL = `./assets/starship_print_1_200_mmu_hex.3mf?v=${CACHE_BUST}`;
+const PRINTABLES_HEX_STL_NAME = "starship_1_200_hex_tiles_one_piece.stl";
+const PRINTABLES_HEX_3MF_NAME = "starship_1_200_hex_tiles_mmu.3mf";
+
+function hasHullName() {
+  return Boolean(el.name.value.trim());
+}
+
+/**
+ * Empty-name Original CAD at the CORE One 1:200 preset downloads the exact
+ * Printables hex files (not a regenerating smooth-hull export).
+ */
+function wantsPrintablesDefault() {
+  return (
+    ship.id === "parametric" &&
+    !hasHullName() &&
+    Math.abs(Number(el.scale.value) - coreOneScalePercent()) < 0.05
+  );
+}
+
+function updateDownloadLabels() {
+  const printables = wantsPrintablesDefault();
+  el.download.textContent = printables
+    ? "Download STL (Printables hex)"
+    : "Download STL";
+  el.download3mf.textContent = printables
+    ? "Download 3MF (Printables MMU)"
+    : "Download 3MF (Hull + Letters)";
+}
+
+async function downloadPublishedAsset(url, filename, mime) {
+  setStatus(`Fetching ${filename}…`);
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${filename}`);
+  const buf = await res.arrayBuffer();
+  triggerDownload(new Blob([buf], { type: mime }), filename);
+}
+
 function readState() {
   return {
     ship: ship.id,
@@ -1572,6 +1613,19 @@ async function downloadStl() {
       return;
     }
 
+    if (wantsPrintablesDefault()) {
+      await downloadPublishedAsset(
+        PRINTABLES_HEX_STL_URL,
+        PRINTABLES_HEX_STL_NAME,
+        "model/stl"
+      );
+      writeUrl();
+      setStatus(
+        "STL downloaded — exact Printables hex one-piece (starship_1_200_hex_tiles_one_piece.stl)."
+      );
+      return;
+    }
+
     setStatus("Loading solid mesh for export…");
     await ensureShipGeometry();
     await yieldToUi(50);
@@ -1617,6 +1671,19 @@ async function download3mf() {
     await flushRebuild();
     if (!confirmLongTextIfNeeded()) {
       setStatus("Download cancelled.");
+      return;
+    }
+
+    if (wantsPrintablesDefault()) {
+      await downloadPublishedAsset(
+        PRINTABLES_HEX_3MF_URL,
+        PRINTABLES_HEX_3MF_NAME,
+        "model/3mf"
+      );
+      writeUrl();
+      setStatus(
+        "3MF downloaded — exact Printables hex MMU (starship_1_200_hex_tiles_mmu.3mf)."
+      );
       return;
     }
 
