@@ -129,6 +129,8 @@ def main() -> None:
         "no glue",
         "26-part",
         "1:300",
+        "Post a Make",
+        "mis-labels",
     ):
         if needle.lower() not in desc.lower():
             fail(f"DESCRIPTION.md missing required phrase: {needle!r}")

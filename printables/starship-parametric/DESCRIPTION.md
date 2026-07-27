@@ -10,15 +10,19 @@ This is a **print-first desk model**, not a rivet-count replica kit: hull, flaps
 
 ## Files (only three)
 
-- `starship_1_200_hex_tiles_one_piece.stl` — hero 1:200 hex ship (~36 MB)
-- `starship_1_200_hex_tiles_mmu.3mf` — MMU two-color (stainless + heat shield/Raptors)
-- `starship_1_300_hex_tiles_one_piece.stl` — A1 mini 1:300 (H ≈ 174 mm)
+- `starship_1_200_hex_tiles_one_piece.stl` — hero **1:200** hex ship (~36 MB, H 260.5 mm)
+- `starship_1_200_hex_tiles_mmu.3mf` — **MMU / AMS two-color** (same 1:200 geometry, stainless + heat shield/Raptors). Printables often mis-labels `.3mf` as “STL” in the file list — download it anyway; open in PrusaSlicer / Bambu Studio.
+- `starship_1_300_hex_tiles_one_piece.stl` — **1:300** A1-mini one-piece (H ≈ 174 mm)
+
+The numbers are **scale**, not version: **1:200** = desk hero for CORE One / MK4 / P1S; **1:300** = smaller print for short Z. Other scales via the [customizer](https://leedsexplore.github.io/starship-custom-name/).
 
 OpenSCAD source + print tips: [GitHub](https://github.com/leedsexplore/starship-custom-name).
 
 ## Custom name
 
 Empty name + Original CAD @ CORE One 1:200 = the hero hex files **byte-for-byte**. Named exports raise/engrave on the smooth hull. Share presets like `?name=S40` or `?name=IFT-12`. Also on [GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
+
+**Printed yours?** [Post a Make](https://www.printables.com/model/1792868) on this model — photos help the next person pick filament and supports.
 
 ## Printing
 
