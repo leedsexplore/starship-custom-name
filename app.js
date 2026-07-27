@@ -26,6 +26,19 @@ const SHIPS = {
     url: "./assets/starship_ship_print_1_200.stl",
     /** Key into print_envelope.json meshes[] for measured dimensions. */
     envelopeFile: "assets/starship_ship_print_1_200.stl",
+    /** Preview layers (steel + tiled heat shield) — same look as assets/starship_cad_preview.html. */
+    layers: [
+      {
+        id: "steel",
+        role: "steel",
+        url: "./assets/starship_print_1_200_steel.stl",
+      },
+      {
+        id: "tiles",
+        role: "tiles",
+        url: "./assets/starship_print_1_200_tiles.stl",
+      },
+    ],
     bodyCenterX: 0,
     hullRadiusZ: 22.575, // measured mid-barrel Ø 45.15 mm
     embedMm: 0.35,
@@ -402,16 +415,48 @@ el.viewport.appendChild(renderer.domElement);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-scene.add(new THREE.AmbientLight(0xffffff, 0.45));
-const key = new THREE.DirectionalLight(0xffffff, 1.25);
-key.position.set(40, 70, 90);
+scene.add(new THREE.AmbientLight(0xffffff, 0.28));
+const key = new THREE.DirectionalLight(0xffffff, 0.95);
+key.position.set(-40, 80, 90);
 scene.add(key);
-const fill = new THREE.DirectionalLight(0x9eb6ff, 0.35);
-fill.position.set(-60, -30, -40);
+const fill = new THREE.DirectionalLight(0x9eb6ff, 0.32);
+fill.position.set(-60, -20, -50);
 scene.add(fill);
-const rim = new THREE.DirectionalLight(0xffe0c0, 0.35);
+const rim = new THREE.DirectionalLight(0xffe0c0, 0.4);
 rim.position.set(-20, 40, 100);
 scene.add(rim);
+/** Windward fill + high rake so hex tile relief reads on the black side. */
+const tileLight = new THREE.DirectionalLight(0xfff4e0, 0.75);
+tileLight.position.set(90, 30, -35);
+scene.add(tileLight);
+const rake = new THREE.DirectionalLight(0xffffff, 0.4);
+rake.position.set(40, 160, 10);
+scene.add(rake);
+
+/** Soft studio environment so stainless steel has something to reflect. */
+{
+  const ec = document.createElement("canvas");
+  ec.width = 1024;
+  ec.height = 512;
+  const eg = ec.getContext("2d");
+  const sky = eg.createLinearGradient(0, 0, 0, 512);
+  sky.addColorStop(0.0, "#9fb0c4");
+  sky.addColorStop(0.42, "#6d7f99");
+  sky.addColorStop(0.5, "#b8a98e");
+  sky.addColorStop(0.55, "#2e333c");
+  sky.addColorStop(1.0, "#101218");
+  eg.fillStyle = sky;
+  eg.fillRect(0, 0, 1024, 512);
+  eg.fillStyle = "rgba(255,250,240,0.9)";
+  eg.fillRect(120, 60, 180, 120);
+  eg.fillRect(620, 40, 220, 140);
+  const envTex = new THREE.CanvasTexture(ec);
+  envTex.mapping = THREE.EquirectangularReflectionMapping;
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromEquirectangular(envTex).texture;
+  envTex.dispose();
+  pmrem.dispose();
+}
 
 /** Root for ship + text so scale % applies to both. */
 const modelGroup = new THREE.Group();
@@ -421,6 +466,22 @@ const shipMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.color.value),
   metalness: 0.42,
   roughness: 0.4,
+});
+/** Parametric preview: polished stainless (hull color picker drives this). */
+const steelMaterial = new THREE.MeshStandardMaterial({
+  color: new THREE.Color("#c8ced6"),
+  metalness: 0.95,
+  roughness: 0.2,
+  envMapIntensity: 0.7,
+});
+/** Parametric preview: black heat-shield tiles with hex bump. */
+const tilesMaterial = new THREE.MeshStandardMaterial({
+  color: new THREE.Color(0x1e2126),
+  metalness: 0.2,
+  roughness: 0.62,
+  envMapIntensity: 0.35,
+  bumpMap: makeHexTileTexture(),
+  bumpScale: 1.1,
 });
 const textMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.textColor.value),
@@ -438,6 +499,7 @@ let fontGlyphs = new Set();
 let currentFontId = "optimer-bold";
 const fontCache = new Map();
 let shipGeometry = null;
+/** Display object: Mesh (legacy) or Group of layered meshes (parametric). */
 let shipMesh = null;
 let textMesh = null;
 let ready = false;
@@ -447,6 +509,82 @@ const csgEvaluator = new Evaluator();
 // STL ship has position/normal/color — no uvs. Default evaluator attrs include uv and crash.
 csgEvaluator.attributes = ["position", "normal"];
 csgEvaluator.useGroups = false;
+
+/** Seamless hexagonal heat-tile bump map (same recipe as starship_cad_preview.html). */
+function makeHexTileTexture() {
+  const S = 512;
+  const c = document.createElement("canvas");
+  c.width = c.height = S;
+  const g = c.getContext("2d");
+  g.fillStyle = "#3a3a3a";
+  g.fillRect(0, 0, S, S);
+  const px = S / 6;
+  const py = S / 7;
+  const R = (py / 1.5) * 0.94;
+  for (let j = -1; j <= 8; j++) {
+    for (let i = -1; i <= 7; i++) {
+      const cx = i * px + (j % 2 ? px / 2 : 0);
+      const cy = j * py;
+      const grad = g.createRadialGradient(cx, cy, R * 0.15, cx, cy, R);
+      grad.addColorStop(0, "#c8c8c8");
+      grad.addColorStop(0.8, "#a8a8a8");
+      grad.addColorStop(1, "#6a6a6a");
+      g.fillStyle = grad;
+      g.beginPath();
+      for (let k = 0; k < 6; k++) {
+        const a = Math.PI / 6 + k * (Math.PI / 3);
+        const x = cx + R * Math.cos(a);
+        const y = cy + R * Math.sin(a);
+        if (k) g.lineTo(x, y);
+        else g.moveTo(x, y);
+      }
+      g.closePath();
+      g.fill();
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  return tex;
+}
+
+/**
+ * Cylindrical UV unwrap for the tile shell (print-scale, Z-up, before orient()).
+ * Flap faces keep a planar map so the hex pattern doesn't smear.
+ */
+function applyTileUVs(geom, scaleMm = 13) {
+  const HULL_R = 22.575;
+  const p = geom.attributes.position;
+  const n = p.count;
+  const uv = new Float32Array(n * 2);
+  const a = new THREE.Vector3();
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
+  const ab = new THREE.Vector3();
+  const ac = new THREE.Vector3();
+  const nrm = new THREE.Vector3();
+  for (let i = 0; i < n; i += 3) {
+    a.fromBufferAttribute(p, i);
+    b.fromBufferAttribute(p, i + 1);
+    c.fromBufferAttribute(p, i + 2);
+    nrm.crossVectors(ab.subVectors(b, a), ac.subVectors(c, a)).normalize();
+    const mx = (a.x + b.x + c.x) / 3;
+    const my = (a.y + b.y + c.y) / 3;
+    const mr = Math.hypot(mx, my) || 1;
+    const radial = Math.abs((nrm.x * mx + nrm.y * my) / mr) > 0.5;
+    for (let k = 0; k < 3; k++) {
+      const v = [a, b, c][k];
+      const o = (i + k) * 2;
+      if (radial) {
+        uv[o] = (Math.atan2(v.y, v.x) * HULL_R) / scaleMm;
+        uv[o + 1] = v.z / scaleMm;
+      } else {
+        uv[o] = v.y / scaleMm;
+        uv[o + 1] = v.z / scaleMm;
+      }
+    }
+  }
+  geom.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+}
 
 async function loadFontById(fontId) {
   const id = FONT_OPTIONS[fontId] ? fontId : "optimer-bold";
@@ -586,6 +724,7 @@ function applyEnvelopeForShip() {
 }
 
 const shipGeometryCache = new Map();
+const shipLayerCache = new Map();
 
 async function loadShipGeometry(shipDef) {
   if (shipGeometryCache.has(shipDef.id)) {
@@ -598,6 +737,34 @@ async function loadShipGeometry(shipDef) {
   return geometry;
 }
 
+async function loadShipLayers(shipDef) {
+  if (!shipDef.layers?.length) return null;
+  if (shipLayerCache.has(shipDef.id)) {
+    return shipLayerCache.get(shipDef.id);
+  }
+  const loader = new STLLoader();
+  const parts = await Promise.all(
+    shipDef.layers.map(async (layer) => {
+      const geometry = await loader.loadAsync(layer.url);
+      if (layer.role === "tiles") applyTileUVs(geometry);
+      geometry.computeVertexNormals();
+      shipDef.orient(geometry);
+      const material =
+        layer.role === "tiles" ? tilesMaterial : steelMaterial;
+      return new THREE.Mesh(geometry, material);
+    })
+  );
+  const group = new THREE.Group();
+  for (const mesh of parts) group.add(mesh);
+  shipLayerCache.set(shipDef.id, group);
+  return group;
+}
+
+function buildShipDisplay(geometry, shipDef, layers) {
+  if (layers) return layers;
+  return new THREE.Mesh(geometry, shipMaterial);
+}
+
 /** Swap the base mesh, retune scale/placement to its 1:200 preset, and rebuild text. */
 async function applyShipSelection(shipId, { retune = true } = {}) {
   const id = SHIPS[shipId] ? shipId : DEFAULT_SHIP_ID;
@@ -606,19 +773,26 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
   applyEnvelopeForShip();
 
   setStatus(`Loading ${ship.label}…`);
-  const geometry = await loadShipGeometry(ship);
+  const [geometry, layers] = await Promise.all([
+    loadShipGeometry(ship),
+    loadShipLayers(ship),
+  ]);
   if (shipMesh) modelGroup.remove(shipMesh);
   shipGeometry = geometry;
-  shipMesh = new THREE.Mesh(shipGeometry, shipMaterial);
+  shipMesh = buildShipDisplay(geometry, ship, layers);
   modelGroup.add(shipMesh);
 
   if (retune) {
     el.scale.value = String(coreOneScalePercent());
     el.size.value = String(ship.defaultSizeMm);
     el.pos.value = String(ship.defaultPosMm);
+    if (ship.layers?.length) {
+      el.color.value = "#c8ced6";
+    }
   }
   updateLabels();
   applyModelScale();
+  applyColor();
   if (ready) {
     await flushRebuild();
     frameCamera();
@@ -700,7 +874,10 @@ function syncPresetActive(container, hex) {
 }
 
 function applyColor() {
-  shipMaterial.color.set(el.color.value);
+  const hull = el.color.value;
+  shipMaterial.color.set(hull);
+  steelMaterial.color.set(hull);
+  // Layered parametric preview keeps tiles black; hull picker only tints steel.
   textMaterial.color.set(el.textColor.value);
   // Slight lift on dark letter colors so they stay readable on Signal Red.
   const hsl = { h: 0, s: 0, l: 0 };
@@ -1568,13 +1745,14 @@ async function boot() {
       ? el.fontStyle.value
       : "optimer-bold";
 
-    const [, geometry] = await Promise.all([
+    const [, geometry, layers] = await Promise.all([
       applyFontSelection(initialFontId, { rebuild: false }),
       loadShipGeometry(ship),
+      loadShipLayers(ship),
     ]);
 
     shipGeometry = geometry;
-    shipMesh = new THREE.Mesh(shipGeometry, shipMaterial);
+    shipMesh = buildShipDisplay(geometry, ship, layers);
     modelGroup.add(shipMesh);
     applyModelScale();
 
