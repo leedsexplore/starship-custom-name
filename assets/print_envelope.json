@@ -17,17 +17,17 @@
     }
   },
   "customizer_mesh": {
-    "file": "assets/StarShipV2_cleaned_flaps.stl",
+    "file": "assets/StarShipV2_original.stl",
     "height_mm": 121.0,
-    "mid_barrel_diameter_mm": 21.4515,
-    "footprint_max_mm": 41.6,
+    "mid_barrel_diameter_mm": 27.7807,
+    "footprint_max_mm": 42.6,
     "implied_real_scale_1_to_N": 430.579,
     "engines_protrude_past_skirt_mm": 0.0,
     "core_one_1_200": {
       "height_mm": 260.5,
-      "diameter_mm": 46.183,
-      "footprint_max_mm": 89.56,
-      "footprint_min_mm": 46.718,
+      "diameter_mm": 59.809,
+      "footprint_max_mm": 91.713,
+      "footprint_min_mm": 48.525,
       "scale_percent_of_mesh": 215.2893,
       "fits_core_one": true,
       "z_margin_mm": 9.5

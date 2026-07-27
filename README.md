@@ -46,7 +46,7 @@ Shareable URLs look like:
 |--------|--------|
 | Base design | `ship=parametric` (default, original CAD) or `ship=legacy` (classic remix) — segmented toggle in the UI |
 | Hull side | `side=right` = leeward (SpaceX S## face) · `side=left` = windward |
-| Position | Default `pos=-10` (parametric) / `-5` (legacy) — S## mid-barrel band |
+| Position | Default `pos=-10` (parametric) / `-2` (legacy) — S## mid-barrel band |
 | Font style | Classic (Optimer/Helvetiker/Gentilis/Droid) + popular (Roboto, Open Sans, Montserrat, Inter, …) + display (Oswald, Bebas Neue) |
 | Model scale | Baked into STL/3MF; **CORE One 1:200** preset (100% parametric / ~215% legacy) → H 260.5 mm |
 | Color presets | Prusament-oriented names on hover (approx where noted) |
@@ -86,7 +86,7 @@ node scripts/build_sample_stl.mjs
 | `assets/starship_ship_print_1_200.stl` | **One-piece print file** — H 260.5 mm, engines flush |
 | `assets/starship_print_1_200_mmu.3mf` | Two-color MMU 3MF (steel + heat shield/Raptors) |
 | `assets/starship_cad_preview.html` | Interactive three.js viewer (steel/tiles/bay/engines layers) |
-| `assets/StarShipV2_cleaned_flaps.stl` | Legacy customizer mesh (remix, CC BY-NC) |
+| `assets/StarShipV2_original.stl` | Legacy customizer mesh (remix, CC BY-NC) — same as v1.1.x |
 
 ## Print scale (Prusa CORE One / 1:200)
 

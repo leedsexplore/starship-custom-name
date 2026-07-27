@@ -8,4 +8,4 @@
 // nose points +Z and the ship stands on the XY plane.
 
 rotate([90, 0, 0])
-    import("../assets/StarShipV2_cleaned_flaps.stl", convexity = 10);
+    import("../assets/StarShipV2_original.stl", convexity = 10);

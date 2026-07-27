@@ -55,10 +55,11 @@ const SHIPS = {
   legacy: {
     id: "legacy",
     label: "Classic remix (v1.x)",
-    url: "./assets/StarShipV2_cleaned_flaps.stl",
-    envelopeFile: "assets/StarShipV2_cleaned_flaps.stl",
+    /** Pre-v2 customizer mesh — Josh1297 Starship (same as v1.1.5). */
+    url: "./assets/StarShipV2_original.stl",
+    envelopeFile: "assets/StarShipV2_original.stl",
     bodyCenterX: -22.3,
-    /** Mid-body cylinder radius from STL (was 10.55 — too small → letters buried). */
+    /** Mid-body cylinder radius tuned for this mesh (v1.1.x placement). */
     hullRadiusZ: 10.7,
     embedMm: 0.35,
     safeSpanMm: 48,
@@ -66,12 +67,12 @@ const SHIPS = {
     flapZoneYMm: 28,
     defaultSizeMm: 5,
     /** Same S##-style band, scaled to the shorter remix mesh. */
-    defaultPosMm: -5,
+    defaultPosMm: -2,
     orient() {},
     meshDefaults: {
       meshHeightMm: 121,
-      meshDiameterMm: 21.452,
-      meshFootprintMaxMm: 41.6,
+      meshDiameterMm: 27.7807,
+      meshFootprintMaxMm: 42.6,
     },
   },
 };
