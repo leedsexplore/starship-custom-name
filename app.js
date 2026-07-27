@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.1.3";
+import { build3mf } from "./export3mf.js?v=2.1.4";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.1.3";
+} from "./version.js?v=2.1.4";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -1626,6 +1626,7 @@ async function download3mf() {
 
     let parts;
     let engravedSolid = false;
+    let hasLetters = false;
 
     if (style === "engraved") {
       setStatus("Boolean engraving for 3MF… this can take a few seconds.");
@@ -1633,6 +1634,7 @@ async function download3mf() {
       const payload = buildExportMeshes({ preferBoolean: true });
       if (payload.mode === "boolean") {
         engravedSolid = true;
+        hasLetters = true;
         parts = [
           {
             name: "Hull (engraved)",
@@ -1640,17 +1642,23 @@ async function download3mf() {
             color: hullColor,
           },
         ];
-      } else {
+      } else if (payload.text) {
         // Fallback: two objects so slicer can still assign materials / boolean.
+        hasLetters = true;
         parts = [
           { name: "Hull", geometry: payload.ship, color: hullColor },
           { name: "Letters (cutter)", geometry: payload.text, color: letterColor },
         ];
+      } else {
+        // No name entered — merged payload only carries the hull geometry.
+        parts = [{ name: "Hull", geometry: payload.geometry, color: hullColor }];
       }
       setStatus(
-        engravedSolid
-          ? "Packing engraved 3MF…"
-          : "Packing 3MF (inset fallback)…"
+        !hasLetters
+          ? "Packing ship-only 3MF…"
+          : engravedSolid
+            ? "Packing engraved 3MF…"
+            : "Packing 3MF (inset fallback)…"
       );
     } else {
       const { ship: shipGeo, text } = cloneModelSpaceParts();
@@ -1662,6 +1670,7 @@ async function download3mf() {
             { name: "Letters", geometry: text, color: letterColor },
           ]
         : [{ name: "Hull", geometry: shipGeo, color: hullColor }];
+      hasLetters = Boolean(text);
       setStatus(
         text ? "Packing multi-material 3MF…" : "Packing ship-only 3MF…"
       );
@@ -1681,7 +1690,7 @@ async function download3mf() {
     );
     writeUrl();
     setStatus(
-      !parts.some((p) => /Letters/i.test(p.name))
+      !hasLetters
         ? "3MF downloaded — ship only (enter a name for lettering)."
         : style === "raised"
           ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU). Preview steel/tiles coloring is separate from this file."

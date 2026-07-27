@@ -39,16 +39,18 @@ if (qs.get("tiles") === "hex" || qs.get("hex") === "1") {
 
 // Procedural hexagonal heat-tile pattern (bump map), like the real ship's
 // tiled windward side. The canvas tiles seamlessly: 6 hex columns x 7 rows.
+// Calibrated to the print tiles: scale-true 0.29 m plates, thin crisp grooves
+// (same recipe as makeHexTileTexture in app.js).
 function hexTileTexture(){
   const S=512, c=document.createElement("canvas"); c.width=c.height=S;
   const g=c.getContext("2d");
   g.fillStyle="#3a3a3a"; g.fillRect(0,0,S,S);          // gaps = recessed
-  const px=S/6, py=S/7, R=py/1.5*0.94;                 // hex pitch + face size
+  const px=S/6, py=S/7, R=py/1.5*0.86;                 // hex pitch + face size
   for(let j=-1;j<=8;j++) for(let i=-1;i<=7;i++){
     const cx=i*px+(j%2?px/2:0), cy=j*py;
     const grad=g.createRadialGradient(cx,cy,R*0.15,cx,cy,R);
-    grad.addColorStop(0,"#c8c8c8"); grad.addColorStop(0.8,"#a8a8a8");
-    grad.addColorStop(1,"#6a6a6a");
+    grad.addColorStop(0,"#c6c6c6"); grad.addColorStop(0.9,"#bfbfbf");
+    grad.addColorStop(1,"#565656");
     g.fillStyle=grad;
     g.beginPath();
     for(let k=0;k<6;k++){
@@ -215,7 +217,7 @@ const results=await Promise.all(PARTS.map(async part=>{
   const geom=await loader.loadAsync(part.url);
   if (part.scale && part.scale !== 1) geom.scale(part.scale, part.scale, part.scale);
   geom.computeVertexNormals();
-  if(part.hexUV) shipUVs(geom, 2.6);   // texture spans 2.6 m → ~0.43 m hexes
+  if(part.hexUV) shipUVs(geom, 1.74);  // texture spans 1.74 m → 0.29 m scale-true hexes
   ship.add(new THREE.Mesh(geom, part.mat));
   return `${part.label}: ${(geom.attributes.position.count/3).toLocaleString()} tris`;
 }));
