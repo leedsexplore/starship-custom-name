@@ -1053,6 +1053,20 @@ function rebuildText() {
   const { missing, folded, used } = sanitizeName(el.name.value);
   updateGlyphWarn(missing, folded);
 
+  if (textMesh) {
+    modelGroup.remove(textMesh);
+    textMesh.geometry.dispose();
+    textMesh = null;
+  }
+
+  // Empty name → ship-only preview (no placeholder lettering).
+  if (!used.trim()) {
+    lastSpanMm = 0;
+    updateLengthWarn(0);
+    applyModelScale();
+    return Promise.resolve();
+  }
+
   const flat = buildFlatTextGeometry(
     used,
     Number(el.size.value),
@@ -1060,12 +1074,6 @@ function rebuildText() {
   );
   const spanMm = measureSpan(flat);
   updateLengthWarn(spanMm);
-
-  if (textMesh) {
-    modelGroup.remove(textMesh);
-    textMesh.geometry.dispose();
-    textMesh = null;
-  }
 
   if (wrap) {
     wrapGeometryToHull(flat, side, textY, style);
@@ -1270,16 +1278,21 @@ function yieldToUi() {
 
 /**
  * Ship + text geometries in model space (pre-scale), with text world-baked.
+ * Text may be null when the hull name field is empty.
  */
 function cloneModelSpaceParts() {
-  if (!shipGeometry || !textMesh) throw new Error("Model not ready");
-  textMesh.updateMatrixWorld(true);
+  if (!shipGeometry || !shipMesh) throw new Error("Model not ready");
   shipMesh.updateMatrixWorld(true);
 
   const ship = shipGeometry.clone();
   // Bake ship mesh local transform (identity today) into geometry.
   ship.applyMatrix4(shipMesh.matrix);
 
+  if (!textMesh) {
+    return { ship, text: null };
+  }
+
+  textMesh.updateMatrixWorld(true);
   const text = textMesh.geometry.clone();
   text.applyMatrix4(textMesh.matrix);
 
@@ -1332,6 +1345,16 @@ function buildExportMeshes({ preferBoolean }) {
   const scale = modelScale();
   const style = selectedStyle();
   const { ship, text } = cloneModelSpaceParts();
+
+  if (!text) {
+    applyScaleToGeometry(ship, scale);
+    ship.computeVertexNormals();
+    return {
+      mode: "merged",
+      geometry: ship,
+      note: "Ship only — enter a hull name to add lettering.",
+    };
+  }
 
   if (style === "engraved" && preferBoolean) {
     try {
@@ -1403,13 +1426,13 @@ async function downloadStl() {
     const payload = buildExportMeshes({ preferBoolean });
     const exporter = new STLExporter();
     let buffer;
-    if (payload.mode === "boolean") {
+    if (payload.mode === "boolean" || payload.geometry) {
       buffer = exporter.parse(new THREE.Mesh(payload.geometry), { binary: true });
       payload.geometry.dispose();
     } else {
       buffer = exporter.parse(payload.group, { binary: true });
-      payload.ship.dispose();
-      payload.text.dispose();
+      payload.ship?.dispose();
+      payload.text?.dispose();
     }
 
     triggerDownload(
@@ -1474,12 +1497,16 @@ async function download3mf() {
     } else {
       const { ship, text } = cloneModelSpaceParts();
       applyScaleToGeometry(ship, scale);
-      applyScaleToGeometry(text, scale);
-      parts = [
-        { name: "Hull", geometry: ship, color: hullColor },
-        { name: "Letters", geometry: text, color: letterColor },
-      ];
-      setStatus("Packing multi-material 3MF…");
+      if (text) applyScaleToGeometry(text, scale);
+      parts = text
+        ? [
+            { name: "Hull", geometry: ship, color: hullColor },
+            { name: "Letters", geometry: text, color: letterColor },
+          ]
+        : [{ name: "Hull", geometry: ship, color: hullColor }];
+      setStatus(
+        text ? "Packing multi-material 3MF…" : "Packing ship-only 3MF…"
+      );
     }
 
     await yieldToUi();
@@ -1496,11 +1523,13 @@ async function download3mf() {
     );
     writeUrl();
     setStatus(
-      style === "raised"
-        ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU)."
-        : engravedSolid
-          ? "3MF downloaded — engraved hull is a single solid (recess cut)."
-          : "3MF downloaded — boolean failed; Hull + Letters (cutter) for slicer boolean."
+      !parts.some((p) => /Letters/i.test(p.name))
+        ? "3MF downloaded — ship only (enter a name for lettering)."
+        : style === "raised"
+          ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU)."
+          : engravedSolid
+            ? "3MF downloaded — engraved hull is a single solid (recess cut)."
+            : "3MF downloaded — boolean failed; Hull + Letters (cutter) for slicer boolean."
     );
   } catch (err) {
     console.error(err);
@@ -1630,6 +1659,10 @@ async function copyShareLink() {
 
 async function fitTextToHull() {
   if (!font || !ready) return;
+  if (!el.name.value.trim()) {
+    setStatus("Enter a name on the hull first.");
+    return;
+  }
   let size = Number(el.size.value);
   while (size > 3) {
     const { used } = sanitizeName(el.name.value);
