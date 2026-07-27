@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.12";
+import { build3mf } from "./export3mf.js?v=2.4.13";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.12";
+} from "./version.js?v=2.4.13";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -60,13 +60,12 @@ const SHIPS = {
     flapZoneYMm: 60,
     defaultSizeMm: 3.5,
     /**
-     * SpaceX-style S## marking (S40 FS-13 still): leeward stainless, mid-barrel
-     * a bit toward the nose (higher on a nose-up print), biased toward the
-     * tile/steel seam — not centered on the bare face.
+     * SpaceX-style S## marking (S40 FS-13 still): leeward stainless, toward the
+     * nose, biased toward the opposite tile/steel seam from the +X flap edge.
      */
     defaultPosMm: 30,
-    /** Circumferential offset (mm along hull) toward the TPS seam (+X flaps). */
-    markingAcrossMm: 16,
+    /** Circumferential offset (mm along hull) toward the opposite TPS seam (−X). */
+    markingAcrossMm: -16,
     /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
