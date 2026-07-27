@@ -48,10 +48,7 @@ Notes:
   web customizer sample, and not the smooth MMU).
 - If the CLI's `printables.toml` schema differs from this file's keys, keep the
   values and rename keys to match `examples/sample-model/printables.toml`.
-- Regenerate files after CAD changes:
-  `python3 scripts/build_starship_cad.py --export --skip-render`,
-  `openscad -o assets/starship_print_1_200_steel.stl openscad/export_print_steel.scad`,
-  `openscad -o assets/starship_print_1_200_tiles.stl openscad/export_print_tiles.scad`,
-  `python3 scripts/build_mmu_3mf.py`,
-  `python3 scripts/emboss_hex_tiles.py`,
-  then copy the hex outputs into `printables/starship-parametric/files/`.
+- Regenerate files after CAD changes with the one-shot rebuild:
+  `python3 scripts/rebuild_release.py`
+  (OpenSCAD exports, smooth + hex MMU, envelope, package sync, validate).
+  Or run the individual steps in the root README if you only need part of the pipeline.

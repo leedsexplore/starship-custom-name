@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.0.9** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.1.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
@@ -69,6 +69,14 @@ python3 -m http.server 8080
 
 The whole ship is one OpenSCAD file: [`openscad/starship_parametric.scad`](openscad/starship_parametric.scad)
 (52.1 m × Ø9 m, blunted-ogive nose, 3 SL + 3 vacuum Raptors).
+
+**One-shot rebuild** (OpenSCAD exports + MMU + hex + envelope + Printables sync + validate):
+
+```bash
+python3 scripts/rebuild_release.py
+```
+
+Or step-by-step:
 
 ```bash
 # One-piece 1:200 print STL + 3MF + refreshed envelope

@@ -55,16 +55,20 @@ fwd_span  = fwd_z1 - fwd_z0;
 fwd_tip_r = 7.34;                        // 1.63x hull radius
 fwd_root  = 2.40;                        // inboard of the nose wall at fwd_z1
 fwd_knee  = 0.40;
-fwd_thick = 0.60;   // at the hinge; blade tapers to ~30% at the outer edge
+fwd_thick = 0.60;   // at the hinge; tip floored for 0.4 mm nozzle printability
 
 aft_z0    = 0.0;                         // bottom edge level with the base
-aft_z1    = 11.5;                        // root tip at 78% of ship height
+aft_z1    = 11.5;                        // root tip at ~22% of ship height
 aft_span  = aft_z1 - aft_z0;
 aft_tip_r = 7.97;                        // 1.77x hull radius
 aft_root  = 4.45;   // embedded in the thin skirt wall — must stay outside
                     // the engine bay recess or it shows from below
 aft_knee  = 0.565;
-aft_thick = 0.80;   // at the hinge; blade tapers to ~30% at the outer edge
+aft_thick = 0.80;   // at the hinge; tip floored for 0.4 mm nozzle printability
+
+// Tip half-thickness in meters. Keep the blade taper, but never go below
+// ~1.8 mm total at 1:200 (0.36 m) — thinner tips slice as bridge artifacts.
+function flap_tip_half(thick) = max(thick * 0.15, 0.18);
 
 // ---- engine bay ----
 // 3 sea-level Raptors clustered on the axis, 3 vacuum Raptors on an outer ring.
@@ -153,19 +157,13 @@ module engine_bells() {
     // (z=0) — the bells never protrude below the skirt.
     // Clocking matches the on-orbit aft reference: one RVac toward +X and the
     // SL cluster rotated 60 deg so it nests between the vacuum bells.
-    // Real Raptor heights: RVac ~4.6 m, sea-level ~3.1 m — so the SL bells are
-    // ~2/3 the height of the RVacs, which span the full bay depth.
+    // All six bells reach the thrust plate as solid cones — short SL bells with
+    // thin mount stems read as a "support beam" in one-piece monochrome prints.
     vac_h = bay_recess - 0.15;
-    sl_h  = vac_h * 3.1 / 4.6;
     color(bell_black) {
         for (a = [60, 180, 300])
-            translate([sl_ring * cos(a), sl_ring * sin(a), 0]) {
-                cylinder(h = sl_h, r1 = sl_r, r2 = sl_r * 0.45);
-                // Mount stem up into the thrust plate — without it the short
-                // SL bells touch nothing and fall out of a one-piece print.
-                translate([0, 0, sl_h - 0.01])
-                    cylinder(h = vac_h - sl_h + 0.06, r = sl_r * 0.30);
-            }
+            translate([sl_ring * cos(a), sl_ring * sin(a), 0])
+                cylinder(h = vac_h + 0.05, r1 = sl_r, r2 = sl_r * 0.45);
         for (a = [0, 120, 240])
             translate([vac_ring * cos(a), vac_ring * sin(a), 0])
                 // +0.05 overlap into the plate — exact tangency is fragile in
@@ -196,13 +194,13 @@ module flap(span, root_x, tip_x, top_x, knee, thick) {
                         [top_x, span],
                         [root_x, span]
                     ]);
-        // blade taper: full thickness at the hinge, ~30% at the outer edge
+        // blade taper: full thickness at the hinge, floored tip for printability
         translate([0, 0, -0.1])
             linear_extrude(height = span + 0.2)
                 polygon([
                     [root_x - 0.1, -thick / 2],
-                    [tip_x + 0.1, -thick * 0.15],
-                    [tip_x + 0.1,  thick * 0.15],
+                    [tip_x + 0.1, -flap_tip_half(thick)],
+                    [tip_x + 0.1,  flap_tip_half(thick)],
                     [root_x - 0.1,  thick / 2]
                 ]);
     }

@@ -3,14 +3,16 @@
 
 The OpenSCAD heat shield is a smooth raised shell. This script replaces that
 shell with a dense procedural windward shell whose outer surface carries real
-hex grooves, remeshes + embosses the windward flap halves, keeps the Raptor
-bells, and writes:
+hex grooves, keeps solid OpenSCAD windward flap halves + Raptor bells, and
+repairs toward zero open edges for PrusaSlicer:
 
   assets/starship_print_1_200_tiles_hex.stl
   assets/starship_ship_print_1_200_hex.stl   (steel + hex tiles merge)
   assets/starship_print_1_200_mmu_hex.3mf    (via build_mmu_3mf.py)
 
-  python3 scripts/emboss_hex_tiles.py
+Prefer the one-shot release rebuild:
+
+  python3 scripts/rebuild_release.py
 """
 
 from __future__ import annotations
@@ -269,6 +271,63 @@ def load_engines(tiles: trimesh.Trimesh) -> list[trimesh.Trimesh]:
     return parts[1:]
 
 
+def load_solid_flaps(tiles: trimesh.Trimesh) -> trimesh.Trimesh | None:
+    """Keep OpenSCAD-solid windward flap halves (watertight) — skip open emboss submeshes."""
+    parts = sorted(tiles.split(only_watertight=False), key=lambda p: len(p.faces), reverse=True)
+    if not parts:
+        return None
+    shell = parts[0]
+    fc = shell.triangles_center
+    flap_mask = np.abs(fc[:, 1]) > FLAP_Y_THRESH
+    if not np.any(flap_mask):
+        return None
+    flaps = shell.submesh([np.where(flap_mask)[0]], append=True, repair=False)
+    # Close the hinge cut left by the submesh extract so the black body stays printable.
+    flaps.merge_vertices()
+    trimesh.repair.fix_normals(flaps)
+    try:
+        trimesh.repair.fill_holes(flaps)
+    except Exception as err:  # noqa: BLE001 — repair is best-effort
+        print(f"  warn: flap fill_holes failed: {err}")
+    return flaps
+
+
+def ensure_printable(mesh: trimesh.Trimesh, label: str) -> trimesh.Trimesh:
+    """Dedup / repair toward a slicer-friendly mesh (zero open edges when possible)."""
+    mesh = mesh.copy()
+    mesh.merge_vertices()
+    # trimesh 4.x: unique_faces() + update_faces (remove_duplicate_faces was removed)
+    try:
+        mesh.update_faces(mesh.unique_faces())
+    except Exception:
+        pass
+    mesh.remove_unreferenced_vertices()
+    trimesh.repair.fix_normals(mesh)
+    try:
+        trimesh.repair.fill_holes(mesh)
+    except Exception as err:  # noqa: BLE001
+        print(f"  warn: {label} fill_holes failed: {err}")
+    from collections import Counter
+
+    def _ek(a, b, nd=5):
+        a = tuple(np.round(a, nd))
+        b = tuple(np.round(b, nd))
+        return (a, b) if a <= b else (b, a)
+
+    edges: Counter = Counter()
+    for face in mesh.faces:
+        verts = mesh.vertices[face]
+        for i, j in ((0, 1), (1, 2), (2, 0)):
+            edges[_ek(verts[i], verts[j])] += 1
+    open_n = sum(1 for c in edges.values() if c == 1)
+    non_n = sum(1 for c in edges.values() if c > 2)
+    print(
+        f"  {label}: faces={len(mesh.faces)} open_edges={open_n} "
+        f"nonmanifold_edges={non_n} watertight={mesh.is_watertight}"
+    )
+    return mesh
+
+
 def merge_stls(paths: list[Path], out: Path) -> None:
     chunks = []
     total = 0
@@ -306,27 +365,30 @@ def main() -> None:
 
     t0 = time.time()
     print("building procedural hex windward shell…")
-    hex_shell = build_hex_shell()
-    print(f"  shell: {len(hex_shell.faces)} faces ({time.time() - t0:.1f}s)")
+    hex_shell = ensure_printable(build_hex_shell(), "hex_shell")
+    print(f"  shell wall time ({time.time() - t0:.1f}s)")
 
     src = trimesh.load_mesh(SRC_TILES, force="mesh")
-    engines = load_engines(src)
+    engines = [ensure_printable(e, f"engine_{i}") for i, e in enumerate(load_engines(src))]
     print(f"  engines: {len(engines)} parts, {sum(len(e.faces) for e in engines)} faces")
 
-    t1 = time.time()
-    print("embossing windward flaps…")
-    # Use original shell+flaps part for flap extraction
-    shell_part = sorted(src.split(only_watertight=False), key=lambda p: len(p.faces), reverse=True)[0]
-    flaps = emboss_flaps(shell_part)
-    print(f"  flaps: {len(flaps.faces)} faces ({time.time() - t1:.1f}s)")
+    flaps_path = ASSETS / "starship_print_1_200_flaps_tiles.stl"
+    if flaps_path.exists():
+        print(f"loading solid windward flaps from {flaps_path.name}…")
+        flaps = ensure_printable(trimesh.load_mesh(flaps_path, force="mesh"), "flaps")
+    else:
+        print("solid flaps STL missing — falling back to repaired submesh extract…")
+        flaps = load_solid_flaps(src)
+        if flaps is not None and len(flaps.faces):
+            flaps = ensure_printable(flaps, "flaps")
+        else:
+            flaps = None
 
     parts = [hex_shell]
-    if len(flaps.faces):
+    if flaps is not None and len(flaps.faces):
         parts.append(flaps)
     parts.extend(engines)
-    combined = trimesh.util.concatenate(parts)
-    combined.merge_vertices()
-    trimesh.repair.fix_normals(combined)
+    combined = ensure_printable(trimesh.util.concatenate(parts), "tiles_hex")
 
     ASSETS.mkdir(exist_ok=True)
     write_binary_stl(OUT_TILES, combined, b"starship_print_1_200_tiles_hex")
@@ -338,10 +400,12 @@ def main() -> None:
     if not args.skip_onepiece:
         if not SRC_STEEL.exists():
             sys.exit(f"missing {SRC_STEEL}")
-        merge_stls([SRC_STEEL, OUT_TILES], OUT_ONE)
-        print(
-            f"wrote {OUT_ONE.relative_to(ROOT)}  {OUT_ONE.stat().st_size / 1e6:.2f} MB"
+        steel = trimesh.load_mesh(SRC_STEEL, force="mesh")
+        one = ensure_printable(
+            trimesh.util.concatenate([steel, combined]), "one_piece_hex"
         )
+        write_binary_stl(OUT_ONE, one, b"starship_ship_print_1_200_hex")
+        print(f"wrote {OUT_ONE.relative_to(ROOT)}  {OUT_ONE.stat().st_size / 1e6:.2f} MB")
 
     if not args.skip_mmu:
         build_mmu_hex()

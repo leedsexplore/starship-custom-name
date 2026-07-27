@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.0.9";
+import { build3mf } from "./export3mf.js?v=2.1.0";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.0.9";
+} from "./version.js?v=2.1.0";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -41,7 +41,12 @@ const SHIPS = {
       {
         id: "tiles",
         role: "tiles",
-        url: `./assets/starship_print_1_200_tiles.stl?v=${CACHE_BUST}`,
+        url: `./assets/starship_print_1_200_tiles_shell.stl?v=${CACHE_BUST}`,
+      },
+      {
+        id: "engines",
+        role: "engines",
+        url: `./assets/starship_print_1_200_engines.stl?v=${CACHE_BUST}`,
       },
     ],
     bodyCenterX: 0,
@@ -525,7 +530,7 @@ function makeHexTileTexture() {
 
 /** Preview sugar for the smooth tile shell. */
 const tilesBumpMap = makeHexTileTexture();
-/** Parametric preview: black heat-shield tiles with hex bump. */
+/** Parametric preview: black heat-shield tiles with hex bump (shell only). */
 const tilesMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(0x1e2126),
   metalness: 0.2,
@@ -533,6 +538,13 @@ const tilesMaterial = new THREE.MeshStandardMaterial({
   envMapIntensity: 0.35,
   bumpMap: tilesBumpMap,
   bumpScale: 1.1,
+});
+/** Raptor bells — smooth black, no heat-tile bump. */
+const enginesMaterial = new THREE.MeshStandardMaterial({
+  color: new THREE.Color(0x121417),
+  metalness: 0.35,
+  roughness: 0.55,
+  envMapIntensity: 0.25,
 });
 const textMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.textColor.value),
@@ -781,7 +793,11 @@ async function loadShipLayers(shipDef) {
       geometry.computeVertexNormals();
       shipDef.orient(geometry);
       const material =
-        layer.role === "tiles" ? tilesMaterial : steelMaterial;
+        layer.role === "tiles"
+          ? tilesMaterial
+          : layer.role === "engines"
+            ? enginesMaterial
+            : steelMaterial;
       return new THREE.Mesh(geometry, material);
     })
   );
