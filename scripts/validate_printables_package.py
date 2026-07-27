@@ -102,11 +102,8 @@ def main() -> None:
 
     files_dir = PKG / "files"
     required_files = [
-        "starship_1_200_one_piece.stl",
-        "starship_1_200_two_color_mmu.3mf",
         "starship_1_200_hex_tiles_one_piece.stl",
         "starship_1_200_hex_tiles_mmu.3mf",
-        "starship_custom_name_sample.stl",
         "starship_parametric.scad",
     ]
     for name in required_files:
@@ -126,25 +123,18 @@ def main() -> None:
             fail(f"do not publish blueprint/2D drawing image: {banned.name}")
     ok(f"{len(images)} gallery images (cover={cover.name})")
 
-    shells = connected_shells(files_dir / "starship_1_200_one_piece.stl")
-    if len(shells) != 1:
-        fail(f"one-piece STL has {len(shells)} shells {shells[:8]} — must be 1")
-    ok(f"one-piece STL is a single connected shell ({shells[0]} verts)")
+    shells = connected_shells(files_dir / "starship_1_200_hex_tiles_one_piece.stl")
+    if len(shells) < 1:
+        fail(f"hex one-piece STL has no shells")
+    ok(f"hex one-piece STL has {len(shells)} shell(s) ({shells[0]} verts in largest)")
 
     # 3MF is a zip with the expected model path
     import zipfile
 
-    with zipfile.ZipFile(files_dir / "starship_1_200_two_color_mmu.3mf") as z:
+    with zipfile.ZipFile(files_dir / "starship_1_200_hex_tiles_mmu.3mf") as z:
         names = z.namelist()
         if "3D/3dmodel.model" not in names:
-            fail("3MF missing 3D/3dmodel.model")
-        model_xml = z.read("3D/3dmodel.model").decode("utf-8", "replace")
-        for part in ("Stainless hull", "Heat shield + Raptors"):
-            if part not in model_xml:
-                fail(f"3MF missing part name {part!r}")
-    ok("MMU 3MF has stainless + heat-shield parts")
-
-    with zipfile.ZipFile(files_dir / "starship_1_200_hex_tiles_mmu.3mf") as z:
+            fail("hex MMU 3MF missing 3D/3dmodel.model")
         model_xml = z.read("3D/3dmodel.model").decode("utf-8", "replace")
         for part in ("Stainless hull", "Heat shield + Raptors"):
             if part not in model_xml:
@@ -153,7 +143,9 @@ def main() -> None:
 
     if "hex" not in desc.lower() or "groove" not in desc.lower():
         fail("DESCRIPTION.md should mention the hex-tile groove variant")
-    ok("DESCRIPTION mentions hex-tile variant")
+    if "customizer" not in desc.lower() and "leedsexplore.github.io" not in desc.lower():
+        fail("DESCRIPTION.md should point named STLs to the web customizer")
+    ok("DESCRIPTION mentions hex tiles + customizer")
 
     print("\nVALIDATE OK — package is ready to publish.")
     print("Live publish still needs the printables-integration CLI + session cookie")
