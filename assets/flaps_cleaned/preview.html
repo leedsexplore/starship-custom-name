@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Cleaned Starship flaps</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#12151c;color:#e8ecf4;font:14px/1.4 system-ui,sans-serif}
+#app{display:grid;grid-template-rows:auto 1fr;height:100%}
+header{padding:12px 16px;background:#1a2030;border-bottom:1px solid #2a3348}
+h1{margin:0;font-size:16px} p{margin:4px 0 0;color:#9aa6bd;font-size:12px}
+#viewport{position:relative;min-height:0} canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;left:12px;bottom:12px;color:#9aa6bd;font-size:12px;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app">
+<header><h1>Cleaned flaps — notches filled, sharp tip</h1><p>Block 2 planforms for the custom-name hull · drag to orbit · scroll to zoom</p></header>
+<div id="viewport"><div id="hud">Loading…</div></div>
+</div>
+<script type="importmap">{"imports":{"three":"../../vendor/three/three.module.js","three/addons/":"../../vendor/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { STLLoader } from "three/addons/loaders/STLLoader.js";
+const PARTS = [
+  { label:"Aft flap", url:"./aft_flap_clean.stl?v=1", color:0x6ea8ff, col:0 },
+  { label:"Fwd flap", url:"./fwd_flap_clean.stl?v=1", color:0x6ea8ff, col:1 },
+];
+const viewport=document.getElementById("viewport"), hud=document.getElementById("hud");
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x12151c);
+const camera=new THREE.PerspectiveCamera(40,1,0.1,2000); camera.position.set(0,40,120);
+const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+viewport.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera, renderer.domElement); controls.enableDamping=true;
+scene.add(new THREE.AmbientLight(0xffffff,0.65));
+const key=new THREE.DirectionalLight(0xffffff,1.05); key.position.set(40,80,60); scene.add(key);
+const grid=new THREE.GridHelper(160,16,0x3a455f,0x2a3348); grid.position.y=-40; scene.add(grid);
+const loader=new STLLoader(), groups=[], GAP=55;
+function fit(geom){ geom.computeBoundingBox(); const s=new THREE.Vector3(), c=new THREE.Vector3();
+  geom.boundingBox.getSize(s); geom.boundingBox.getCenter(c); geom.translate(-c.x,-c.y,-c.z); return s; }
+async function load(part){
+  const geom=await loader.loadAsync(part.url); geom.computeVertexNormals(); const size=fit(geom);
+  const mesh=new THREE.Mesh(geom, new THREE.MeshStandardMaterial({color:part.color,metalness:0.12,roughness:0.55,side:THREE.DoubleSide}));
+  const g=new THREE.Group(); g.add(mesh); g.position.set((part.col-0.5)*GAP,0,0);
+  // Face-on: put thinnest axis toward camera
+  const dims=[size.x,size.y,size.z]; const thin=dims.indexOf(Math.min(...dims));
+  if(thin===1) g.rotation.x=-Math.PI/2;
+  else if(thin===0) g.rotation.y=Math.PI/2;
+  scene.add(g); groups.push(g);
+  return {part, faces:geom.attributes.position.count/3};
+}
+function resize(){ const w=viewport.clientWidth,h=viewport.clientHeight; camera.aspect=w/Math.max(h,1); camera.updateProjectionMatrix(); renderer.setSize(w,h,false); }
+addEventListener("resize", resize); resize();
+(function frame(){ controls.update(); renderer.render(scene,camera); requestAnimationFrame(frame); })();
+const results=await Promise.all(PARTS.map(load));
+hud.textContent=results.map(r=>`${r.part.label}: ${Math.round(r.faces)} faces · sharp tip`).join("   ·   ");
+const box=new THREE.Box3(); for(const g of groups) box.expandByObject(g);
+const center=box.getCenter(new THREE.Vector3()), size=box.getSize(new THREE.Vector3()), m=Math.max(size.x,size.y,size.z);
+controls.target.copy(center); camera.position.copy(center).add(new THREE.Vector3(0, m*0.35, m*1.4)); controls.update();
+</script>
+</body>
+</html>

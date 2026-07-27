@@ -1,0 +1,227 @@
+{
+  "real_ship": {
+    "height_m": 52.1,
+    "diameter_m": 9.0,
+    "variant": "Starship V3 / Block 2 ship (public approx)"
+  },
+  "target_print": {
+    "scale": "1:200",
+    "height_mm": 260.5,
+    "diameter_mm": 45.0,
+    "orientation": "nose up / standing",
+    "printer": "Prusa CORE One",
+    "build_volume_mm": {
+      "x_mm": 250,
+      "y_mm": 220,
+      "z_mm": 270
+    }
+  },
+  "customizer_mesh": {
+    "file": "assets/StarShipV2_cleaned_flaps.stl",
+    "height_mm": 121.0,
+    "mid_barrel_diameter_mm": 21.4515,
+    "footprint_max_mm": 41.6,
+    "implied_real_scale_1_to_N": 430.579,
+    "engines_protrude_past_skirt_mm": 0.0,
+    "core_one_1_200": {
+      "height_mm": 260.5,
+      "diameter_mm": 46.183,
+      "footprint_max_mm": 89.56,
+      "footprint_min_mm": 46.718,
+      "scale_percent_of_mesh": 215.2893,
+      "fits_core_one": true,
+      "z_margin_mm": 9.5
+    }
+  },
+  "meshes": [
+    {
+      "file": "assets/StarShipV2_cleaned_flaps.stl",
+      "aabb_min_mm": [
+        -43.1,
+        -61.8,
+        -10.85
+      ],
+      "aabb_max_mm": [
+        -1.5,
+        59.2,
+        10.85
+      ],
+      "aabb_size_mm": [
+        41.6,
+        121.0,
+        21.7
+      ],
+      "height_axis": "Y",
+      "height_mm": 121.0,
+      "mid_barrel_diameter_mm": 21.4515,
+      "footprint_max_mm": 41.6,
+      "footprint_min_mm": 21.7,
+      "tip_at_axis_max": true,
+      "engines_protrude_past_skirt_mm": 0.0,
+      "base_band_inward_extent_mm": 1.8667,
+      "implied_real_scale_1_to_N": 430.579,
+      "at_1_200_from_height": {
+        "height_mm": 260.5,
+        "diameter_mm": 46.183,
+        "footprint_max_mm": 89.56,
+        "footprint_min_mm": 46.718,
+        "scale_percent_of_mesh": 215.2893,
+        "fits_core_one": true,
+        "z_margin_mm": 9.5
+      },
+      "true_1_200_targets_mm": {
+        "height_mm": 260.5,
+        "diameter_mm": 45.0
+      },
+      "notes": [
+        "1:200 height match scales mesh so H = 52.1m/200 = 260.5 mm.",
+        "Mesh diameter at that scale may differ slightly from true \u00d845 mm if the source mesh aspect ratio \u2260 52.1/9.",
+        "Engines are recessed if engines_protrude_past_skirt_mm == 0 (nothing extends the AABB past the skirt plane)."
+      ]
+    },
+    {
+      "file": "assets/StarShipV2_no_flaps.stl",
+      "aabb_min_mm": [
+        -33.15,
+        -61.8,
+        -10.85
+      ],
+      "aabb_max_mm": [
+        -11.45,
+        59.2,
+        10.85
+      ],
+      "aabb_size_mm": [
+        21.7,
+        121.0,
+        21.7
+      ],
+      "height_axis": "Y",
+      "height_mm": 121.0,
+      "mid_barrel_diameter_mm": 21.4515,
+      "footprint_max_mm": 21.7,
+      "footprint_min_mm": 21.7,
+      "tip_at_axis_max": true,
+      "engines_protrude_past_skirt_mm": 0.0,
+      "base_band_inward_extent_mm": 1.8667,
+      "implied_real_scale_1_to_N": 430.579,
+      "at_1_200_from_height": {
+        "height_mm": 260.5,
+        "diameter_mm": 46.183,
+        "footprint_max_mm": 46.718,
+        "footprint_min_mm": 46.718,
+        "scale_percent_of_mesh": 215.2893,
+        "fits_core_one": true,
+        "z_margin_mm": 9.5
+      },
+      "true_1_200_targets_mm": {
+        "height_mm": 260.5,
+        "diameter_mm": 45.0
+      },
+      "notes": [
+        "1:200 height match scales mesh so H = 52.1m/200 = 260.5 mm.",
+        "Mesh diameter at that scale may differ slightly from true \u00d845 mm if the source mesh aspect ratio \u2260 52.1/9.",
+        "Engines are recessed if engines_protrude_past_skirt_mm == 0 (nothing extends the AABB past the skirt plane)."
+      ]
+    },
+    {
+      "file": "assets/StarShipV2_original.stl",
+      "aabb_min_mm": [
+        -43.6,
+        -61.8,
+        -11.2701
+      ],
+      "aabb_max_mm": [
+        -1.0,
+        59.2,
+        11.2692
+      ],
+      "aabb_size_mm": [
+        42.6,
+        121.0,
+        22.5393
+      ],
+      "height_axis": "Y",
+      "height_mm": 121.0,
+      "mid_barrel_diameter_mm": 27.7807,
+      "footprint_max_mm": 42.6,
+      "footprint_min_mm": 22.5393,
+      "tip_at_axis_max": true,
+      "engines_protrude_past_skirt_mm": 0.0,
+      "base_band_inward_extent_mm": 1.8667,
+      "implied_real_scale_1_to_N": 430.579,
+      "at_1_200_from_height": {
+        "height_mm": 260.5,
+        "diameter_mm": 59.809,
+        "footprint_max_mm": 91.713,
+        "footprint_min_mm": 48.525,
+        "scale_percent_of_mesh": 215.2893,
+        "fits_core_one": true,
+        "z_margin_mm": 9.5
+      },
+      "true_1_200_targets_mm": {
+        "height_mm": 260.5,
+        "diameter_mm": 45.0
+      },
+      "notes": [
+        "1:200 height match scales mesh so H = 52.1m/200 = 260.5 mm.",
+        "Mesh diameter at that scale may differ slightly from true \u00d845 mm if the source mesh aspect ratio \u2260 52.1/9.",
+        "Engines are recessed if engines_protrude_past_skirt_mm == 0 (nothing extends the AABB past the skirt plane)."
+      ]
+    },
+    {
+      "file": "assets/starship_ship_print_1_200.stl",
+      "aabb_min_mm": [
+        -24.7422,
+        -39.8499,
+        0.0
+      ],
+      "aabb_max_mm": [
+        24.75,
+        39.8499,
+        260.4999
+      ],
+      "aabb_size_mm": [
+        49.4922,
+        79.6999,
+        260.4999
+      ],
+      "height_axis": "Z",
+      "height_mm": 260.4999,
+      "mid_barrel_diameter_mm": 45.15,
+      "footprint_max_mm": 79.6999,
+      "footprint_min_mm": 49.4922,
+      "tip_at_axis_max": true,
+      "engines_protrude_past_skirt_mm": 0.0,
+      "base_band_inward_extent_mm": 1.9523,
+      "implied_real_scale_1_to_N": 200.0,
+      "at_1_200_from_height": {
+        "height_mm": 260.5,
+        "diameter_mm": 45.15,
+        "footprint_max_mm": 79.7,
+        "footprint_min_mm": 49.492,
+        "scale_percent_of_mesh": 100.0,
+        "fits_core_one": true,
+        "z_margin_mm": 9.5
+      },
+      "true_1_200_targets_mm": {
+        "height_mm": 260.5,
+        "diameter_mm": 45.0
+      },
+      "notes": [
+        "1:200 height match scales mesh so H = 52.1m/200 = 260.5 mm.",
+        "Mesh diameter at that scale may differ slightly from true \u00d845 mm if the source mesh aspect ratio \u2260 52.1/9.",
+        "Engines are recessed if engines_protrude_past_skirt_mm == 0 (nothing extends the AABB past the skirt plane)."
+      ]
+    }
+  ],
+  "preferred_print_mesh": {
+    "file": "assets/starship_ship_print_1_200.stl",
+    "role": "parametric 1:200 CAD solid (true proportions)",
+    "height_mm": 260.4999,
+    "mid_barrel_diameter_mm": 45.15,
+    "footprint_max_mm": 79.6999,
+    "engines_protrude_past_skirt_mm": 0.0,
+    "customizer_note": "Web tool scales Josh mesh via CORE One 1:200 preset (~215.2893%)"
+  }
+}

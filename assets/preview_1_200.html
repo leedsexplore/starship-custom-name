@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Starship 1:200 — CORE One print preview</title>
+<style>
+:root{color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#0e141f;color:#e8ecf4;font:14px/1.4 "IBM Plex Sans",system-ui,sans-serif}
+#app{display:grid;grid-template-rows:auto 1fr;height:100%}
+header{padding:14px 18px;background:#152033;border-bottom:1px solid #2a3a55}
+h1{margin:0;font-size:17px;font-weight:650;letter-spacing:.02em}
+p{margin:5px 0 0;color:#9aa6bd;font-size:12px}
+#viewport{position:relative;min-height:0}
+canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;left:14px;bottom:14px;color:#9aa6bd;font-size:12px;pointer-events:none;
+  background:rgba(10,16,28,.55);padding:8px 10px;border-radius:6px;backdrop-filter:blur(6px)}
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>Starship parametric — 1:200 print mesh</h1>
+    <p>H 260.5 mm · Ø ≈45.15 mm · Prusa CORE One · drag to orbit · scroll to zoom</p>
+  </header>
+  <div id="viewport"><div id="hud">Loading STL…</div></div>
+</div>
+<script type="importmap">{"imports":{"three":"../vendor/three/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { STLLoader } from "three/addons/loaders/STLLoader.js";
+
+const STL_URL = "./starship_ship_print_1_200.stl?v=1";
+const viewport = document.getElementById("viewport");
+const hud = document.getElementById("hud");
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x0e141f);
+
+const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 5000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+viewport.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.45));
+const key = new THREE.DirectionalLight(0xffffff, 1.15);
+key.position.set(80, 140, 100);
+scene.add(key);
+const fill = new THREE.DirectionalLight(0x8eb0ff, 0.35);
+fill.position.set(-90, -40, -60);
+scene.add(fill);
+
+const grid = new THREE.GridHelper(400, 20, 0x3a455f, 0x243044);
+scene.add(grid);
+
+function resize() {
+  const w = viewport.clientWidth;
+  const h = viewport.clientHeight;
+  camera.aspect = w / Math.max(h, 1);
+  camera.updateProjectionMatrix();
+  renderer.setSize(w, h, false);
+}
+addEventListener("resize", resize);
+resize();
+
+(function frame() {
+  controls.update();
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+})();
+
+const loader = new STLLoader();
+const geom = await loader.loadAsync(STL_URL);
+geom.computeVertexNormals();
+geom.computeBoundingBox();
+
+const size = new THREE.Vector3();
+const center = new THREE.Vector3();
+geom.boundingBox.getSize(size);
+geom.boundingBox.getCenter(center);
+geom.translate(-center.x, -center.y, -center.z);
+
+// Parametric ship is Z-up; stand it on the grid (Z → Y).
+const mesh = new THREE.Mesh(
+  geom,
+  new THREE.MeshStandardMaterial({
+    color: 0xc8ccd4,
+    metalness: 0.55,
+    roughness: 0.35,
+  })
+);
+mesh.rotation.x = -Math.PI / 2;
+scene.add(mesh);
+
+mesh.updateMatrixWorld(true);
+const box = new THREE.Box3().setFromObject(mesh);
+const c = box.getCenter(new THREE.Vector3());
+const s = box.getSize(new THREE.Vector3());
+grid.position.y = box.min.y;
+
+controls.target.copy(c);
+// Frame the full tall ship (height dominates).
+const dist = Math.max(s.y * 1.85, s.x * 2.8, s.z * 2.8);
+camera.position.set(c.x + dist * 0.48, c.y + dist * 0.08, c.z + dist * 0.95);
+camera.near = 0.1;
+camera.far = dist * 20;
+camera.updateProjectionMatrix();
+controls.update();
+
+hud.textContent =
+  `H ${s.y.toFixed(1)} mm · footprint ${s.x.toFixed(1)} × ${s.z.toFixed(1)} mm · ` +
+  `${Math.round(geom.attributes.position.count / 3).toLocaleString()} faces`;
+</script>
+</body>
+</html>

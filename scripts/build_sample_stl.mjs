@@ -62,7 +62,9 @@ function wrapGeometryToHull(geometry, side, textY, style) {
   return geometry;
 }
 
-const shipGeo = loadBinarySTL(path.join(ROOT, "assets/StarShipV2_original.stl"));
+const shipGeo = loadBinarySTL(
+  path.join(ROOT, "assets/StarShipV2_cleaned_flaps.stl")
+);
 const font = loadFont(path.join(ROOT, "fonts/optimer_bold.typeface.json"));
 const textGeo = buildFlatTextGeometry(font, "Custom Name", 5, EMBED_MM + 0.5);
 wrapGeometryToHull(textGeo, "right", -2, "raised");
@@ -84,7 +86,7 @@ if (buffer instanceof DataView) {
   throw new Error("Unexpected STLExporter output");
 }
 const header = Buffer.alloc(80, 0);
-header.write("Starship sample v1.1.5 3SL+3Vac");
+header.write("Starship sample v1.2.0 cleaned flaps 3SL+3Vac");
 bytes.set(header, 0);
 
 const outPath = path.join(ROOT, "assets/starship_custom_name_sample.stl");

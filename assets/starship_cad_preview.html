@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Starship — parametric CAD preview</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#12151c;color:#e8ecf4;font:14px/1.4 system-ui,sans-serif}
+#app{display:grid;grid-template-rows:auto 1fr;height:100%}
+header{padding:12px 16px;background:#1a2030;border-bottom:1px solid #2a3348}
+h1{margin:0;font-size:16px} p{margin:4px 0 0;color:#9aa6bd;font-size:12px}
+#viewport{position:relative;min-height:0} canvas{display:block;width:100%;height:100%}
+#hud{position:absolute;left:12px;bottom:12px;color:#9aa6bd;font-size:12px;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app">
+<header><h1>Starship — parametric CAD (52.1 m × 9 m)</h1><p>openscad/starship_parametric.scad · flaps measured from the v5 blueprint · drag to orbit · scroll to zoom</p></header>
+<div id="viewport"><div id="hud">Loading…</div></div>
+</div>
+<script type="importmap">{"imports":{"three":"../vendor/three/three.module.js","three/addons/":"../vendor/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { STLLoader } from "three/addons/loaders/STLLoader.js";
+
+// Procedural hexagonal heat-tile pattern (bump map), like the real ship's
+// tiled windward side. The canvas tiles seamlessly: 6 hex columns x 7 rows.
+function hexTileTexture(){
+  const S=512, c=document.createElement("canvas"); c.width=c.height=S;
+  const g=c.getContext("2d");
+  g.fillStyle="#3a3a3a"; g.fillRect(0,0,S,S);          // gaps = recessed
+  const px=S/6, py=S/7, R=py/1.5*0.94;                 // hex pitch + face size
+  for(let j=-1;j<=8;j++) for(let i=-1;i<=7;i++){
+    const cx=i*px+(j%2?px/2:0), cy=j*py;
+    const grad=g.createRadialGradient(cx,cy,R*0.15,cx,cy,R);
+    grad.addColorStop(0,"#c8c8c8"); grad.addColorStop(0.8,"#a8a8a8");
+    grad.addColorStop(1,"#6a6a6a");
+    g.fillStyle=grad;
+    g.beginPath();
+    for(let k=0;k<6;k++){
+      const a=Math.PI/6+k*Math.PI/3;
+      const x=cx+R*Math.cos(a), y=cy+R*Math.sin(a);
+      k?g.lineTo(x,y):g.moveTo(x,y);
+    }
+    g.closePath(); g.fill();
+  }
+  const tex=new THREE.CanvasTexture(c);
+  tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+  return tex;
+}
+
+// STL geometry has no UVs. The hull/nose tile shell gets a cylindrical unwrap
+// (u = arc length around the axis, v = height) whose seam falls on the
+// untiled leeward side, so the hex pattern is continuous — box projection
+// left seam lines wherever the projection axis flipped. Flat flap faces
+// (normals near the x axis, not radial) keep a planar map instead, since a
+// cylindrical map would smear across them.
+function shipUVs(geom, scale){
+  const HULL_R=4.5;
+  const p=geom.attributes.position, n=p.count, uv=new Float32Array(n*2);
+  const a=new THREE.Vector3(), b=new THREE.Vector3(), c=new THREE.Vector3();
+  const ab=new THREE.Vector3(), ac=new THREE.Vector3(), nrm=new THREE.Vector3();
+  for(let i=0;i<n;i+=3){
+    a.fromBufferAttribute(p,i); b.fromBufferAttribute(p,i+1); c.fromBufferAttribute(p,i+2);
+    nrm.crossVectors(ab.subVectors(b,a), ac.subVectors(c,a)).normalize();
+    // radial faces belong to the hull shell; others are flap plate faces
+    const mx=(a.x+b.x+c.x)/3, my=(a.y+b.y+c.y)/3;
+    const mr=Math.hypot(mx,my)||1;
+    const radial=Math.abs((nrm.x*mx+nrm.y*my)/mr)>0.5;
+    for(let k=0;k<3;k++){
+      const v=[a,b,c][k], o=(i+k)*2;
+      if(radial){ uv[o]=Math.atan2(v.y,v.x)*HULL_R/scale; uv[o+1]=v.z/scale; }
+      else      { uv[o]=v.y/scale;                         uv[o+1]=v.z/scale; }
+    }
+  }
+  geom.setAttribute("uv", new THREE.BufferAttribute(uv,2));
+}
+
+const hexTex=hexTileTexture();
+
+const PARTS = [
+  { label:"steel hull + flaps", url:"./starship_cad_steel.stl?v=25",
+    mat:new THREE.MeshStandardMaterial({color:0x8a929c, metalness:0.95, roughness:0.2,
+      envMapIntensity:0.7}) },
+  { label:"heat-shield tiles", url:"./starship_cad_tiles.stl?v=25", hexUV:true,
+    mat:new THREE.MeshStandardMaterial({color:0x1e2126, metalness:0.2, roughness:0.62,
+      envMapIntensity:0.35, bumpMap:hexTex, bumpScale:1.1}) },
+  { label:"bay interior", url:"./starship_cad_bay.stl?v=25",
+    mat:new THREE.MeshStandardMaterial({color:0xaab0ba, metalness:0.55, roughness:0.5}) },
+  { label:"raptor bells", url:"./starship_cad_engines.stl?v=25",
+    mat:new THREE.MeshStandardMaterial({color:0x0b0c0e, metalness:0.45, roughness:0.55}) },
+];
+
+const viewport=document.getElementById("viewport"), hud=document.getElementById("hud");
+const scene=new THREE.Scene(); scene.background=new THREE.Color(0x12151c);
+const camera=new THREE.PerspectiveCamera(38,1,0.1,2000);
+const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+viewport.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera, renderer.domElement); controls.enableDamping=true;
+
+// Procedural equirect environment (sky/horizon/ground bands) so the polished
+// stainless hull has something real to reflect — metalness alone renders black.
+{
+  const ec=document.createElement("canvas"); ec.width=1024; ec.height=512;
+  const eg=ec.getContext("2d");
+  const sky=eg.createLinearGradient(0,0,0,512);
+  sky.addColorStop(0.0,"#9fb0c4"); sky.addColorStop(0.42,"#6d7f99");
+  sky.addColorStop(0.5,"#b8a98e");  sky.addColorStop(0.55,"#2e333c");
+  sky.addColorStop(1.0,"#101218");
+  eg.fillStyle=sky; eg.fillRect(0,0,1024,512);
+  // a couple of bright "window" strips for crisp specular streaks
+  eg.fillStyle="rgba(255,250,240,0.9)";
+  eg.fillRect(120,60,180,120); eg.fillRect(620,40,220,140);
+  const envTex=new THREE.CanvasTexture(ec);
+  envTex.mapping=THREE.EquirectangularReflectionMapping;
+  const pmrem=new THREE.PMREMGenerator(renderer);
+  scene.environment=pmrem.fromEquirectangular(envTex).texture;
+  envTex.dispose(); pmrem.dispose();
+}
+
+scene.add(new THREE.AmbientLight(0xffffff,0.22));
+const key=new THREE.DirectionalLight(0xffffff,0.9); key.position.set(-60,80,90); scene.add(key);
+const rim=new THREE.DirectionalLight(0x88aaff,0.35); rim.position.set(-70,40,-60); scene.add(rim);
+// windward fill + high raking light so the hex tile relief reads on the black side
+const tileLight=new THREE.DirectionalLight(0xfff4e0,0.8); tileLight.position.set(90,30,-35); scene.add(tileLight);
+const rake=new THREE.DirectionalLight(0xffffff,0.45); rake.position.set(40,160,10); scene.add(rake);
+const grid=new THREE.GridHelper(80,16,0x3a455f,0x2a3348); scene.add(grid);
+
+const loader=new STLLoader();
+const ship=new THREE.Group();
+ship.rotation.x=-Math.PI/2;   // model is Z-up; three.js is Y-up
+scene.add(ship);
+
+const results=await Promise.all(PARTS.map(async part=>{
+  const geom=await loader.loadAsync(part.url);
+  geom.computeVertexNormals();
+  if(part.hexUV) shipUVs(geom, 2.6);   // texture spans 2.6 m → ~0.43 m hexes
+  ship.add(new THREE.Mesh(geom, part.mat));
+  return `${part.label}: ${(geom.attributes.position.count/3).toLocaleString()} tris`;
+}));
+window.__ship=ship; window.__cam=camera; window.__controls=controls;
+hud.textContent=results.join("   ·   ");
+
+const box=new THREE.Box3().setFromObject(ship);
+const center=box.getCenter(new THREE.Vector3()), size=box.getSize(new THREE.Vector3());
+const m=Math.max(size.x,size.y,size.z);
+grid.position.y=box.min.y;
+// Frame the engine bay: look at the base from below-aft so hanging bells are clear.
+const base=new THREE.Vector3(center.x, box.min.y + size.y*0.02, center.z);
+controls.target.copy(base);
+camera.position.set(base.x - m*0.35, box.min.y - m*0.28, base.z + m*0.35);
+controls.update();
+
+function resize(){ const w=viewport.clientWidth,h=viewport.clientHeight; camera.aspect=w/Math.max(h,1); camera.updateProjectionMatrix(); renderer.setSize(w,h,false); }
+addEventListener("resize", resize); resize();
+(function frame(){ controls.update(); renderer.render(scene,camera); requestAnimationFrame(frame); })();
+</script>
+</body>
+</html>

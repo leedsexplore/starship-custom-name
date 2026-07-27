@@ -19,13 +19,32 @@ const BODY_CENTER_X = -22.3;
 /** Mid-body cylinder radius from STL (was 10.55 — too small → letters buried). */
 const HULL_RADIUS_Z = 10.7;
 const EMBED_MM = 0.35;
-/** Approx safe text span along hull before flaps (mm). */
+/** Approx safe text span along mid-body cylinder before flaps (mm). */
 const SAFE_TEXT_SPAN_MM = 48;
 /** Beyond this, downloads ask for confirmation. */
 const HARD_TEXT_SPAN_MM = 60;
 /** |pos| + half-span past this often nears flap roots. */
 const FLAP_ZONE_Y_MM = 28;
-const SHIP_URL = "./assets/StarShipV2_original.stl";
+/**
+ * Smooth hull + cleaned Block 2–style flaps (see scripts/build_ship_with_cleaned_flaps.py).
+ */
+const SHIP_URL = "./assets/StarShipV2_cleaned_flaps.stl";
+const ENVELOPE_URL = "./assets/print_envelope.json";
+
+/** Published ship + CORE One 1:200 targets (overridden by print_envelope.json). */
+const PRINT_DEFAULTS = {
+  realHeightM: 52.1,
+  realDiameterM: 9.0,
+  targetScale: 200,
+  targetHeightMm: 260.5,
+  coreOne: { x_mm: 250, y_mm: 220, z_mm: 270 },
+  /** Measured from assets/StarShipV2_cleaned_flaps.stl (scripts/measure_ship_mesh.py). */
+  meshHeightMm: 121,
+  meshDiameterMm: 21.452,
+  meshFootprintMaxMm: 41.6,
+};
+
+let printEnvelope = { ...PRINT_DEFAULTS };
 
 /**
  * Extruded fonts (Three.js typeface JSON).
@@ -303,6 +322,7 @@ const el = {
   posLabel: document.getElementById("pos-label"),
   depthLabel: document.getElementById("depth-label"),
   scaleLabel: document.getElementById("scale-label"),
+  coreOnePreset: document.getElementById("core-one-preset"),
   download: document.getElementById("download"),
   download3mf: document.getElementById("download-3mf"),
   downloadPng: document.getElementById("download-png"),
@@ -432,6 +452,73 @@ function applyModelScale() {
   modelGroup.scale.setScalar(s);
 }
 
+/** Scale % that makes the customizer mesh H match true 1:200 (260.5 mm). */
+function coreOneScalePercent() {
+  const h = printEnvelope.meshHeightMm || PRINT_DEFAULTS.meshHeightMm;
+  const target = printEnvelope.targetHeightMm || PRINT_DEFAULTS.targetHeightMm;
+  return (target / h) * 100;
+}
+
+function scaledPrintSize(scalePct = Number(el.scale.value)) {
+  const s = scalePct / 100;
+  return {
+    heightMm: (printEnvelope.meshHeightMm || PRINT_DEFAULTS.meshHeightMm) * s,
+    diameterMm:
+      (printEnvelope.meshDiameterMm || PRINT_DEFAULTS.meshDiameterMm) * s,
+    footprintMaxMm:
+      (printEnvelope.meshFootprintMaxMm || PRINT_DEFAULTS.meshFootprintMaxMm) *
+      s,
+  };
+}
+
+function applyCoreOnePreset() {
+  const pct = coreOneScalePercent();
+  const max = Number(el.scale.max);
+  const min = Number(el.scale.min);
+  el.scale.value = String(Math.min(max, Math.max(min, pct)));
+  // Keep exact value even if it falls between range steps.
+  if (Math.abs(Number(el.scale.value) - pct) > 0.001) {
+    el.scale.value = String(pct);
+  }
+  updateLabels();
+  applyModelScale();
+  writeUrl();
+  const sz = scaledPrintSize(pct);
+  const z = printEnvelope.coreOne?.z_mm ?? PRINT_DEFAULTS.coreOne.z_mm;
+  setStatus(
+    `CORE One 1:200 — H ${sz.heightMm.toFixed(1)} mm × Ø ${sz.diameterMm.toFixed(1)} mm (Z room ${ (z - sz.heightMm).toFixed(1) } mm).`
+  );
+}
+
+async function loadPrintEnvelope() {
+  try {
+    const res = await fetch(ENVELOPE_URL, { cache: "no-cache" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const mesh = data.customizer_mesh || {};
+    const target = data.target_print || {};
+    const real = data.real_ship || {};
+    printEnvelope = {
+      realHeightM: real.height_m ?? PRINT_DEFAULTS.realHeightM,
+      realDiameterM: real.diameter_m ?? PRINT_DEFAULTS.realDiameterM,
+      targetScale: Number(String(target.scale || "1:200").split(":").pop()) || 200,
+      targetHeightMm: target.height_mm ?? PRINT_DEFAULTS.targetHeightMm,
+      coreOne: target.build_volume_mm || PRINT_DEFAULTS.coreOne,
+      meshHeightMm: mesh.height_mm ?? PRINT_DEFAULTS.meshHeightMm,
+      meshDiameterMm: mesh.mid_barrel_diameter_mm ?? PRINT_DEFAULTS.meshDiameterMm,
+      meshFootprintMaxMm: mesh.footprint_max_mm ?? PRINT_DEFAULTS.meshFootprintMaxMm,
+    };
+    // Slider must reach the measured CORE One % (≈215%).
+    const need = Math.ceil(coreOneScalePercent() + 0.5);
+    if (Number(el.scale.max) < need) el.scale.max = String(need);
+  } catch (err) {
+    console.warn("print_envelope.json unavailable; using built-in defaults", err);
+    printEnvelope = { ...PRINT_DEFAULTS };
+    const need = Math.ceil(coreOneScalePercent() + 0.5);
+    if (Number(el.scale.max) < need) el.scale.max = String(need);
+  }
+}
+
 function resize() {
   const { clientWidth: w, clientHeight: h } = el.viewport;
   camera.aspect = w / Math.max(h, 1);
@@ -443,7 +530,13 @@ function updateLabels() {
   el.sizeLabel.textContent = `${Number(el.size.value).toFixed(1)} mm`;
   el.posLabel.textContent = el.pos.value;
   el.depthLabel.textContent = `${Number(el.depth.value).toFixed(2)} mm`;
-  el.scaleLabel.textContent = `${el.scale.value}%`;
+  const pct = Number(el.scale.value);
+  const sz = scaledPrintSize(pct);
+  const corePct = coreOneScalePercent();
+  const isCore = Math.abs(pct - corePct) < 0.05;
+  el.scaleLabel.textContent = isCore
+    ? `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm (CORE One 1:200)`
+    : `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm`;
 }
 
 function mountFontOptions(selectedId = "optimer-bold") {
@@ -807,7 +900,11 @@ function applyState(state) {
   if (state.depth != null) el.depth.value = state.depth;
   if (state.scale != null) {
     const n = Number(state.scale);
-    if (Number.isFinite(n)) el.scale.value = String(Math.min(200, Math.max(50, n)));
+    if (Number.isFinite(n)) {
+      const max = Number(el.scale.max) || 220;
+      const min = Number(el.scale.min) || 50;
+      el.scale.value = String(Math.min(max, Math.max(min, n)));
+    }
   }
   if (state.side === "left" || state.side === "right") {
     const radio = document.querySelector(
@@ -1275,6 +1372,7 @@ async function boot() {
   }
 
   el.form.addEventListener("submit", (e) => e.preventDefault());
+  await loadPrintEnvelope();
   const urlState = stateFromUrl();
   mountFontOptions(
     urlState.font && FONT_OPTIONS[urlState.font] ? urlState.font : "optimer-bold"
@@ -1303,6 +1401,7 @@ async function boot() {
     applyModelScale();
     writeUrl();
   });
+  el.coreOnePreset?.addEventListener("click", () => applyCoreOnePreset());
   el.wrap.addEventListener("change", onControlChange);
   el.fontStyle.addEventListener("change", () => {
     applyFontSelection(el.fontStyle.value).catch((err) => {
