@@ -1,32 +1,45 @@
 # Attribution
 
-## Remix / tool
+## Original work
 
-**Starship Custom Name** (web customizer + OpenSCAD wrapper)  
+**Starship Custom Name** — parametric Starship CAD, web customizer, and tooling  
 by **David Leeds** ([@leedsexplore](https://github.com/leedsexplore))  
 https://github.com/leedsexplore/starship-custom-name  
 https://leedsexplore.github.io/starship-custom-name/
 
-## Parent models
+The **parametric CAD model** (`openscad/starship_parametric.scad` and every mesh
+exported from it — the one-piece 1:200 print STL, the split steel/tile bodies,
+and the MMU 3MF) is original work modeled from published vehicle dimensions and
+a scaled blueprint. It is licensed **CC BY 4.0**
+(https://creativecommons.org/licenses/by/4.0/): remix it, print it, sell prints —
+just credit David Leeds (leedsexplore) with a link.
 
-This project is a **remix** of:
+## Legacy remix mesh (v1.x customizer option)
+
+The classic customizer base mesh (`assets/StarShipV2_original.stl`,
+`assets/StarShipV2_no_flaps.stl`, `assets/StarShipV2_cleaned_flaps.stl`,
+`assets/flaps_cleaned/`) is a **remix** of:
 
 **SpaceX Starship** by Josh1297  
 https://www.printables.com/model/225040-spacex-starship  
 
-Hull, engines, and overall print scale come from Josh1297’s model.
+Hull, engines, and overall print scale of the legacy mesh come from Josh1297's model.
 
 **SpaceX Starship Block 2 (1:144)** by anventia  
 https://www.printables.com/model/1314176-spacex-starship-block-2-1144-scale  
 
-Forward/aft flap planforms are cleaned from anventia’s structural flap STLs, then scaled and posed onto the Josh hull (`assets/flaps_cleaned/`, `scripts/build_cleaned_flaps.py`, `scripts/build_ship_with_cleaned_flaps.py`).
+Forward/aft flap planforms are cleaned from anventia's structural flap STLs, then
+scaled and posed onto the Josh hull (`scripts/build_cleaned_flaps.py`,
+`scripts/build_ship_with_cleaned_flaps.py`).
 
-License: Creative Commons Attribution–NonCommercial (CC BY-NC)  
+License for the legacy mesh and any STL that includes it:
+Creative Commons Attribution–NonCommercial (CC BY-NC)  
 https://creativecommons.org/licenses/by-nc/4.0/
 
-You must give credit to **Josh1297** and **anventia** when you share remixed files or prints derived from this work. Commercial use is not allowed under the parent licenses.
-
-The web customizer and OpenSCAD wrapper in this repository do not change that license.
+You must credit **Josh1297** and **anventia** when you share remixed files or
+prints derived from the legacy mesh. Commercial use of that mesh is not allowed
+under the parent licenses. These restrictions do **not** apply to the original
+parametric model above.
 
 ## Fonts
 

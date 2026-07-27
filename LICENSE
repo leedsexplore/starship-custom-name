@@ -1,18 +1,33 @@
-This repository redistributes and remixed geometry derived from:
+This repository contains works under two Creative Commons licenses.
+
+1) Original parametric Starship CAD — CC BY 4.0
+
+  openscad/starship_parametric.scad and every mesh exported from it
+  (assets/starship_ship_print_1_200.stl, assets/starship_print_1_200_steel.stl,
+  assets/starship_print_1_200_tiles.stl, assets/starship_print_1_200_mmu.3mf,
+  assets/starship_cad_*.stl, printables/starship-parametric/files/*)
+
+  by David Leeds (https://github.com/leedsexplore)
+
+  Creative Commons Attribution 4.0 International (CC BY 4.0)
+  https://creativecommons.org/licenses/by/4.0/legalcode
+  - Attribution required (credit David Leeds / leedsexplore)
+  - Commercial use, remixing, and redistribution allowed
+
+2) Legacy remixed geometry — CC BY-NC 4.0
+
+  assets/StarShipV2_*.stl and assets/flaps_cleaned/* derive from:
 
   SpaceX Starship by Josh1297
   https://www.printables.com/model/225040-spacex-starship
+  (flap planforms from anventia's Starship Block 2,
+  https://www.printables.com/model/1314176-spacex-starship-block-2-1144-scale)
 
-under Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0).
-
-Full license text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
-
-Summary:
-  - Attribution required (credit Josh1297)
+  Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+  https://creativecommons.org/licenses/by-nc/4.0/legalcode
+  - Attribution required (credit Josh1297 and anventia)
   - Non-commercial use only
   - Sharing remixed files is allowed with the same credit/restrictions
 
 Original tooling code in this repository (HTML/CSS/JS/Python helper scripts)
-by David Leeds (https://github.com/leedsexplore) that is not part of the 3D mesh
-may be reused with attribution to this project and author, but the Starship mesh
-and any STL that includes it remain CC BY-NC.
+by David Leeds may be reused with attribution to this project and author.
