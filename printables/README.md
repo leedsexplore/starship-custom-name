@@ -9,9 +9,8 @@ Listing packages ready to publish with a local `printables-integration` CLI
 python3 scripts/validate_printables_package.py
 ```
 
-Checks structure, CC BY-NC 4.0 / no-remix flags, required tags, and that the
-package includes the **hex** one-piece STL + hex MMU 3MF (+ `.scad`). Run this
-before every publish.
+Checks structure, **CC BY 4.0** / no-remix flags, required tags, hex one-piece
+(+ minis) + hex MMU 3MF (+ `.scad` / `.ini`). Run this before every publish.
 
 ## Publish `starship-parametric`
 
@@ -40,15 +39,18 @@ printables publish packages/starship-parametric --model-id 1792868 --no-dry-run 
 
 Notes:
 
-- This listing is an ORIGINAL model (no `remix_of`), licensed CC BY-NC 4.0.
+- This listing is an ORIGINAL model (no `remix_of`), licensed **CC BY 4.0**
+  for the parametric / hex print files.
   Live model: https://www.printables.com/model/1792868
 - Only `starship-parametric/` ships in this repo (no separate remix Printables
-  package here — the classic Josh1297/anventia mesh is a customizer option only).
-- Package `files/` is hex one-piece STL + hex MMU 3MF + parametric `.scad` (not the
-  web customizer sample, and not the smooth MMU).
+  package here — the classic Josh1297/anventia mesh is a customizer option only,
+  still CC BY-NC).
+- Package `files/` is hex one-piece (1:200 + minis) + hex MMU 3MF + `.ini` helpers
+  + parametric `.scad`.
 - If the CLI's `printables.toml` schema differs from this file's keys, keep the
   values and rename keys to match the CLI sample `printables.toml`.
 - Regenerate files after CAD changes with the one-shot rebuild:
   `python3 scripts/rebuild_release.py`
   (OpenSCAD exports, smooth + hex MMU, envelope, package sync, validate).
   Or run the individual steps in the root README if you only need part of the pipeline.
+  Minis: `python3 scripts/build_mini_scale.py`

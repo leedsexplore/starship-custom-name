@@ -84,8 +84,8 @@ def main() -> None:
     for key in ("title", "license", "tags"):
         if key not in listing:
             fail(f"printables.toml missing listing.{key}")
-    if listing.get("license") not in ("CC BY-NC", "CC BY-NC 4.0"):
-        fail(f"expected CC BY-NC, got {listing.get('license')!r}")
+    if listing.get("license") not in ("CC BY", "CC BY 4.0", "CC-BY"):
+        fail(f"expected CC BY 4.0 for parametric listing, got {listing.get('license')!r}")
     if "remix_of" in listing or "remix_of" in meta:
         fail("original listing must not set remix_of")
     tags = set(listing["tags"])
@@ -100,7 +100,7 @@ def main() -> None:
         "one print job",
         "MMU3",
         "leedsexplore.github.io/starship-custom-name",
-        "CC BY-NC",
+        "CC BY 4.0",
         "260.5",
         "byte-for-byte",
         "GitHub Releases",
@@ -110,6 +110,8 @@ def main() -> None:
         "desk model",
         "no glue",
         "26-part",
+        "1:250",
+        "1:300",
     ):
         if needle.lower() not in desc.lower():
             fail(f"DESCRIPTION.md missing required phrase: {needle!r}")
@@ -126,6 +128,8 @@ def main() -> None:
         "starship_parametric.scad",
         "prusa_core_one_starship.ini",
         "bambu_p1s_starship.ini",
+        "starship_1_250_hex_tiles_one_piece.stl",
+        "starship_1_300_hex_tiles_one_piece.stl",
     ]
     for name in required_files:
         p = files_dir / name

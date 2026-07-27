@@ -1,19 +1,20 @@
-This repository contains works under Creative Commons Attribution–NonCommercial 4.0.
+This repository contains works under Creative Commons and original tooling copyright.
 
-1) Original parametric Starship CAD — CC BY-NC 4.0
+1) Original parametric Starship CAD — CC BY 4.0
 
   openscad/starship_parametric.scad and every mesh exported from it
   (assets/starship_ship_print_1_200.stl, assets/starship_print_1_200_steel.stl,
   assets/starship_print_1_200_tiles.stl, assets/starship_print_1_200_mmu.3mf,
-  assets/starship_*_hex.*, printables/starship-parametric/files/*)
+  assets/starship_*_hex.*, printables/starship-parametric/files/* for the
+  parametric / hex listing)
 
   by David Leeds (https://github.com/leedsexplore)
 
-  Creative Commons Attribution–NonCommercial 4.0 International (CC BY-NC 4.0)
-  https://creativecommons.org/licenses/by-nc/4.0/legalcode
-  - Attribution required (credit David Leeds / leedsexplore)
-  - Non-commercial use only
-  - Remixing and redistribution allowed under the same terms
+  Creative Commons Attribution 4.0 International (CC BY 4.0)
+  https://creativecommons.org/licenses/by/4.0/legalcode
+  - Attribution required (credit David Leeds / leedsexplore with a link)
+  - Commercial use and remixing allowed under CC BY terms
+  - Unofficial fan model; SpaceX and Starship are trademarks of their owners
 
 2) Legacy remixed geometry — CC BY-NC 4.0
 
@@ -28,7 +29,9 @@ This repository contains works under Creative Commons Attribution–NonCommercia
   https://creativecommons.org/licenses/by-nc/4.0/legalcode
   - Attribution required (credit Josh1297 and anventia)
   - Non-commercial use only
-  - Sharing remixed files is allowed with the same credit/restrictions
 
-Original tooling code in this repository (HTML/CSS/JS/Python helper scripts)
-by David Leeds may be reused with attribution to this project and author.
+3) Tooling code (HTML/CSS/JS/Python/OpenSCAD wrappers)
+
+  Copyright David Leeds — reuse with attribution to this project and author.
+  The web customizer is not relicensed as CC BY; only the parametric CAD /
+  print meshes above are CC BY 4.0.

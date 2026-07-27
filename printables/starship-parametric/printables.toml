@@ -3,16 +3,12 @@
 #   printables validate packages/starship-parametric
 #   printables publish packages/starship-parametric --model-id 1792868 --no-dry-run --confirm
 #
-# This is original work (openscad/starship_parametric.scad, built from published
-# dimensions) — NOT a remix, so there is no remix_of. License: CC BY-NC 4.0
-# (attribution required, remix OK, no commercial use).
-#
+# Original parametric print files: CC BY 4.0 (attribution required; commercial OK).
 # Live model: https://www.printables.com/model/1792868
-# Category: Physics & Astronomy — where Starship searchers already browse.
 
 [listing]
 title = "SpaceX Starship 1:200 One-Piece Hex Tiles — Put Your Name On It"
-license = "CC BY-NC"
+license = "CC BY 4.0"
 category = "Physics & Astronomy"
 category_id = "91"
 tags = [

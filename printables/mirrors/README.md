@@ -4,8 +4,9 @@
 **Customizer:** https://leedsexplore.github.io/starship-custom-name/  
 **Source:** https://github.com/leedsexplore/starship-custom-name  
 
-License everywhere: **CC BY-NC 4.0** — credit David Leeds (leedsexplore).  
+License everywhere for the **parametric / hex** files: **CC BY 4.0** — credit David Leeds (leedsexplore).  
 Deep-link Printables + the customizer on every mirror; do not invent a second “canonical.”
+Do not relicense the classic remix mesh (still CC BY-NC / Josh + anventia).
 
 ## Stage files
 
@@ -24,10 +25,11 @@ python3 scripts/stage_mirror_uploads.py
 ## Thingiverse
 
 1. Create → upload core files (one-piece STL + MMU 3MF + inis; skip huge extras if needed).
-2. Summary = first paragraph of DESCRIPTION.
-3. License: Creative Commons — Attribution — Non-Commercial.
+2. Summary = first paragraph of DESCRIPTION (customizer URL in the first ~150 chars).
+3. License: Creative Commons — Attribution (CC BY) for parametric / hex files.
 4. Footer links to Printables + customizer.
 
 ## Cults / others
 
-Only if you are comfortable with the same CC BY-NC terms and trademark disclaimer.
+Only if you are comfortable with **CC BY 4.0** on the parametric files and the trademark disclaimer.
+Do not upload the classic remix mesh under a commercial-friendly license.

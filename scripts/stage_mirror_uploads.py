@@ -18,6 +18,8 @@ OUT = ROOT / "printables" / "mirrors" / "upload"
 CORE = [
     "starship_1_200_hex_tiles_one_piece.stl",
     "starship_1_200_hex_tiles_mmu.3mf",
+    "starship_1_250_hex_tiles_one_piece.stl",
+    "starship_1_300_hex_tiles_one_piece.stl",
     "starship_parametric.scad",
     "prusa_core_one_starship.ini",
     "bambu_p1s_starship.ini",

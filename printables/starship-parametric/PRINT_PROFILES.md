@@ -5,6 +5,13 @@ Customizer (put your name on it): https://leedsexplore.github.io/starship-custom
 
 Open `starship_1_200_hex_tiles_mmu.3mf` (or the one-piece STL), then apply:
 
+True **1:200** (H **260.5 mm**) is the hero. Also ship:
+
+| Scale | Height | File |
+|-------|--------|------|
+| 1:250 | ≈208 mm | `starship_1_250_hex_tiles_one_piece.stl` |
+| 1:300 | ≈174 mm | `starship_1_300_hex_tiles_one_piece.stl` (A1 mini–friendly) |
+
 ## All printers
 
 - **Orientation:** nose up · engines flush with the skirt on the plate
@@ -23,6 +30,6 @@ Envelope 250×220×270 — true 1:200 has ~9.5 mm Z margin.
 
 Import `bambu_p1s_starship.ini` notes into Bambu Studio Fine 0.16/0.20, or match the table.
 AMS: map the two bodies to silver + black.
-**Z:** needs ≥261 mm clear (A1 mini is short — scale down in the slicer if needed).
+**Z:** 1:200 needs ≥261 mm. For A1 mini use the **1:300** one-piece (~174 mm) or scale in the slicer.
 
 Named lettering: use the customizer, then slice Hull + Letters 3MF separately.

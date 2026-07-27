@@ -9,13 +9,16 @@ https://leedsexplore.github.io/starship-custom-name/
 
 The **parametric CAD model** (`openscad/starship_parametric.scad` and every mesh
 exported from it — the one-piece 1:200 print STL, the split steel/tile bodies,
-and the MMU 3MF) is original work modeled from published vehicle dimensions.
-It is an **unofficial fan model** (not affiliated with SpaceX); SpaceX and Starship
-are trademarks of their respective owners. Licensed **CC BY-NC 4.0**
-(https://creativecommons.org/licenses/by-nc/4.0/): remix and share with credit —
-non-commercial only. Credit David Leeds (leedsexplore) with a link.
+hex variants, and the MMU 3MF) is original work modeled from published vehicle
+dimensions. It is an **unofficial fan model** (not affiliated with SpaceX);
+SpaceX and Starship are trademarks of their respective owners. Licensed
+**CC BY 4.0** (https://creativecommons.org/licenses/by/4.0/): remix and share
+(including commercial) with credit. Credit David Leeds (leedsexplore) with a link.
 
 Live print files: https://www.printables.com/model/1792868
+
+Web customizer / tooling code remains copyright David Leeds (reuse with
+attribution) and is not the same as the CC BY grant on the parametric meshes.
 
 ## Legacy remix mesh (v1.x customizer option)
 
@@ -41,8 +44,8 @@ https://creativecommons.org/licenses/by-nc/4.0/
 
 You must credit **Josh1297** and **anventia** when you share remixed files or
 prints derived from the legacy mesh. Commercial use of that mesh is not allowed
-under the parent licenses. The original parametric model above is also
-**CC BY-NC** (credit David Leeds / leedsexplore; non-commercial).
+under the parent licenses. The original parametric model above is **CC BY 4.0**
+(credit David Leeds / leedsexplore).
 
 ## Fonts
 

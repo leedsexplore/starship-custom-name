@@ -123,6 +123,12 @@ def main() -> int:
             shutil.copy2(src, dst)
             print(f"synced {dst.relative_to(ROOT)}")
 
+        run([py, str(ROOT / "scripts" / "build_mini_scale.py")], "1:250 + 1:300 mini hex")
+        run(
+            [py, str(ROOT / "scripts" / "build_sliced_hints_3mf.py")],
+            "hex MMU print-hint metadata",
+        )
+
         run(
             [py, str(ROOT / "scripts" / "validate_printables_package.py")],
             "validate Printables package",

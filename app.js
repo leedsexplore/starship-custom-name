@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.3.1";
+import { build3mf } from "./export3mf.js?v=2.4.0";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.3.1";
+} from "./version.js?v=2.4.0";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -407,6 +407,9 @@ const el = {
   downloadPng: document.getElementById("download-png"),
   downloadScad: document.getElementById("download-scad"),
   exportPathNote: document.getElementById("export-path-note"),
+  postDownloadCta: document.getElementById("post-download-cta"),
+  namePresets: document.getElementById("name-presets"),
+  copyLinkAgain: document.getElementById("copy-link-again"),
   copyLink: document.getElementById("copy-link"),
   resetView: document.getElementById("reset-view"),
   fitSize: document.getElementById("fit-size"),
@@ -667,6 +670,19 @@ async function applyFontSelection(fontId, { rebuild = true } = {}) {
 function setStatus(msg, isError = false) {
   el.status.textContent = msg;
   el.status.classList.toggle("error", isError);
+}
+
+function showPostDownloadCta(show = true) {
+  if (!el.postDownloadCta) return;
+  el.postDownloadCta.hidden = !show;
+}
+
+async function applyNamePreset(name) {
+  el.name.value = name;
+  onControlChange();
+  await flushRebuild();
+  writeUrl();
+  setStatus(`Preset “${name}” — Copy link or PNG cover to share.`);
 }
 
 function selectedSide() {
@@ -1633,6 +1649,7 @@ async function downloadStl() {
       setStatus(
         "STL downloaded — exact Printables hex one-piece (starship_1_200_hex_tiles_one_piece.stl)."
       );
+      showPostDownloadCta(true);
       return;
     }
 
@@ -1666,6 +1683,7 @@ async function downloadStl() {
     setStatus(
       `STL downloaded — ${payload.note} Color is preview-only; set filament in your slicer.`
     );
+    showPostDownloadCta(true);
   } catch (err) {
     console.error(err);
     setStatus(err.message || "Export failed", true);
@@ -1694,6 +1712,7 @@ async function download3mf() {
       setStatus(
         "3MF downloaded — exact Printables hex MMU (starship_1_200_hex_tiles_mmu.3mf)."
       );
+      showPostDownloadCta(true);
       return;
     }
 
@@ -1780,6 +1799,7 @@ async function download3mf() {
             ? "3MF downloaded — engraved hull is a single solid (recess cut)."
             : "3MF downloaded — boolean failed; Hull + Letters (cutter) for slicer boolean."
     );
+    showPostDownloadCta(true);
   } catch (err) {
     console.error(err);
     setStatus(err.message || "3MF export failed", true);
@@ -1840,6 +1860,7 @@ async function downloadPng() {
     a.download = `starship_${nameSlug()}_cover.png`;
     a.click();
     setStatus("PNG cover downloaded — good for Printables gallery images.");
+    showPostDownloadCta(true);
   } catch (err) {
     console.error(err);
     setStatus(err.message || "PNG capture failed", true);
@@ -2037,6 +2058,17 @@ async function boot() {
     setStatus("View reset.");
   });
   el.fitSize.addEventListener("click", fitTextToHull);
+  el.namePresets?.addEventListener("click", (ev) => {
+    const btn = ev.target.closest("button[data-name]");
+    if (!btn) return;
+    applyNamePreset(btn.dataset.name).catch((err) => {
+      console.error(err);
+      setStatus(err.message || "Preset failed", true);
+    });
+  });
+  el.copyLinkAgain?.addEventListener("click", () => {
+    copyShareLink();
+  });
 
   try {
     const initialFontId = FONT_OPTIONS[el.fontStyle.value]

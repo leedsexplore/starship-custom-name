@@ -1,15 +1,16 @@
 # Starship Custom Name
 
-**v2.3.1** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.4.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 **North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
 real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.
+Mini one-piece files at **1:250** / **1:300** fit shorter printers.
 
 **Unofficial fan model** — not affiliated with or endorsed by SpaceX. Outer envelope
 matches the **Block 2 / Block 3 ship** (52.1 m × Ø9 m), not the full V3 stack
 (~124.4 m). SpaceX and Starship are trademarks of their respective owners.
 
-- **Your name on the hull** — type → preview → STL / Hull+Letters 3MF / PNG cover.
+- **Your name on the hull** — type → preview → STL / Hull+Letters 3MF / PNG cover · share presets (`?name=S40`).
 - **One print job** — hull, flaps, bay, six Raptors; zero assembly.
 - **Real hex tiles** — embossed plates on the windward shield (Printables hex files;
   empty-name Original CAD @ 1:200 downloads them byte-for-byte).
@@ -18,9 +19,9 @@ matches the **Block 2 / Block 3 ship** (52.1 m × Ø9 m), not the full V3 stack
 
 | What | License |
 |------|---------|
-| Parametric CAD model (`openscad/starship_parametric.scad` and every mesh exported from it, incl. `assets/starship_ship_print_1_200.stl`, the split print bodies, and the MMU 3MF) | **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)** — original work by David Leeds; remix with credit, non-commercial only |
+| Parametric CAD / hex print meshes (`openscad/starship_parametric.scad`, `assets/starship_*_hex.*`, Printables package files for this listing) | **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)** — credit David Leeds; commercial remix OK with attribution |
 | Legacy customizer mesh (`assets/StarShipV2_*.stl`, remix of Josh1297 + anventia flaps) | **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/)** — credit Josh1297 and anventia, non-commercial only |
-| Tooling code (HTML/CSS/JS/Python/OpenSCAD wrappers) | Reuse with attribution |
+| Tooling code (HTML/CSS/JS/Python/OpenSCAD wrappers) | Copyright David Leeds — reuse with attribution |
 
 See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 
@@ -30,7 +31,7 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 **Source:** [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
 
 1. Open the site above (or run locally — see below).
-2. Pick a base model: **Parametric CAD 1:200** (default, CC BY-NC) or the classic
+2. Pick a base model: **Parametric CAD 1:200** (default, CC BY) or the classic
    v1.x remix mesh (CC BY-NC).
 3. Enter hull text, fonts, colors, and placement.
 4. Download:
