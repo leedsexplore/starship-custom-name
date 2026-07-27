@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.1.4";
+import { build3mf } from "./export3mf.js?v=2.1.5";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.1.4";
+} from "./version.js?v=2.1.5";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -499,26 +499,29 @@ const steelMaterial = new THREE.MeshStandardMaterial({
  * emboss_hex_tiles.py (scale-true 0.29 m tiles measured off tiles_combined.stl).
  */
 function makeHexTileTexture() {
-  const S = 512;
+  const S = 1024;
   const c = document.createElement("canvas");
   c.width = c.height = S;
   const g = c.getContext("2d");
-  g.fillStyle = "#3a3a3a";
+  // Groove floor between plates (recessed in the bump map).
+  g.fillStyle = "#242424";
   g.fillRect(0, 0, S, S);
-  const px = S / 6;
-  const py = S / 7;
-  // Circumradius sized so the inter-tile gap ≈ 0.2 mm of the 1.45 mm pitch.
-  const R = (py / 1.5) * 0.86;
+  const px = S / 6; // hex pitch = 1.45 mm (plate FTF + groove)
+  const py = S / 7; // circumferential row pitch ≈ 0.866 · px
+  // Scale-true groove: 0.2 mm of the 1.45 mm pitch, like the print plates.
+  const groove = px * (0.2 / 1.45);
+  // Pointy-top plate: across-flats (horizontal) = √3 · R.
+  const R = (px - groove) / Math.sqrt(3);
   for (let j = -1; j <= 8; j++) {
     for (let i = -1; i <= 7; i++) {
       const cx = i * px + (j % 2 ? px / 2 : 0);
       const cy = j * py;
-      // Flat plate face with a crisp rim — the reference tiles are flat
-      // plates with thin grooves, not domed buttons.
-      const grad = g.createRadialGradient(cx, cy, R * 0.15, cx, cy, R);
-      grad.addColorStop(0, "#c6c6c6");
-      grad.addColorStop(0.9, "#bfbfbf");
-      grad.addColorStop(1, "#565656");
+      // Flat plate face — uniform height with only a slim anti-alias rim,
+      // so tiles read as a honeycomb of plates, not domed buttons.
+      const grad = g.createRadialGradient(cx, cy, R * 0.85, cx, cy, R);
+      grad.addColorStop(0, "#c8c8c8");
+      grad.addColorStop(0.75, "#c4c4c4");
+      grad.addColorStop(1, "#9a9a9a");
       g.fillStyle = grad;
       g.beginPath();
       for (let k = 0; k < 6; k++) {
@@ -534,6 +537,8 @@ function makeHexTileTexture() {
   }
   const tex = new THREE.CanvasTexture(c);
   tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+  // Fine 1.45 mm tiles smear at glancing angles without anisotropy.
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
   return tex;
 }
 
@@ -1894,7 +1899,8 @@ async function boot() {
   mountPresets(el.hullPresets, el.color);
   mountPresets(el.textPresets, el.textColor);
   applyState(urlState);
-  if (urlState.name == null) el.name.value = "";
+  // First visit (no ?name=) shows a demo ship ID on the leeward steel side.
+  if (urlState.name == null) el.name.value = "S40";
   if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
   updateLabels();
   resize();

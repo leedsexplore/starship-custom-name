@@ -42,15 +42,18 @@ if (qs.get("tiles") === "hex" || qs.get("hex") === "1") {
 // Calibrated to the print tiles: scale-true 0.29 m plates, thin crisp grooves
 // (same recipe as makeHexTileTexture in app.js).
 function hexTileTexture(){
-  const S=512, c=document.createElement("canvas"); c.width=c.height=S;
+  const S=1024, c=document.createElement("canvas"); c.width=c.height=S;
   const g=c.getContext("2d");
-  g.fillStyle="#3a3a3a"; g.fillRect(0,0,S,S);          // gaps = recessed
-  const px=S/6, py=S/7, R=py/1.5*0.86;                 // hex pitch + face size
+  g.fillStyle="#242424"; g.fillRect(0,0,S,S);          // gaps = recessed
+  const px=S/6, py=S/7;                                // hex pitch
+  const groove=px*(0.2/1.45);                          // scale-true 0.2 mm groove
+  const R=(px-groove)/Math.sqrt(3);                    // pointy-top plate size
   for(let j=-1;j<=8;j++) for(let i=-1;i<=7;i++){
     const cx=i*px+(j%2?px/2:0), cy=j*py;
-    const grad=g.createRadialGradient(cx,cy,R*0.15,cx,cy,R);
-    grad.addColorStop(0,"#c6c6c6"); grad.addColorStop(0.9,"#bfbfbf");
-    grad.addColorStop(1,"#565656");
+    // Flat plate faces with a slim anti-alias rim — honeycomb, not domes.
+    const grad=g.createRadialGradient(cx,cy,R*0.85,cx,cy,R);
+    grad.addColorStop(0,"#c8c8c8"); grad.addColorStop(0.75,"#c4c4c4");
+    grad.addColorStop(1,"#9a9a9a");
     g.fillStyle=grad;
     g.beginPath();
     for(let k=0;k<6;k++){
@@ -178,6 +181,7 @@ const scene=new THREE.Scene(); scene.background=new THREE.Color(0x12151c);
 const camera=new THREE.PerspectiveCamera(38,1,0.1,2000);
 const renderer=new THREE.WebGLRenderer({antialias:true}); renderer.setPixelRatio(Math.min(devicePixelRatio,2));
 viewport.appendChild(renderer.domElement);
+if(hexTex) hexTex.anisotropy=renderer.capabilities.getMaxAnisotropy();
 const controls=new OrbitControls(camera, renderer.domElement); controls.enableDamping=true;
 
 // Procedural equirect environment (sky/horizon/ground bands) so the polished
