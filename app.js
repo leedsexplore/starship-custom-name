@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.3";
+import { build3mf } from "./export3mf.js?v=2.4.4";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.3";
+} from "./version.js?v=2.4.4";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -30,7 +30,9 @@ const SHIPS = {
     envelopeFile: "assets/starship_ship_print_1_200.stl",
     /**
      * Preview layers (steel + tiled heat shield). The combined one-piece STL is
-     * lazy-loaded on first export/CSG so cold start stays ~20 MB instead of ~30 MB.
+     * loaded only on first named export/CSG so Ready stays ~19 MB of layers,
+     * not +10 MB solid prefetch. Hex Printables files are Release-hosted on
+     * the slim Pages deploy (not fetched at boot).
      */
     layers: [
       {
@@ -773,6 +775,13 @@ function miniScalePercent(denom) {
 }
 
 function applyMiniScalePreset(denom) {
+  if (ship.id !== "parametric") {
+    setStatus(
+      "Mini 1:250 / 1:300 are for Original CAD (Printables hex files). Switch base model first.",
+      true
+    );
+    return;
+  }
   const pct = miniScalePercent(denom);
   const max = Number(el.scale.max);
   const min = Number(el.scale.min);
@@ -962,16 +971,8 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
     shipMesh = buildShipDisplay(geometry, next, layers);
     modelGroup.add(shipMesh);
 
-    // Warm the combined solid in the background for parametric export.
-    if (next.layers?.length) {
-      loadShipGeometry(next)
-        .then((g) => {
-          if (token === shipLoadToken && ship.id === next.id) {
-            shipGeometry = g;
-          }
-        })
-        .catch((err) => console.warn("Background solid prefetch failed", err));
-    }
+    // Combined solid (~10 MB) loads only on first named export / CSG via
+    // ensureShipGeometry() — do not prefetch during Ready (steals bandwidth).
 
     if (retune) {
       el.scale.value = String(coreOneScalePercent());
@@ -1409,10 +1410,36 @@ function nameSlug() {
 }
 
 /** Byte-identical to the Printables listing files (hex one-piece + hex MMU). */
-const PRINTABLES_HEX_STL_URL = `./assets/starship_ship_print_1_200_hex.stl?v=${CACHE_BUST}`;
-const PRINTABLES_HEX_3MF_URL = `./assets/starship_print_1_200_mmu_hex.3mf?v=${CACHE_BUST}`;
 const PRINTABLES_HEX_STL_NAME = "starship_1_200_hex_tiles_one_piece.stl";
 const PRINTABLES_HEX_3MF_NAME = "starship_1_200_hex_tiles_mmu.3mf";
+/** Last GitHub Release that ships the hex print files (Pages slim omits them). */
+const PRINTABLES_HEX_RELEASE = "v2.4.2";
+const PRINTABLES_HEX_STL_LOCAL = `./assets/starship_ship_print_1_200_hex.stl?v=${CACHE_BUST}`;
+const PRINTABLES_HEX_3MF_LOCAL = `./assets/starship_print_1_200_mmu_hex.3mf?v=${CACHE_BUST}`;
+const PRINTABLES_HEX_STL_REMOTE = `https://github.com/leedsexplore/starship-custom-name/releases/download/${PRINTABLES_HEX_RELEASE}/${PRINTABLES_HEX_STL_NAME}`;
+const PRINTABLES_HEX_3MF_REMOTE = `https://github.com/leedsexplore/starship-custom-name/releases/download/${PRINTABLES_HEX_RELEASE}/${PRINTABLES_HEX_3MF_NAME}`;
+
+/**
+ * Prefer local assets (full checkout). On the slim Pages deploy those files are
+ * omitted, so fall back to the GitHub Release that carries the Printables hex.
+ */
+async function fetchPrintablesHex(kind) {
+  const local =
+    kind === "stl" ? PRINTABLES_HEX_STL_LOCAL : PRINTABLES_HEX_3MF_LOCAL;
+  const remote =
+    kind === "stl" ? PRINTABLES_HEX_STL_REMOTE : PRINTABLES_HEX_3MF_REMOTE;
+  const filename =
+    kind === "stl" ? PRINTABLES_HEX_STL_NAME : PRINTABLES_HEX_3MF_NAME;
+  let res = await fetch(local);
+  if (!res.ok) {
+    setStatus(`Fetching ${filename} from GitHub Releases…`);
+    res = await fetch(remote);
+  }
+  if (!res.ok) {
+    throw new Error(`HTTP ${res.status} fetching ${filename}`);
+  }
+  return res.arrayBuffer();
+}
 
 function hasHullName() {
   return Boolean(el.name.value.trim());
@@ -1495,14 +1522,6 @@ function updateDownloadLabels() {
       ship.id === "parametric" && !printables && !miniDenom
     );
   }
-}
-
-async function downloadPublishedAsset(url, filename, mime) {
-  setStatus(`Fetching ${filename}…`);
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`HTTP ${res.status} fetching ${filename}`);
-  const buf = await res.arrayBuffer();
-  triggerDownload(new Blob([buf], { type: mime }), filename);
 }
 
 function readState() {
@@ -1763,10 +1782,11 @@ async function downloadStl() {
     }
 
     if (wantsPrintablesDefault()) {
-      await downloadPublishedAsset(
-        PRINTABLES_HEX_STL_URL,
-        PRINTABLES_HEX_STL_NAME,
-        "model/stl"
+      setStatus(`Fetching ${PRINTABLES_HEX_STL_NAME}…`);
+      const buf = await fetchPrintablesHex("stl");
+      triggerDownload(
+        new Blob([buf], { type: "model/stl" }),
+        PRINTABLES_HEX_STL_NAME
       );
       writeUrl();
       setStatus(
@@ -1779,10 +1799,8 @@ async function downloadStl() {
     const miniDenom = printablesMiniDenom();
     if (miniDenom) {
       setStatus(`Fetching 1:200 hex and scaling to 1:${miniDenom}…`);
-      const res = await fetch(PRINTABLES_HEX_STL_URL);
-      if (!res.ok) throw new Error(`HTTP ${res.status} fetching hex STL`);
       const scaled = scaleBinaryStlBuffer(
-        await res.arrayBuffer(),
+        await fetchPrintablesHex("stl"),
         200 / miniDenom
       );
       const filename = `starship_1_${miniDenom}_hex_tiles_one_piece.stl`;
@@ -1845,10 +1863,11 @@ async function download3mf() {
     }
 
     if (wantsPrintablesDefault()) {
-      await downloadPublishedAsset(
-        PRINTABLES_HEX_3MF_URL,
-        PRINTABLES_HEX_3MF_NAME,
-        "model/3mf"
+      setStatus(`Fetching ${PRINTABLES_HEX_3MF_NAME}…`);
+      const buf = await fetchPrintablesHex("3mf");
+      triggerDownload(
+        new Blob([buf], { type: "model/3mf" }),
+        PRINTABLES_HEX_3MF_NAME
       );
       writeUrl();
       setStatus(

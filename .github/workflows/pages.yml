@@ -38,11 +38,18 @@ jobs:
                 _site/assets/starship_ship_print_1_200.3mf \
                 _site/assets/starship_print_1_200_mmu.3mf \
                 _site/assets/starship_print_1_200_tiles.stl \
+                _site/assets/starship_print_1_200_tiles_hex.stl \
+                _site/assets/starship_ship_print_1_200_hex.stl \
+                _site/assets/starship_print_1_200_mmu_hex.3mf \
+                _site/assets/starship_print_1_200_flaps_tiles.stl \
                 _site/assets/StarShipV2_cleaned_flaps.stl \
                 _site/assets/StarShipV2_no_flaps.stl \
                 _site/assets/flap_placement_sketch.html \
                 _site/assets/starship_flaps_reference.png \
-                _site/assets/starship_cad_*.stl
+                _site/assets/starship_cad_*.stl \
+                _site/assets/starship_cad_preview.html
+          # Gallery: keep 320px thumbs only (full 1024 covers stay in the repo)
+          find _site/assets/named-covers -maxdepth 1 -type f -name '*.png' -delete
 
           # printables/, scripts/, openscad/, renders/ are intentionally not copied
 
