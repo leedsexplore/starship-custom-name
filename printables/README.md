@@ -1,23 +1,43 @@
 # Printables packages
 
 Listing packages ready to publish with the `printables-integration` CLI (lives in
-`~/Projects/printables-integration` — it is not on GitHub).
+`~/Projects/printables-integration` on your Mac — it is not on GitHub and is not
+available in this cloud agent environment).
 
-## Publish `starship-parametric`
+## Preflight (works anywhere)
 
 ```bash
+python3 scripts/validate_printables_package.py
+```
+
+Checks structure, CC BY 4.0 / no-remix flags, required tags, file presence, that
+the one-piece STL is a single connected shell, and that the MMU 3MF has both
+color parts. Run this before every publish.
+
+## Publish `starship-parametric` (Mac only)
+
+Needs a fresh Printables browser session cookie in
+`~/.config/printables/credentials.json` (see the printables-integration README:
+`auth.access_token` + `client-uid`).
+
+```bash
+# 1. Sync the package into the CLI workspace
 cp -R printables/starship-parametric ~/Projects/printables-integration/packages/
 
 cd ~/Projects/printables-integration
+
+# 2. Validate (CLI schema check)
 printables validate packages/starship-parametric
-printables publish packages/starship-parametric                          # dry-run
+
+# 3. Dry-run (prints the GraphQL plan; touches nothing)
+printables publish packages/starship-parametric
+
+# 4. Draft publish (creates an unpublished draft you can review in the UI)
 printables publish packages/starship-parametric --draft --no-dry-run --confirm
-# review the draft on printables.com, then:
+
+# 5. Review the draft on printables.com, then go live
 printables publish packages/starship-parametric --no-dry-run --confirm
 ```
-
-Auth: the CLI needs a fresh Printables session cookie in
-`~/.config/printables/credentials.json` (see the printables-integration README).
 
 Notes:
 
