@@ -8,13 +8,12 @@
 # (attribution required, remix OK, no commercial use).
 #
 # Live model: https://www.printables.com/model/1792868
-# Category matches popular Starship listings (Learning → Physics & Astronomy).
 
 [listing]
-title = "SpaceX Starship 1:200 One-Piece Hex Heat Shield MMU"
+title = "SpaceX Starship 1:200 — Embossed Hex-Tile Heat Shield, One-Piece / MMU"
 license = "CC BY-NC"
-category = "Physics & Astronomy"
-category_id = "91"
+category = "Other Ideas"
+category_id = "82"
 tags = [
   "spacex",
   "starship",
@@ -24,6 +23,7 @@ tags = [
   "parametric",
   "openscad",
   "multimaterial",
+#   "heatshield",
   "mmu3",
   "singlepiece",
   "noassembly",
