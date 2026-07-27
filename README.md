@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.3.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.3.1** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 **North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
 real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.
@@ -123,16 +123,15 @@ Measured via `python3 scripts/measure_ship_mesh.py` → `assets/print_envelope.j
 ## Printables
 
 **Live listing:** [printables.com/model/1792868](https://www.printables.com/model/1792868)
-— embossed hex-tile heat shield, one-piece STL + MMU 3MF.
+— one-piece hex tiles + put-your-name customizer.
 
-The listing package for the original parametric model lives in
-[`printables/starship-parametric/`](printables/starship-parametric/) — hex one-piece
-STL, hex MMU 3MF, `.scad` source, gallery images, and the listing copy.
-See [`printables/README.md`](printables/README.md) for the publish commands.
+Package: [`printables/starship-parametric/`](printables/starship-parametric/)  
+Print settings: [`PRINT_PROFILES.md`](printables/starship-parametric/PRINT_PROFILES.md) + `.ini` helpers in `files/`.  
+Cross-post staging: [`printables/mirrors/README.md`](printables/mirrors/README.md) (`python3 scripts/stage_mirror_uploads.py`).  
+Publish: [`printables/README.md`](printables/README.md).
 
-Hex print files are also published on
-[GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases)
-(`starship_1_200_hex_tiles_one_piece.stl` + `starship_1_200_hex_tiles_mmu.3mf`).
+Hex print files also on
+[GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
 
 ## Version
 

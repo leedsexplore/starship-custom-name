@@ -8,12 +8,13 @@
 # (attribution required, remix OK, no commercial use).
 #
 # Live model: https://www.printables.com/model/1792868
+# Category: Physics & Astronomy — where Starship searchers already browse.
 
 [listing]
-title = "Starship 1:200 — Put Your Name On It (One-Piece Hex Tiles)"
+title = "SpaceX Starship 1:200 One-Piece Hex Tiles — Put Your Name On It"
 license = "CC BY-NC"
-category = "Other Ideas"
-category_id = "82"
+category = "Physics & Astronomy"
+category_id = "91"
 tags = [
   "spacex",
   "starship",
@@ -23,12 +24,11 @@ tags = [
   "parametric",
   "openscad",
   "multimaterial",
-#   "heatshield",
   "mmu3",
   "singlepiece",
   "noassembly",
   "scalemodel",
 ]
 
-files = ["files/**/*.stl", "files/**/*.3mf", "files/**/*.scad"]
+files = ["files/**/*.stl", "files/**/*.3mf", "files/**/*.scad", "files/**/*.ini"]
 images = ["images/**/*.png"]

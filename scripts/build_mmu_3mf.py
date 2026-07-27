@@ -63,7 +63,13 @@ def mesh_xml(verts, tris) -> str:
     return "\n".join(lines)
 
 
-def build(parts, out: Path) -> None:
+def build(
+    parts,
+    out: Path,
+    *,
+    metadata: dict | None = None,
+    assembly_name: str = "Starship 1:200",
+) -> None:
     bases, objects, components = [], [], []
     next_id = 2
     for i, (name, path, color) in enumerate(parts):
@@ -79,18 +85,28 @@ def build(parts, out: Path) -> None:
         components.append(f'      <component objectid="{next_id}" />')
         next_id += 1
 
+    meta = {
+        "Application": "Starship Custom Name",
+        "Author": "David Leeds",
+    }
+    if metadata:
+        meta.update(metadata)
+    meta_xml = "\n".join(
+        f'  <metadata name="{escape(k)}">{escape(str(v))}</metadata>'
+        for k, v in meta.items()
+    )
+
     model = f"""<?xml version="1.0" encoding="UTF-8"?>
 <model unit="millimeter" xml:lang="en-US"
   xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"
   xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06">
-  <metadata name="Application">Starship Custom Name</metadata>
-  <metadata name="Author">David Leeds</metadata>
+{meta_xml}
   <resources>
     <basematerials id="1">
 {chr(10).join(bases)}
     </basematerials>
 {chr(10).join(objects)}
-    <object id="{next_id}" name="Starship 1:200" type="model">
+    <object id="{next_id}" name="{escape(assembly_name)}" type="model">
       <components>
 {chr(10).join(components)}
       </components>

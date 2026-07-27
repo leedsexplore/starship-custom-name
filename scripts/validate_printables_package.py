@@ -108,22 +108,44 @@ def main() -> None:
         "Block 2",
         "your name",
         "desk model",
+        "no glue",
+        "26-part",
     ):
         if needle.lower() not in desc.lower():
             fail(f"DESCRIPTION.md missing required phrase: {needle!r}")
     ok(f"DESCRIPTION.md ({len(desc)} chars)")
+
+    if str(listing.get("category_id") or "") != "91" and listing.get("category") != "Physics & Astronomy":
+        fail("expected category Physics & Astronomy (id 91) for Starship discoverability")
+    ok(f"category={listing.get('category')} id={listing.get('category_id')}")
 
     files_dir = PKG / "files"
     required_files = [
         "starship_1_200_hex_tiles_one_piece.stl",
         "starship_1_200_hex_tiles_mmu.3mf",
         "starship_parametric.scad",
+        "prusa_core_one_starship.ini",
+        "bambu_p1s_starship.ini",
     ]
     for name in required_files:
         p = files_dir / name
-        if not p.exists() or p.stat().st_size < 1000:
+        if not p.exists():
+            fail(f"missing files/{name}")
+        if name.endswith((".stl", ".3mf")) and p.stat().st_size < 1000:
+            fail(f"missing/empty files/{name}")
+        if name.endswith(".ini") and p.stat().st_size < 50:
             fail(f"missing/empty files/{name}")
         ok(f"files/{name}  {p.stat().st_size / 1e6:.2f} MB")
+
+    profiles = PKG / "PRINT_PROFILES.md"
+    if not profiles.exists() or profiles.stat().st_size < 100:
+        fail("missing PRINT_PROFILES.md at package root")
+    ok("PRINT_PROFILES.md present")
+
+    mirrors = PKG.parent / "mirrors" / "README.md"
+    if not mirrors.exists():
+        fail("missing printables/mirrors/README.md")
+    ok("cross-post mirrors README present")
 
     pkg_stl = files_dir / "starship_1_200_hex_tiles_one_piece.stl"
     pkg_3mf = files_dir / "starship_1_200_hex_tiles_mmu.3mf"
