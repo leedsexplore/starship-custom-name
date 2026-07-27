@@ -5,8 +5,7 @@ This repository contains works under Creative Commons Attribution–NonCommercia
   openscad/starship_parametric.scad and every mesh exported from it
   (assets/starship_ship_print_1_200.stl, assets/starship_print_1_200_steel.stl,
   assets/starship_print_1_200_tiles.stl, assets/starship_print_1_200_mmu.3mf,
-  assets/starship_*_hex.*, assets/starship_cad_*.stl,
-  printables/starship-parametric/files/*)
+  assets/starship_*_hex.*, printables/starship-parametric/files/*)
 
   by David Leeds (https://github.com/leedsexplore)
 

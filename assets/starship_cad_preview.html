@@ -16,8 +16,8 @@ h1{margin:0;font-size:16px} p{margin:4px 0 0;color:#9aa6bd;font-size:12px}
 <body>
 <div id="app">
 <header>
-  <h1 id="title">Starship — parametric CAD (52.1 m × 9 m)</h1>
-  <p id="subtitle">openscad/starship_parametric.scad · drag to orbit · scroll to zoom</p>
+  <h1 id="title">Starship — parametric CAD preview (Block 2/3 ship)</h1>
+  <p id="subtitle">1:200 print layers scaled to meters · drag to orbit · scroll to zoom</p>
 </header>
 <div id="viewport"><div id="hud">Loading…</div></div>
 </div>
@@ -104,7 +104,7 @@ const PARTS = HEX_RELIEF
   ? [
       {
         label: "stainless hull",
-        url: "./starship_print_1_200_steel.stl?v=norings4",
+        url: "./starship_print_1_200_steel.stl?v=2.1.11",
         scale: PRINT_TO_M,
         mat: new THREE.MeshStandardMaterial({
           color: 0x8a929c,
@@ -115,7 +115,7 @@ const PARTS = HEX_RELIEF
       },
       {
         label: "hex heat shield + Raptors",
-        url: "./starship_print_1_200_tiles_hex.stl?v=norings4",
+        url: "./starship_print_1_200_tiles_hex.stl?v=2.1.11",
         scale: PRINT_TO_M,
         mat: new THREE.MeshStandardMaterial({
           color: 0x1e2126,
@@ -128,7 +128,8 @@ const PARTS = HEX_RELIEF
   : [
       {
         label: "steel hull + flaps",
-        url: "./starship_cad_steel.stl?v=29",
+        url: "./starship_print_1_200_steel.stl?v=2.1.11",
+        scale: PRINT_TO_M,
         mat: new THREE.MeshStandardMaterial({
           color: 0x8a929c,
           metalness: 0.95,
@@ -138,7 +139,8 @@ const PARTS = HEX_RELIEF
       },
       {
         label: "heat-shield tiles",
-        url: "./starship_cad_tiles.stl?v=29",
+        url: "./starship_print_1_200_tiles_shell.stl?v=2.1.11",
+        scale: PRINT_TO_M,
         hexUV: true,
         mat: new THREE.MeshStandardMaterial({
           color: 0x1e2126,
@@ -150,17 +152,9 @@ const PARTS = HEX_RELIEF
         }),
       },
       {
-        label: "bay interior",
-        url: "./starship_cad_bay.stl?v=29",
-        mat: new THREE.MeshStandardMaterial({
-          color: 0xaab0ba,
-          metalness: 0.55,
-          roughness: 0.5,
-        }),
-      },
-      {
         label: "raptor bells",
-        url: "./starship_cad_engines.stl?v=29",
+        url: "./starship_print_1_200_engines.stl?v=2.1.11",
+        scale: PRINT_TO_M,
         mat: new THREE.MeshStandardMaterial({
           color: 0x0b0c0e,
           metalness: 0.45,
@@ -174,6 +168,11 @@ if (HEX_RELIEF) {
     "Starship — printable hex-tile heat shield (1:200 mesh)";
   document.getElementById("subtitle").textContent =
     "Real embossed grooves · starship_print_1_200_tiles_hex.stl · drag to orbit · scroll to zoom";
+} else {
+  document.getElementById("title").textContent =
+    "Starship — parametric CAD preview (Block 2/3 ship)";
+  document.getElementById("subtitle").textContent =
+    "1:200 print layers scaled to meters · drag to orbit · scroll to zoom";
 }
 
 const viewport=document.getElementById("viewport"), hud=document.getElementById("hud");

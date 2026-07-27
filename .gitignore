@@ -7,6 +7,7 @@ __pycache__/
 dist/
 *.stl.bak
 node_modules/
+_site/
 
 # Secrets / local auth (never commit)
 .env
@@ -21,3 +22,11 @@ assets/flaps_cleaned/*_preview.png
 
 # Dead / local-only archives
 assets/backup/
+
+# Regenerable / non-runtime clutter (rebuild via scripts; not loaded by the customizer)
+renders/
+assets/starship_custom_name_sample.stl
+assets/starship_ship_print_1_200.3mf
+assets/starship_cad_*.stl
+assets/flap_placement_sketch.html
+assets/starship_flaps_reference.png

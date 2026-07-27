@@ -1,0 +1,55 @@
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Assemble slim customizer site
+        run: |
+          set -euo pipefail
+          mkdir -p _site
+          cp index.html styles.css app.js export3mf.js version.js package.json \
+            LICENSE ATTRIBUTION.md README.md .nojekyll _site/
+          cp -R assets fonts vendor _site/
+
+          # Drop maintainer / rebuild-only / duplicate bulk from the public site
+          rm -rf _site/assets/flaps_cleaned
+          rm -f _site/assets/starship_custom_name_sample.stl \
+                _site/assets/starship_ship_print_1_200.3mf \
+                _site/assets/starship_print_1_200_mmu.3mf \
+                _site/assets/starship_print_1_200_tiles.stl \
+                _site/assets/StarShipV2_cleaned_flaps.stl \
+                _site/assets/StarShipV2_no_flaps.stl \
+                _site/assets/flap_placement_sketch.html \
+                _site/assets/starship_flaps_reference.png \
+                _site/assets/starship_cad_*.stl
+
+          # printables/, scripts/, openscad/, renders/ are intentionally not copied
+
+      - uses: actions/configure-pages@v5
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

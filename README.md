@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.1.10** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.1.11** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
@@ -98,18 +98,18 @@ python3 scripts/build_mmu_3mf.py
 # Printable hex-tile relief (real grooves on the black body)
 python3 scripts/emboss_hex_tiles.py
 
-# Sample STL with default raised name (parametric base)
+# Sample STL with raised name (optional local artifact; gitignored)
 node scripts/build_sample_stl.mjs
 ```
 
 | Asset | Role |
 |-------|------|
-| `assets/starship_ship_print_1_200.stl` | **One-piece print file** — H 260.5 mm, engines flush |
-| `assets/starship_print_1_200_mmu.3mf` | Two-color MMU 3MF (steel + smooth heat shield/Raptors) |
-| `assets/starship_print_1_200_tiles_hex.stl` | Black body with ~11k discrete hex tile plates (scale-true 0.29 m tiles → 1.45 mm FTF, matched to a reference tile scan) |
-| `assets/starship_ship_print_1_200_hex.stl` | One-piece merge with hex heat shield |
-| `assets/starship_print_1_200_mmu_hex.3mf` | Two-color MMU with hex heat shield |
-| `assets/starship_cad_preview.html` | Interactive three.js viewer (steel/tiles/bay/engines layers) |
+| `assets/starship_ship_print_1_200.stl` | **One-piece smooth print** — H 260.5 mm, engines flush (named exports / CSG) |
+| `assets/starship_print_1_200_mmu.3mf` | Smooth two-color MMU (rebuild intermediate; listing ships **hex**) |
+| `assets/starship_print_1_200_tiles_hex.stl` | Black body with ~11k discrete hex tile plates (1.45 mm FTF) |
+| `assets/starship_ship_print_1_200_hex.stl` | One-piece merge with hex heat shield (**Printables / Releases**) |
+| `assets/starship_print_1_200_mmu_hex.3mf` | Two-color MMU with hex heat shield (**Printables / Releases**) |
+| `assets/starship_cad_preview.html` | Layered three.js viewer (uses the same 1:200 print STLs) |
 | `assets/StarShipV2_original.stl` | Legacy customizer mesh (remix, CC BY-NC) — same as v1.1.x |
 
 ## Print scale (Prusa CORE One / 1:200)
@@ -148,3 +148,10 @@ on the same version (fonts get `?v=` automatically from `APP_VERSION`).
 python3 scripts/check_version_sync.py
 python3 scripts/validate_printables_package.py
 ```
+
+## GitHub Pages
+
+The site deploys via [`.github/workflows/pages.yml`](.github/workflows/pages.yml):
+a slim customizer payload (no `printables/`, `scripts/`, `openscad/`, or rebuild-only
+meshes). In the repo **Settings → Pages**, set Source to **GitHub Actions** so that
+workflow is what publishes [the live site](https://leedsexplore.github.io/starship-custom-name/).

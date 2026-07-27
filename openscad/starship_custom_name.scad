@@ -1,4 +1,4 @@
-// Starship Custom Name — OpenSCAD path (v2.1.10)
+// Starship Custom Name — OpenSCAD path (v2.1.11)
 // Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
 // Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship
@@ -25,7 +25,7 @@
 
 /* [Text] */
 // Name / text on the side of the ship
-Name = "Custom Name";
+Name = "";
 // Letter height (mm) — matches web customizer range (max 14 mm)
 Text_Size = 5; // [3:0.5:14]
 // Full letter extrusion (mm). Default matches web: 0.35 embed + 0.5 proud.
