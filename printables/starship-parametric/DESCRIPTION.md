@@ -2,7 +2,7 @@
 
 **One single print file.** The whole ship — hull, forward and aft flaps, engine bay, and all six Raptors — is one monolithic body. No hunting for separate flap/nose/engine parts, no glue, no alignment pins. Drop the STL in your slicer and print.
 
-**MMU3 / multi-color ready.** The 3MF splits the exact same geometry into two bodies: stainless hull and a black body carrying the hexagonal-tile heat shield, the windward flap faces, and the Raptor bells. Still one print job — assign two filaments and you get the iconic black windward side straight off the printer. Single-extruder? The tile shell sits proud of the hull, so a filament-swap at the right layer also works.
+**MMU3 / multi-color ready.** The 3MF splits the exact same geometry into two bodies: stainless hull and a black body carrying the hexagonal-tile heat shield, the windward flap faces, and the Raptor bells. Still one print job — assign two filaments and you get the iconic black windward side straight off the printer. (The color split is radial, so it needs a multi-material or toolchanger setup — single-extruder users should print the one-piece STL in silver.)
 
 ## ✏️ Put YOUR name on it — free web customizer
 

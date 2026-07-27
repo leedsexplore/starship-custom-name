@@ -125,7 +125,13 @@ module hull_body() {
     color(steel_dark)
         for (z = [ring_pitch : ring_pitch : cyl_h - 0.4])
             translate([0, 0, z - ring_w / 2])
-                cylinder(h = ring_w, r = hull_r + ring_proud);
+                // Annular band, not a solid disk — a disk crosses the engine
+                // bay cavity and seals a phantom chamber inside the print.
+                difference() {
+                    cylinder(h = ring_w, r = hull_r + ring_proud);
+                    translate([0, 0, -0.01])
+                        cylinder(h = ring_w + 0.02, r = hull_r - 0.05);
+                }
 }
 
 module heat_shield() {
@@ -146,10 +152,13 @@ module heat_shield() {
 
 module bay_bulkhead() {
     // Silver interior plate closing the bay ceiling. Exported as its own mesh
-    // so the viewer can light it separately from the outer hull.
+    // so the viewer can light it separately from the outer hull. Slightly
+    // oversized (radius into the skirt wall, top past the cavity cut) so the
+    // one-piece union has real overlaps — exact tangency left sealed void
+    // shells in the print mesh.
     color(bay_gray)
         translate([0, 0, bay_recess - 0.15])
-            cylinder(h = 0.15, r = bay_wall_r);
+            cylinder(h = 0.30, r = bay_wall_r + 0.04);
 }
 
 module engine_bells() {
@@ -163,11 +172,18 @@ module engine_bells() {
     sl_h  = vac_h * 3.1 / 4.6;
     color(bell_black) {
         for (a = [60, 180, 300])
-            translate([sl_ring * cos(a), sl_ring * sin(a), 0])
+            translate([sl_ring * cos(a), sl_ring * sin(a), 0]) {
                 cylinder(h = sl_h, r1 = sl_r, r2 = sl_r * 0.45);
+                // Mount stem up into the thrust plate — without it the short
+                // SL bells touch nothing and fall out of a one-piece print.
+                translate([0, 0, sl_h - 0.01])
+                    cylinder(h = vac_h - sl_h + 0.06, r = sl_r * 0.30);
+            }
         for (a = [0, 120, 240])
             translate([vac_ring * cos(a), vac_ring * sin(a), 0])
-                cylinder(h = vac_h, r1 = vac_r, r2 = vac_r * 0.40);
+                // +0.05 overlap into the plate — exact tangency is fragile in
+                // boolean union and slicing.
+                cylinder(h = vac_h + 0.05, r1 = vac_r, r2 = vac_r * 0.40);
     }
 }
 

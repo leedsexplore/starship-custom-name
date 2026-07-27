@@ -1389,6 +1389,11 @@ function downloadOpenscadSnippet() {
 // ${AUTHOR.repo}
 // Wrap-to-hull is web-only — OpenSCAD uses flat emboss/engrave.
 // Open with openscad/starship_custom_name.scad or paste into Customizer.
+// NOTE: that flat path is tuned to the classic remix mesh${
+    ship.id === "parametric"
+      ? " — your current base is the parametric CAD, so placement will differ"
+      : ""
+  }.
 
 /* [Text] */
 Name = "${nameEscaped}";
