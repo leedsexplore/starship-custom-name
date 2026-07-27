@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Scale the 1:200 hex one-piece mesh to mini printer sizes.
+"""Scale the 1:200 hex one-piece mesh for the Printables A1-mini file.
 
-  1:200 → H 260.5 mm (hero / CORE One)
-  1:250 → H 208.4 mm (scale 0.8)
+  1:200 → H 260.5 mm (hero — not regenerated here)
   1:300 → H 173.7 mm (scale 2/3) — fits Bambu A1 mini Z (~180 mm with margin)
+
+  Other scales (e.g. 1:250) are customizer-only (client-side uniform scale).
 
   python3 scripts/build_mini_scale.py
 """
@@ -19,7 +20,6 @@ SRC = ROOT / "assets" / "starship_ship_print_1_200_hex.stl"
 PKG = ROOT / "printables" / "starship-parametric" / "files"
 
 VARIANTS = [
-    (250, PKG / "starship_1_250_hex_tiles_one_piece.stl"),
     (300, PKG / "starship_1_300_hex_tiles_one_piece.stl"),
 ]
 

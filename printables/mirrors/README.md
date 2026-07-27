@@ -17,7 +17,7 @@ python3 scripts/stage_mirror_uploads.py
 
 ## MakerWorld
 
-1. Create model → upload staged STLs/3MFs + `.ini` helpers + gallery images.
+1. Create model → upload staged STLs/3MFs + gallery images.
 2. Paste `DESCRIPTION.txt` (from the stage folder).
 3. Category: closest to Vehicles / Space / Toys.
 4. Tags: SpaceX, Starship, one-piece, hex, customizable, MMU, 1:200.

@@ -128,7 +128,6 @@ def main() -> None:
         "desk model",
         "no glue",
         "26-part",
-        "1:250",
         "1:300",
     ):
         if needle.lower() not in desc.lower():
@@ -143,10 +142,6 @@ def main() -> None:
     required_files = [
         "starship_1_200_hex_tiles_one_piece.stl",
         "starship_1_200_hex_tiles_mmu.3mf",
-        "starship_parametric.scad",
-        "prusa_core_one_starship.ini",
-        "bambu_p1s_starship.ini",
-        "starship_1_250_hex_tiles_one_piece.stl",
         "starship_1_300_hex_tiles_one_piece.stl",
     ]
     for name in required_files:
@@ -155,9 +150,16 @@ def main() -> None:
             fail(f"missing files/{name}")
         if name.endswith((".stl", ".3mf")) and p.stat().st_size < 1000:
             fail(f"missing/empty files/{name}")
-        if name.endswith(".ini") and p.stat().st_size < 50:
-            fail(f"missing/empty files/{name}")
         ok(f"files/{name}  {p.stat().st_size / 1e6:.2f} MB")
+
+    extras = sorted(
+        p.name
+        for p in files_dir.iterdir()
+        if p.is_file() and p.name not in required_files and not p.name.startswith(".")
+    )
+    if extras:
+        fail(f"unexpected files/ entries (keep listing to 3 print files): {extras}")
+    ok("files/ has exactly the 3 Printables downloads")
 
     profiles = PKG / "PRINT_PROFILES.md"
     if not profiles.exists() or profiles.stat().st_size < 100:
@@ -223,7 +225,6 @@ def main() -> None:
     hero_h = 260.5
     for denom, path_name in (
         (200, "starship_1_200_hex_tiles_one_piece.stl"),
-        (250, "starship_1_250_hex_tiles_one_piece.stl"),
         (300, "starship_1_300_hex_tiles_one_piece.stl"),
     ):
         _, _, z = stl_bbox_size(files_dir / path_name)

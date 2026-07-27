@@ -2,7 +2,7 @@
 """Rebuild the hex MMU 3MF with print-hint metadata for one-click slicer opens.
 
 Uses the same steel + hex tiles bodies as Printables. Metadata is advisory —
-import prusa_core_one_starship.ini / bambu_p1s_starship.ini for full settings.
+see PRINT_PROFILES.md (and optional .ini helpers next to it) for full settings.
 
   python3 scripts/build_sliced_hints_3mf.py
 """
@@ -33,7 +33,7 @@ HINTS = {
     "Description": (
         "Nose up. Layer 0.15–0.20 mm. Supports under forward flaps only. "
         "MMU: Stainless hull=silver, Heat shield+Raptors=black. "
-        "See PRINT_PROFILES.md + prusa_core_one_starship.ini / bambu_p1s_starship.ini. "
+        "See PRINT_PROFILES.md. "
         "Customizer: https://leedsexplore.github.io/starship-custom-name/"
     ),
     "LayerHeight": "0.15",

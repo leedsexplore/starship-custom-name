@@ -102,11 +102,6 @@ def main() -> int:
 
     if not args.skip_package:
         PKG_FILES.mkdir(parents=True, exist_ok=True)
-        # Refresh parametric source copy
-        shutil.copy2(
-            OPENSCAD / "starship_parametric.scad",
-            PKG_FILES / "starship_parametric.scad",
-        )
         copies = [
             (
                 ASSETS / "starship_ship_print_1_200_hex.stl",
@@ -123,7 +118,7 @@ def main() -> int:
             shutil.copy2(src, dst)
             print(f"synced {dst.relative_to(ROOT)}")
 
-        run([py, str(ROOT / "scripts" / "build_mini_scale.py")], "1:250 + 1:300 mini hex")
+        run([py, str(ROOT / "scripts" / "build_mini_scale.py")], "1:300 mini hex")
         run(
             [py, str(ROOT / "scripts" / "build_sliced_hints_3mf.py")],
             "hex MMU print-hint metadata",

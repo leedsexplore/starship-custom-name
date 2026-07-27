@@ -26,5 +26,5 @@ tags = [
   "scalemodel",
 ]
 
-files = ["files/**/*.stl", "files/**/*.3mf", "files/**/*.scad", "files/**/*.ini"]
+files = ["files/**/*.stl", "files/**/*.3mf"]
 images = ["images/**/*.png"]

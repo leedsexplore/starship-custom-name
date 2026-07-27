@@ -10,7 +10,7 @@ python3 scripts/validate_printables_package.py
 ```
 
 Checks structure, **CC BY 4.0** / no-remix flags, required tags, hex one-piece
-(+ minis) + hex MMU 3MF (+ `.scad` / `.ini`). Run this before every publish.
+(1:200 + 1:300 mini) + hex MMU 3MF. Run this before every publish.
 
 ## Publish `starship-parametric`
 
@@ -45,8 +45,9 @@ Notes:
 - Only `starship-parametric/` ships in this repo (no separate remix Printables
   package here — the classic Josh1297/anventia mesh is a customizer option only,
   still CC BY-NC).
-- Package `files/` is hex one-piece (1:200 + minis) + hex MMU 3MF + `.ini` helpers
-  + parametric `.scad`.
+- Package `files/` is **three downloads**: hex one-piece 1:200, hex MMU 3MF,
+  hex one-piece 1:300 (A1 mini). OpenSCAD + `.ini` helpers live at package root /
+  repo (not on the Printables file list).
 - If the CLI's `printables.toml` schema differs from this file's keys, keep the
   values and rename keys to match the CLI sample `printables.toml`.
 - Regenerate files after CAD changes with the one-shot rebuild:

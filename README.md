@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.4.1** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.4.2** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 **North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
 real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.
@@ -127,7 +127,7 @@ Measured via `python3 scripts/measure_ship_mesh.py` → `assets/print_envelope.j
 — one-piece hex tiles + put-your-name customizer.
 
 Package: [`printables/starship-parametric/`](printables/starship-parametric/)  
-Print settings: [`PRINT_PROFILES.md`](printables/starship-parametric/PRINT_PROFILES.md) + `.ini` helpers in `files/`.  
+Print settings: [`PRINT_PROFILES.md`](printables/starship-parametric/PRINT_PROFILES.md).  
 Cross-post staging: [`printables/mirrors/README.md`](printables/mirrors/README.md) (`python3 scripts/stage_mirror_uploads.py`).  
 Publish: [`printables/README.md`](printables/README.md).
 
