@@ -1,5 +1,6 @@
 /**
- * Headless sample STL: base ship + raised wrapped "Custom Name" (defaults).
+ * Headless sample STL: parametric CAD ship + raised wrapped "Custom Name"
+ * (matches the customizer's v2 defaults — parametric base, 8 mm letters).
  */
 import * as fs from "fs";
 import * as path from "path";
@@ -11,14 +12,26 @@ import { FontLoader } from "../vendor/three/examples/jsm/loaders/FontLoader.js";
 import { TextGeometry } from "../vendor/three/examples/jsm/geometries/TextGeometry.js";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const BODY_CENTER_X = -22.3;
-const HULL_RADIUS_Z = 10.7;
+// Parametric CAD 1:200 placement (see SHIPS.parametric in app.js).
+const BODY_CENTER_X = 0;
+const HULL_RADIUS_Z = 22.575;
 const EMBED_MM = 0.35;
+const LETTER_MM = 8;
 
 function loadBinarySTL(filePath) {
   const buf = fs.readFileSync(filePath);
   const ab = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
   return new STLLoader().parse(ab);
+}
+
+/** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
+function orientParametric(geometry) {
+  geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
+  geometry.rotateY(Math.PI / 2); // flaps ±Z → ±X
+  geometry.computeBoundingBox();
+  const bb = geometry.boundingBox;
+  geometry.translate(0, -(bb.min.y + bb.max.y) / 2, 0);
+  return geometry;
 }
 
 function loadFont(filePath) {
@@ -62,11 +75,11 @@ function wrapGeometryToHull(geometry, side, textY, style) {
   return geometry;
 }
 
-const shipGeo = loadBinarySTL(
-  path.join(ROOT, "assets/StarShipV2_cleaned_flaps.stl")
+const shipGeo = orientParametric(
+  loadBinarySTL(path.join(ROOT, "assets/starship_ship_print_1_200.stl"))
 );
 const font = loadFont(path.join(ROOT, "fonts/optimer_bold.typeface.json"));
-const textGeo = buildFlatTextGeometry(font, "Custom Name", 5, EMBED_MM + 0.5);
+const textGeo = buildFlatTextGeometry(font, "Custom Name", LETTER_MM, EMBED_MM + 0.5);
 wrapGeometryToHull(textGeo, "right", -2, "raised");
 
 const group = new THREE.Group();
@@ -86,7 +99,7 @@ if (buffer instanceof DataView) {
   throw new Error("Unexpected STLExporter output");
 }
 const header = Buffer.alloc(80, 0);
-header.write("Starship sample v1.2.0 cleaned flaps 3SL+3Vac");
+header.write("Starship sample v2.0.0 parametric CAD 1:200");
 bytes.set(header, 0);
 
 const outPath = path.join(ROOT, "assets/starship_custom_name_sample.stl");

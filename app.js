@@ -14,21 +14,64 @@ import {
   versionLabel,
 } from "./version.js";
 
-/** Placement tuned to Josh1297 Starship mesh (same as openscad/). */
-const BODY_CENTER_X = -22.3;
-/** Mid-body cylinder radius from STL (was 10.55 — too small → letters buried). */
-const HULL_RADIUS_Z = 10.7;
-const EMBED_MM = 0.35;
-/** Approx safe text span along mid-body cylinder before flaps (mm). */
-const SAFE_TEXT_SPAN_MM = 48;
-/** Beyond this, downloads ask for confirmation. */
-const HARD_TEXT_SPAN_MM = 60;
-/** |pos| + half-span past this often nears flap roots. */
-const FLAP_ZONE_Y_MM = 28;
 /**
- * Smooth hull + cleaned Block 2–style flaps (see scripts/build_ship_with_cleaned_flaps.py).
+ * Base ship meshes. Placement values are mesh-space mm; the app convention is
+ * hull length along Y, text faces ±Z, flaps along ±X (set by the legacy mesh —
+ * other meshes are reoriented on load via orient()).
  */
-const SHIP_URL = "./assets/StarShipV2_cleaned_flaps.stl";
+const SHIPS = {
+  parametric: {
+    id: "parametric",
+    label: "Parametric CAD 1:200 (original)",
+    url: "./assets/starship_ship_print_1_200.stl",
+    /** Key into print_envelope.json meshes[] for measured dimensions. */
+    envelopeFile: "assets/starship_ship_print_1_200.stl",
+    bodyCenterX: 0,
+    hullRadiusZ: 22.575, // measured mid-barrel Ø 45.15 mm
+    embedMm: 0.35,
+    safeSpanMm: 100,
+    hardSpanMm: 120,
+    flapZoneYMm: 60,
+    defaultSizeMm: 8,
+    /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
+    orient(geometry) {
+      geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
+      geometry.rotateY(Math.PI / 2); // flaps ±Z → ±X
+      geometry.computeBoundingBox();
+      const bb = geometry.boundingBox;
+      geometry.translate(0, -(bb.min.y + bb.max.y) / 2, 0);
+    },
+    meshDefaults: {
+      meshHeightMm: 260.5,
+      meshDiameterMm: 45.15,
+      meshFootprintMaxMm: 79.7,
+    },
+  },
+  legacy: {
+    id: "legacy",
+    label: "Classic remix mesh (v1.x)",
+    url: "./assets/StarShipV2_cleaned_flaps.stl",
+    envelopeFile: "assets/StarShipV2_cleaned_flaps.stl",
+    bodyCenterX: -22.3,
+    /** Mid-body cylinder radius from STL (was 10.55 — too small → letters buried). */
+    hullRadiusZ: 10.7,
+    embedMm: 0.35,
+    safeSpanMm: 48,
+    hardSpanMm: 60,
+    flapZoneYMm: 28,
+    defaultSizeMm: 5,
+    orient() {},
+    meshDefaults: {
+      meshHeightMm: 121,
+      meshDiameterMm: 21.452,
+      meshFootprintMaxMm: 41.6,
+    },
+  },
+};
+
+const DEFAULT_SHIP_ID = "parametric";
+let ship = SHIPS[DEFAULT_SHIP_ID];
+
 const ENVELOPE_URL = "./assets/print_envelope.json";
 
 /** Published ship + CORE One 1:200 targets (overridden by print_envelope.json). */
@@ -38,13 +81,10 @@ const PRINT_DEFAULTS = {
   targetScale: 200,
   targetHeightMm: 260.5,
   coreOne: { x_mm: 250, y_mm: 220, z_mm: 270 },
-  /** Measured from assets/StarShipV2_cleaned_flaps.stl (scripts/measure_ship_mesh.py). */
-  meshHeightMm: 121,
-  meshDiameterMm: 21.452,
-  meshFootprintMaxMm: 41.6,
 };
 
-let printEnvelope = { ...PRINT_DEFAULTS };
+let envelopeData = null;
+let printEnvelope = { ...PRINT_DEFAULTS, ...ship.meshDefaults };
 
 /**
  * Extruded fonts (Three.js typeface JSON).
@@ -310,6 +350,7 @@ const ACCENT_FOLD = {
 
 const el = {
   form: document.getElementById("controls"),
+  shipModel: document.getElementById("ship-model"),
   name: document.getElementById("name"),
   color: document.getElementById("color"),
   textColor: document.getElementById("text-color"),
@@ -494,28 +535,76 @@ async function loadPrintEnvelope() {
   try {
     const res = await fetch(ENVELOPE_URL, { cache: "no-cache" });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
-    const mesh = data.customizer_mesh || {};
-    const target = data.target_print || {};
-    const real = data.real_ship || {};
-    printEnvelope = {
-      realHeightM: real.height_m ?? PRINT_DEFAULTS.realHeightM,
-      realDiameterM: real.diameter_m ?? PRINT_DEFAULTS.realDiameterM,
-      targetScale: Number(String(target.scale || "1:200").split(":").pop()) || 200,
-      targetHeightMm: target.height_mm ?? PRINT_DEFAULTS.targetHeightMm,
-      coreOne: target.build_volume_mm || PRINT_DEFAULTS.coreOne,
-      meshHeightMm: mesh.height_mm ?? PRINT_DEFAULTS.meshHeightMm,
-      meshDiameterMm: mesh.mid_barrel_diameter_mm ?? PRINT_DEFAULTS.meshDiameterMm,
-      meshFootprintMaxMm: mesh.footprint_max_mm ?? PRINT_DEFAULTS.meshFootprintMaxMm,
-    };
-    // Slider must reach the measured CORE One % (≈215%).
-    const need = Math.ceil(coreOneScalePercent() + 0.5);
-    if (Number(el.scale.max) < need) el.scale.max = String(need);
+    envelopeData = await res.json();
   } catch (err) {
     console.warn("print_envelope.json unavailable; using built-in defaults", err);
-    printEnvelope = { ...PRINT_DEFAULTS };
-    const need = Math.ceil(coreOneScalePercent() + 0.5);
-    if (Number(el.scale.max) < need) el.scale.max = String(need);
+    envelopeData = null;
+  }
+  applyEnvelopeForShip();
+}
+
+/** Refresh envelope numbers for the active ship (measured entry when present). */
+function applyEnvelopeForShip() {
+  const data = envelopeData || {};
+  const target = data.target_print || {};
+  const real = data.real_ship || {};
+  const mesh =
+    (data.meshes || []).find((m) => m.file === ship.envelopeFile) || {};
+  printEnvelope = {
+    realHeightM: real.height_m ?? PRINT_DEFAULTS.realHeightM,
+    realDiameterM: real.diameter_m ?? PRINT_DEFAULTS.realDiameterM,
+    targetScale: Number(String(target.scale || "1:200").split(":").pop()) || 200,
+    targetHeightMm: target.height_mm ?? PRINT_DEFAULTS.targetHeightMm,
+    coreOne: target.build_volume_mm || PRINT_DEFAULTS.coreOne,
+    meshHeightMm: mesh.height_mm ?? ship.meshDefaults.meshHeightMm,
+    meshDiameterMm:
+      mesh.mid_barrel_diameter_mm ?? ship.meshDefaults.meshDiameterMm,
+    meshFootprintMaxMm:
+      mesh.footprint_max_mm ?? ship.meshDefaults.meshFootprintMaxMm,
+  };
+  // Slider must reach the measured CORE One % (100% parametric, ≈215% legacy).
+  const need = Math.ceil(coreOneScalePercent() + 0.5);
+  if (Number(el.scale.max) < need) el.scale.max = String(need);
+}
+
+const shipGeometryCache = new Map();
+
+async function loadShipGeometry(shipDef) {
+  if (shipGeometryCache.has(shipDef.id)) {
+    return shipGeometryCache.get(shipDef.id);
+  }
+  const geometry = await new STLLoader().loadAsync(shipDef.url);
+  shipDef.orient(geometry);
+  geometry.computeVertexNormals();
+  shipGeometryCache.set(shipDef.id, geometry);
+  return geometry;
+}
+
+/** Swap the base mesh, retune scale to its 1:200 preset, and rebuild text. */
+async function applyShipSelection(shipId, { retune = true } = {}) {
+  const id = SHIPS[shipId] ? shipId : DEFAULT_SHIP_ID;
+  ship = SHIPS[id];
+  if (el.shipModel && el.shipModel.value !== id) el.shipModel.value = id;
+  applyEnvelopeForShip();
+
+  setStatus(`Loading ${ship.label}…`);
+  const geometry = await loadShipGeometry(ship);
+  if (shipMesh) modelGroup.remove(shipMesh);
+  shipGeometry = geometry;
+  shipMesh = new THREE.Mesh(shipGeometry, shipMaterial);
+  modelGroup.add(shipMesh);
+
+  if (retune) {
+    el.scale.value = String(coreOneScalePercent());
+    el.size.value = String(ship.defaultSizeMm);
+  }
+  updateLabels();
+  applyModelScale();
+  if (ready) {
+    await flushRebuild();
+    frameCamera();
+    writeUrl();
+    setStatus(`Base model: ${ship.label}.`);
   }
 }
 
@@ -655,25 +744,25 @@ function updateLengthWarn(spanMm) {
   const extent = Math.abs(textY) + spanMm / 2;
   const parts = [];
 
-  if (spanMm > HARD_TEXT_SPAN_MM) {
+  if (spanMm > ship.hardSpanMm) {
     parts.push(
-      `Very long — span ~${spanMm.toFixed(0)} mm (safe ≤${SAFE_TEXT_SPAN_MM} mm). Likely hits flaps.`
+      `Very long — span ~${spanMm.toFixed(0)} mm (safe ≤${ship.safeSpanMm} mm). Likely hits flaps.`
     );
     el.lengthWarn.classList.add("warn-hard");
-  } else if (spanMm > SAFE_TEXT_SPAN_MM) {
+  } else if (spanMm > ship.safeSpanMm) {
     parts.push(
-      `Span ~${spanMm.toFixed(0)} mm (safe ≤${SAFE_TEXT_SPAN_MM} mm). Use “Fit text to hull” or shorten.`
+      `Span ~${spanMm.toFixed(0)} mm (safe ≤${ship.safeSpanMm} mm). Use “Fit text to hull” or shorten.`
     );
     el.lengthWarn.classList.remove("warn-hard");
   } else {
     el.lengthWarn.classList.remove("warn-hard");
   }
 
-  if (extent > FLAP_ZONE_Y_MM) {
+  if (extent > ship.flapZoneYMm) {
     parts.push(
-      `Position + length nears flap zone (~±${FLAP_ZONE_Y_MM} mm). Nudge position toward mid-body.`
+      `Position + length nears flap zone (~±${ship.flapZoneYMm} mm). Nudge position toward mid-body.`
     );
-    if (spanMm <= SAFE_TEXT_SPAN_MM) el.lengthWarn.classList.remove("warn-hard");
+    if (spanMm <= ship.safeSpanMm) el.lengthWarn.classList.remove("warn-hard");
   }
 
   if (!parts.length) {
@@ -713,7 +802,7 @@ function buildFlatTextGeometry(text, size, extrudeMm) {
  */
 function wrapGeometryToHull(geometry, side, textY, style) {
   const sign = side === "right" ? 1 : -1;
-  const R = HULL_RADIUS_Z;
+  const R = ship.hullRadiusZ;
   const pos = geometry.attributes.position;
   const v = new THREE.Vector3();
 
@@ -721,9 +810,9 @@ function wrapGeometryToHull(geometry, side, textY, style) {
     v.fromBufferAttribute(pos, i);
     const across = side === "left" ? -v.x : v.x;
     const along = v.y;
-    const radial = style === "raised" ? R - EMBED_MM + v.z : R - v.z;
+    const radial = style === "raised" ? R - ship.embedMm + v.z : R - v.z;
     const theta = across / R;
-    const x = BODY_CENTER_X + radial * Math.sin(theta);
+    const x = ship.bodyCenterX + radial * Math.sin(theta);
     const z = sign * radial * Math.cos(theta);
     const y = textY + along;
     pos.setXYZ(i, x, y, z);
@@ -737,10 +826,14 @@ function placeFlatOnHull(geometry, side, textY, style) {
   const sign = side === "right" ? 1 : -1;
   const mesh = new THREE.Mesh(geometry, textMaterial);
   if (style === "raised") {
-    mesh.position.set(BODY_CENTER_X, textY, sign * (HULL_RADIUS_Z - EMBED_MM));
+    mesh.position.set(
+      ship.bodyCenterX,
+      textY,
+      sign * (ship.hullRadiusZ - ship.embedMm)
+    );
     if (side === "left") mesh.rotation.y = Math.PI;
   } else {
-    mesh.position.set(BODY_CENTER_X, textY, sign * HULL_RADIUS_Z);
+    mesh.position.set(ship.bodyCenterX, textY, sign * ship.hullRadiusZ);
     mesh.rotation.y = side === "left" ? 0 : Math.PI;
   }
   return mesh;
@@ -756,7 +849,7 @@ function rebuildText() {
   if (!font || !ready) return Promise.resolve();
 
   const proud = Number(el.depth.value);
-  const totalDepth = EMBED_MM + proud;
+  const totalDepth = ship.embedMm + proud;
   const side = selectedSide();
   const style = selectedStyle();
   const textY = Number(el.pos.value);
@@ -837,7 +930,7 @@ function frameCoverCamera() {
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
   // Prefer hull axis X so the cylinder sits dead-center horizontally.
-  center.x = BODY_CENTER_X * modelGroup.scale.x;
+  center.x = ship.bodyCenterX * modelGroup.scale.x;
 
   // Extra margin so nose + flaps read clearly in the square (not edge-clipped).
   const fit = Math.max(size.x, size.y, size.z) * 1.35;
@@ -871,6 +964,7 @@ function nameSlug() {
 
 function readState() {
   return {
+    ship: ship.id,
     name: el.name.value.trim(),
     color: el.color.value.replace("#", ""),
     text: el.textColor.value.replace("#", ""),
@@ -929,6 +1023,7 @@ function stateFromUrl() {
   const q = new URLSearchParams(window.location.search);
   const state = {};
   for (const key of [
+    "ship",
     "name",
     "color",
     "text",
@@ -949,6 +1044,7 @@ function stateFromUrl() {
 function writeUrl(replace = true) {
   const s = readState();
   const q = new URLSearchParams();
+  q.set("ship", s.ship);
   if (s.name) q.set("name", s.name);
   q.set("color", s.color);
   q.set("text", s.text);
@@ -966,7 +1062,7 @@ function writeUrl(replace = true) {
 }
 
 function confirmLongTextIfNeeded() {
-  if (lastSpanMm <= HARD_TEXT_SPAN_MM) return true;
+  if (lastSpanMm <= ship.hardSpanMm) return true;
   return window.confirm(
     `Text span is ~${lastSpanMm.toFixed(0)} mm and may hit the flaps. Download anyway?`
   );
@@ -1286,7 +1382,7 @@ function downloadOpenscadSnippet() {
   const fontKey = FONT_OPTIONS[s.font] ? s.font : "optimer-bold";
   const openscadFont = FONT_OPTIONS[fontKey].openscad;
   // Web proud depth + embed ≈ OpenSCAD Text_Depth with Surface_Offset = -EMBED
-  const textDepth = (EMBED_MM + Number(s.depth)).toFixed(2);
+  const textDepth = (ship.embedMm + Number(s.depth)).toFixed(2);
   const nameEscaped = (s.name || "Custom Name").replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
   const scad = `// Generated by ${creditLine()}
@@ -1305,7 +1401,7 @@ Style = "${s.style}"; // [raised, engraved]
 Text_Y = ${Number(s.pos)}; // [-30:1:30]
 Side = "${s.side}"; // [right, left]
 Text_X_Offset = 0;
-Surface_Offset = -${EMBED_MM};
+Surface_Offset = -${ship.embedMm};
 
 /* [Export] */
 Part = "preview_with_ship"; // [text_only, preview_with_ship]
@@ -1339,11 +1435,11 @@ async function fitTextToHull() {
     const geo = buildFlatTextGeometry(
       used,
       size,
-      EMBED_MM + Number(el.depth.value)
+      ship.embedMm + Number(el.depth.value)
     );
     const span = measureSpan(geo);
     geo.dispose();
-    if (span <= SAFE_TEXT_SPAN_MM) break;
+    if (span <= ship.safeSpanMm) break;
     size -= 0.5;
   }
   el.size.value = String(size);
@@ -1351,7 +1447,7 @@ async function fitTextToHull() {
   await flushRebuild();
   writeUrl();
   setStatus(
-    lastSpanMm <= SAFE_TEXT_SPAN_MM
+    lastSpanMm <= ship.safeSpanMm
       ? `Fitted to ${size.toFixed(1)} mm letter height (span ~${lastSpanMm.toFixed(0)} mm).`
       : `Still long at minimum size (~${lastSpanMm.toFixed(0)} mm). Shorten the name.`
   );
@@ -1374,6 +1470,12 @@ async function boot() {
   el.form.addEventListener("submit", (e) => e.preventDefault());
   await loadPrintEnvelope();
   const urlState = stateFromUrl();
+  // Resolve the base ship first — envelope numbers, slider limits, and the
+  // default letter size all depend on it.
+  ship = SHIPS[urlState.ship] || SHIPS[DEFAULT_SHIP_ID];
+  if (el.shipModel) el.shipModel.value = ship.id;
+  applyEnvelopeForShip();
+  if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
   mountFontOptions(
     urlState.font && FONT_OPTIONS[urlState.font] ? urlState.font : "optimer-bold"
   );
@@ -1402,6 +1504,12 @@ async function boot() {
     writeUrl();
   });
   el.coreOnePreset?.addEventListener("click", () => applyCoreOnePreset());
+  el.shipModel?.addEventListener("change", () => {
+    applyShipSelection(el.shipModel.value).catch((err) => {
+      console.error(err);
+      setStatus("Failed to load that base model.", true);
+    });
+  });
   el.wrap.addEventListener("change", onControlChange);
   el.fontStyle.addEventListener("change", () => {
     applyFontSelection(el.fontStyle.value).catch((err) => {
@@ -1429,19 +1537,16 @@ async function boot() {
   el.fitSize.addEventListener("click", fitTextToHull);
 
   try {
-    const stlLoader = new STLLoader();
     const initialFontId = FONT_OPTIONS[el.fontStyle.value]
       ? el.fontStyle.value
       : "optimer-bold";
 
     const [, geometry] = await Promise.all([
       applyFontSelection(initialFontId, { rebuild: false }),
-      stlLoader.loadAsync(SHIP_URL),
+      loadShipGeometry(ship),
     ]);
 
     shipGeometry = geometry;
-    shipGeometry.computeVertexNormals();
-
     shipMesh = new THREE.Mesh(shipGeometry, shipMaterial);
     modelGroup.add(shipMesh);
     applyModelScale();
