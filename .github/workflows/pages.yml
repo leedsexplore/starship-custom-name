@@ -33,6 +33,7 @@ jobs:
 
           # Drop maintainer / rebuild-only / duplicate bulk from the public site
           rm -rf _site/assets/flaps_cleaned
+          rm -rf _site/assets/reference
           rm -f _site/assets/starship_custom_name_sample.stl \
                 _site/assets/starship_ship_print_1_200.3mf \
                 _site/assets/starship_print_1_200_mmu.3mf \

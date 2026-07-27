@@ -18,7 +18,7 @@
       content="https://leedsexplore.github.io/starship-custom-name/"
     />
     <link rel="canonical" href="https://leedsexplore.github.io/starship-custom-name/" />
-    <link rel="stylesheet" href="styles.css?v=2.4.2" />
+    <link rel="stylesheet" href="styles.css?v=2.4.3" />
   </head>
   <body>
     <div id="app">
@@ -26,7 +26,7 @@
         <header class="brand">
           <p class="eyebrow">
             Your name on Starship
-            <span class="version" id="app-version" aria-label="App version">v2.4.2</span>
+            <span class="version" id="app-version" aria-label="App version">v2.4.3</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -101,15 +101,18 @@
             <span>Name text color <em class="hint">preview / 3MF</em></span>
             <div class="color-row">
               <div class="presets" id="text-presets" data-target="text-color" role="group" aria-label="Name text color presets"></div>
-              <input id="text-color" type="color" value="#e10600" aria-label="Custom name text color" />
+              <input id="text-color" type="color" value="#1c1c1c" aria-label="Custom name text color" />
             </div>
+            <p class="field-note">
+              Real ship IDs (e.g. S40 on FS-13) are matte black on stainless — not Signal Red.
+            </p>
           </div>
 
           <label class="field">
             <span>Font style</span>
             <select id="font-style" aria-label="Font style">
               <!-- Options populated from FONT_OPTIONS in app.js -->
-              <option value="optimer-bold" selected>Optimer Bold</option>
+              <option value="oswald-bold" selected>Oswald Bold</option>
             </select>
           </label>
 
@@ -125,7 +128,8 @@
               >
             </div>
             <p class="field-note">
-              Leeward is the stainless face where SpaceX paints ship IDs like S40.
+              Leeward = bare stainless. Flight markings sit on this face, near the
+              black tile / steel seam (S40 FS-13 onboard still).
             </p>
           </fieldset>
 
@@ -147,6 +151,11 @@
           <label class="field check">
             <input id="wrap" type="checkbox" checked />
             <span>Wrap text to hull curve</span>
+          </label>
+
+          <label class="field check">
+            <input id="italic" type="checkbox" checked />
+            <span>Italic slant (flight stencil)</span>
           </label>
 
           <label class="field">
@@ -248,10 +257,10 @@
             <div class="named-covers" id="named-covers">
               <a
                 class="named-cover"
-                href="?ship=parametric&amp;name=S40&amp;side=right&amp;style=raised&amp;scale=100"
+                href="?ship=parametric&amp;name=S40&amp;side=right&amp;style=raised&amp;scale=100&amp;text=1c1c1c&amp;font=oswald-bold&amp;italic=1"
               >
                 <img
-                  src="./assets/named-covers/s40.png?v=2.4.2"
+                  src="./assets/named-covers/s40.png?v=2.4.3"
                   width="160"
                   height="160"
                   alt="S40 cover"
@@ -261,10 +270,10 @@
               </a>
               <a
                 class="named-cover"
-                href="?ship=parametric&amp;name=S33&amp;side=right&amp;style=raised&amp;scale=100"
+                href="?ship=parametric&amp;name=S33&amp;side=right&amp;style=raised&amp;scale=100&amp;text=1c1c1c&amp;font=oswald-bold&amp;italic=1"
               >
                 <img
-                  src="./assets/named-covers/s33.png?v=2.4.2"
+                  src="./assets/named-covers/s33.png?v=2.4.3"
                   width="160"
                   height="160"
                   alt="S33 cover"
@@ -274,10 +283,10 @@
               </a>
               <a
                 class="named-cover"
-                href="?ship=parametric&amp;name=IFT-12&amp;side=right&amp;style=raised&amp;scale=100"
+                href="?ship=parametric&amp;name=IFT-12&amp;side=right&amp;style=raised&amp;scale=100&amp;text=1c1c1c&amp;font=oswald-bold&amp;italic=1"
               >
                 <img
-                  src="./assets/named-covers/ift-12.png?v=2.4.2"
+                  src="./assets/named-covers/ift-12.png?v=2.4.3"
                   width="160"
                   height="160"
                   alt="IFT-12 cover"
@@ -287,10 +296,10 @@
               </a>
               <a
                 class="named-cover"
-                href="?ship=parametric&amp;name=Starship&amp;side=right&amp;style=raised&amp;scale=100"
+                href="?ship=parametric&amp;name=Starship&amp;side=right&amp;style=raised&amp;scale=100&amp;text=1c1c1c&amp;font=oswald-bold&amp;italic=1"
               >
                 <img
-                  src="./assets/named-covers/starship.png?v=2.4.2"
+                  src="./assets/named-covers/starship.png?v=2.4.3"
                   width="160"
                   height="160"
                   alt="Starship cover"
@@ -320,7 +329,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.4.2</span>)
+            · <span id="footer-version">v2.4.3</span>)
           </p>
           <p>
             Print files (hex one-piece + MMU):
@@ -382,6 +391,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.4.2"></script>
+    <script type="module" src="app.js?v=2.4.3"></script>
   </body>
 </html>

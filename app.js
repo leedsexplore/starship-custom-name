@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.2";
+import { build3mf } from "./export3mf.js?v=2.4.3";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.2";
+} from "./version.js?v=2.4.3";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -58,10 +58,12 @@ const SHIPS = {
     flapZoneYMm: 60,
     defaultSizeMm: 8,
     /**
-     * SpaceX-style S## marking: leeward mid-barrel, slightly aft of the
-     * clear-section midpoint (≈23 m up a 52.1 m ship → ≈−10 mm here).
+     * SpaceX-style S## marking (S40 FS-13 still): leeward stainless, mid-barrel,
+     * biased toward the tile/steel seam — not centered on the bare face.
      */
     defaultPosMm: -10,
+    /** Circumferential offset (mm along hull) toward the TPS seam (+X flaps). */
+    markingAcrossMm: 16,
     /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
@@ -93,6 +95,7 @@ const SHIPS = {
     defaultSizeMm: 5,
     /** Same S##-style band, scaled to the shorter remix mesh. */
     defaultPosMm: -2,
+    markingAcrossMm: 0,
     orient() {},
     meshDefaults: {
       meshHeightMm: 121,
@@ -397,6 +400,7 @@ const el = {
   depth: document.getElementById("depth"),
   scale: document.getElementById("scale"),
   wrap: document.getElementById("wrap"),
+  italic: document.getElementById("italic"),
   sizeLabel: document.getElementById("size-label"),
   posLabel: document.getElementById("pos-label"),
   depthLabel: document.getElementById("depth-label"),
@@ -580,7 +584,7 @@ const textMaterial = new THREE.MeshStandardMaterial({
 
 let font = null;
 let fontGlyphs = new Set();
-let currentFontId = "optimer-bold";
+let currentFontId = "oswald-bold";
 const fontCache = new Map();
 let fontLoadToken = 0;
 let shipGeometry = null;
@@ -636,7 +640,7 @@ function applyTileUVs(geom, hullRadiusZ, scaleMm = 8.7) {
 }
 
 async function loadFontById(fontId) {
-  const id = FONT_OPTIONS[fontId] ? fontId : "optimer-bold";
+  const id = FONT_OPTIONS[fontId] ? fontId : "oswald-bold";
   if (fontCache.has(id)) {
     return { id, font: fontCache.get(id) };
   }
@@ -647,7 +651,7 @@ async function loadFontById(fontId) {
 }
 
 async function applyFontSelection(fontId, { rebuild = true } = {}) {
-  const wanted = FONT_OPTIONS[fontId] ? fontId : "optimer-bold";
+  const wanted = FONT_OPTIONS[fontId] ? fontId : "oswald-bold";
   const token = ++fontLoadToken;
   setStatus("Loading font…");
   try {
@@ -1035,7 +1039,7 @@ function updateLabels() {
   updateDownloadLabels();
 }
 
-function mountFontOptions(selectedId = "optimer-bold") {
+function mountFontOptions(selectedId = "oswald-bold") {
   const select = el.fontStyle;
   select.replaceChildren();
   const groups = new Map();
@@ -1056,7 +1060,7 @@ function mountFontOptions(selectedId = "optimer-bold") {
     }
     select.appendChild(og);
   }
-  if (!FONT_OPTIONS[select.value]) select.value = "optimer-bold";
+  if (!FONT_OPTIONS[select.value]) select.value = "oswald-bold";
 }
 
 function mountPresets(container, input) {
@@ -1206,7 +1210,24 @@ function buildFlatTextGeometry(text, size, extrudeMm) {
   );
   // Letters run along +Y (ship length); letter height along ±X; extrude +Z.
   geometry.rotateZ(Math.PI / 2);
+  // Flight-style italic: slant tops toward the nose (+Y), matching S40 FS-13.
+  if (el.italic?.checked) {
+    applyFlightItalicShear(geometry);
+  }
   return geometry;
+}
+
+/** ~12° shear — bold stencil look without needing an italic typeface file. */
+const FLIGHT_ITALIC_SHEAR = 0.22;
+
+function applyFlightItalicShear(geometry) {
+  const pos = geometry.attributes.position;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    pos.setXYZ(i, v.x, v.y + FLIGHT_ITALIC_SHEAR * v.x, v.z);
+  }
+  pos.needsUpdate = true;
 }
 
 /**
@@ -1216,12 +1237,13 @@ function buildFlatTextGeometry(text, size, extrudeMm) {
 function wrapGeometryToHull(geometry, side, textY, style) {
   const sign = side === "right" ? 1 : -1;
   const R = ship.hullRadiusZ;
+  const acrossBias = Number(ship.markingAcrossMm) || 0;
   const pos = geometry.attributes.position;
   const v = new THREE.Vector3();
 
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i);
-    const across = side === "left" ? -v.x : v.x;
+    const across = (side === "left" ? -v.x : v.x) + acrossBias;
     const along = v.y;
     const radial = style === "raised" ? R - ship.embedMm + v.z : R - v.z;
     const theta = across / R;
@@ -1237,17 +1259,20 @@ function wrapGeometryToHull(geometry, side, textY, style) {
 
 function placeFlatOnHull(geometry, side, textY, style) {
   const sign = side === "right" ? 1 : -1;
+  const R = ship.hullRadiusZ;
+  const acrossBias = Number(ship.markingAcrossMm) || 0;
+  const theta = acrossBias / R;
+  const radial = style === "raised" ? R - ship.embedMm : R;
   const mesh = new THREE.Mesh(geometry, textMaterial);
+  mesh.position.set(
+    ship.bodyCenterX + radial * Math.sin(theta),
+    textY,
+    sign * radial * Math.cos(theta)
+  );
   if (style === "raised") {
-    mesh.position.set(
-      ship.bodyCenterX,
-      textY,
-      sign * (ship.hullRadiusZ - ship.embedMm)
-    );
-    if (side === "left") mesh.rotation.y = Math.PI;
+    mesh.rotation.y = (side === "left" ? Math.PI : 0) - sign * theta;
   } else {
-    mesh.position.set(ship.bodyCenterX, textY, sign * ship.hullRadiusZ);
-    mesh.rotation.y = side === "left" ? 0 : Math.PI;
+    mesh.rotation.y = (side === "left" ? 0 : Math.PI) - sign * theta;
   }
   return mesh;
 }
@@ -1486,7 +1511,7 @@ function readState() {
     name: el.name.value.trim(),
     color: el.color.value.replace("#", ""),
     text: el.textColor.value.replace("#", ""),
-    font: currentFontId || el.fontStyle.value || "optimer-bold",
+    font: currentFontId || el.fontStyle.value || "oswald-bold",
     size: el.size.value,
     pos: el.pos.value,
     depth: el.depth.value,
@@ -1494,6 +1519,7 @@ function readState() {
     side: selectedSide(),
     style: selectedStyle(),
     wrap: el.wrap.checked ? "1" : "0",
+    italic: el.italic?.checked ? "1" : "0",
   };
 }
 
@@ -1535,6 +1561,10 @@ function applyState(state) {
   }
   if (state.wrap === "0" || state.wrap === "false") el.wrap.checked = false;
   if (state.wrap === "1" || state.wrap === "true") el.wrap.checked = true;
+  if (el.italic) {
+    if (state.italic === "0" || state.italic === "false") el.italic.checked = false;
+    if (state.italic === "1" || state.italic === "true") el.italic.checked = true;
+  }
   updateLabels();
   applyModelScale();
   applyColor();
@@ -1556,6 +1586,7 @@ function stateFromUrl() {
     "side",
     "style",
     "wrap",
+    "italic",
   ]) {
     if (q.has(key)) state[key] = q.get(key);
   }
@@ -1577,6 +1608,7 @@ function writeUrl(replace = true) {
   q.set("side", s.side);
   q.set("style", s.style);
   q.set("wrap", s.wrap);
+  q.set("italic", s.italic);
   const url = `${window.location.pathname}?${q.toString()}`;
   if (replace) history.replaceState(null, "", url);
   return `${window.location.origin}${url}`;
@@ -1993,7 +2025,7 @@ window.__starshipCaptureCover = captureCoverDataUrl;
 
 function downloadOpenscadSnippet() {
   const s = readState();
-  const fontKey = FONT_OPTIONS[s.font] ? s.font : "optimer-bold";
+  const fontKey = FONT_OPTIONS[s.font] ? s.font : "oswald-bold";
   const openscadFont = FONT_OPTIONS[fontKey].openscad;
   // Web proud depth + embed ≈ OpenSCAD Text_Depth with Surface_Offset = -EMBED
   const textDepth = (ship.embedMm + Number(s.depth)).toFixed(2);
@@ -2115,7 +2147,7 @@ async function boot() {
   // Classic remix must start at CORE One % (~215), not the HTML default 100.
   if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
   mountFontOptions(
-    urlState.font && FONT_OPTIONS[urlState.font] ? urlState.font : "optimer-bold"
+    urlState.font && FONT_OPTIONS[urlState.font] ? urlState.font : "oswald-bold"
   );
   mountPresets(el.hullPresets, el.color);
   mountPresets(el.textPresets, el.textColor);
@@ -2156,6 +2188,7 @@ async function boot() {
     });
   }
   el.wrap.addEventListener("change", onControlChange);
+  el.italic?.addEventListener("change", onControlChange);
   el.fontStyle.addEventListener("change", () => {
     applyFontSelection(el.fontStyle.value).catch((err) => {
       console.error(err);
@@ -2195,7 +2228,7 @@ async function boot() {
   try {
     const initialFontId = FONT_OPTIONS[el.fontStyle.value]
       ? el.fontStyle.value
-      : "optimer-bold";
+      : "oswald-bold";
 
     await Promise.all([
       applyFontSelection(initialFontId, { rebuild: false }),
