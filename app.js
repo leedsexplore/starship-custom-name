@@ -1704,6 +1704,11 @@ async function boot() {
   el.form.addEventListener("submit", (e) => e.preventDefault());
   await loadPrintEnvelope();
   const urlState = stateFromUrl();
+  // Drop the old baked-in default so bookmarked/share URLs from v2.0.3 and
+  // earlier don't keep putting "Custom Name" on an empty-default launch.
+  if (urlState.name === "Custom Name") {
+    delete urlState.name;
+  }
   // Resolve the base ship first — envelope numbers, slider limits, and the
   // default letter size all depend on it.
   ship = SHIPS[urlState.ship] || SHIPS[DEFAULT_SHIP_ID];
@@ -1717,6 +1722,7 @@ async function boot() {
   mountPresets(el.hullPresets, el.color);
   mountPresets(el.textPresets, el.textColor);
   applyState(urlState);
+  if (urlState.name == null) el.name.value = "";
   updateLabels();
   resize();
   window.addEventListener("resize", resize);
