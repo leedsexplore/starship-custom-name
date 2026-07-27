@@ -12,7 +12,7 @@ import {
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js";
+} from "./version.js?v=2.0.8";
 
 /**
  * Base ship meshes. Placement values are mesh-space mm; the app convention is
