@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.1.7** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.1.8** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
@@ -125,6 +125,10 @@ The listing package for the original parametric model lives in
 [`printables/starship-parametric/`](printables/starship-parametric/) — hex one-piece
 STL, hex MMU 3MF, `.scad` source, gallery images, and the listing copy.
 See [`printables/README.md`](printables/README.md) for the publish commands.
+
+Hex print files are also published on
+[GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases)
+(`starship_1_200_hex_tiles_one_piece.stl` + `starship_1_200_hex_tiles_mmu.3mf`).
 
 ## Version
 

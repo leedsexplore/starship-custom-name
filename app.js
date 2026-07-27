@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.1.7";
+import { build3mf } from "./export3mf.js?v=2.1.8";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.1.7";
+} from "./version.js?v=2.1.8";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -406,6 +406,7 @@ const el = {
   download3mf: document.getElementById("download-3mf"),
   downloadPng: document.getElementById("download-png"),
   downloadScad: document.getElementById("download-scad"),
+  exportPathNote: document.getElementById("export-path-note"),
   copyLink: document.getElementById("copy-link"),
   resetView: document.getElementById("reset-view"),
   fitSize: document.getElementById("fit-size"),
@@ -1353,6 +1354,12 @@ function updateDownloadLabels() {
   el.download3mf.textContent = printables
     ? "Download 3MF (Printables MMU)"
     : "Download 3MF (Hull + Letters)";
+  if (el.exportPathNote) {
+    // Show when Original CAD has a name (or non-CORE scale) — not the Printables path.
+    el.exportPathNote.hidden = !(
+      ship.id === "parametric" && !printables
+    );
+  }
 }
 
 async function downloadPublishedAsset(url, filename, mime) {

@@ -8,7 +8,7 @@
       name="description"
       content="Put your name on a 3D-printable Starship: original parametric CAD, one-piece print, MMU-ready. Download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=2.1.7" />
+    <link rel="stylesheet" href="styles.css?v=2.1.8" />
   </head>
   <body>
     <div id="app">
@@ -16,7 +16,7 @@
         <header class="brand">
           <p class="eyebrow">
             Printables customizer
-            <span class="version" id="app-version" aria-label="App version">v2.1.7</span>
+            <span class="version" id="app-version" aria-label="App version">v2.1.8</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -156,6 +156,10 @@
             recessed inside the skirt. Empty name on Original CAD at 100% downloads the
             exact Printables hex STL / MMU 3MF. With a name, 3MF is Hull + Letters.
           </p>
+          <p class="field-note" id="export-path-note" hidden>
+            Named export uses the smooth CAD mesh so lettering/CSG stays reliable.
+            Hex tile plates are in the empty-name Printables files (or GitHub Releases).
+          </p>
 
           <div class="actions">
             <button type="button" id="download" class="primary" disabled>
@@ -202,7 +206,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.1.7</span>)
+            · <span id="footer-version">v2.1.8</span>)
           </p>
           <p>
             The parametric CAD base model is original work — CC BY-NC 4.0
@@ -246,6 +250,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.1.7"></script>
+    <script type="module" src="app.js?v=2.1.8"></script>
   </body>
 </html>

@@ -14,7 +14,7 @@ This listing is the **embossed hex-tile** print: thousands of real hexagonal til
 
 **[leedsexplore.github.io/starship-custom-name](https://leedsexplore.github.io/starship-custom-name/)**
 
-With **Original CAD** selected, an empty name at the CORE One 1:200 preset downloads these same hex STL / MMU 3MF files byte-for-byte. Enter a name to emboss or raise lettering on the smooth hull (named exports are separate from this listing).
+With **Original CAD** selected, an empty name at the CORE One 1:200 preset downloads these same hex STL / MMU 3MF files byte-for-byte. Enter a name to emboss or raise lettering on the smooth hull (named exports are separate from this listing). The same hex files are also on the project’s [GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
 
 ## Printing
 

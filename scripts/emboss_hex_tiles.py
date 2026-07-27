@@ -465,10 +465,24 @@ def main() -> None:
         else:
             flaps = None
 
-    parts = [hex_shell, plates]
+    # OpenSCAD flaps are coarse extruded polygons (~50 tris). Subdivide a copy
+    # for dense plate ray-casts, but keep the watertight coarse solid in the
+    # final mesh (subdivision opens edges).
+    flaps_solid = flaps
     if flaps is not None and len(flaps.faces):
-        parts.append(flaps)
-        flap_plates = flap_plate_prisms(flaps)
+        flaps_for_plates = flaps
+        before = len(flaps.faces)
+        try:
+            flaps_for_plates = flaps.subdivide_to_size(max_edge=1.2)
+            print(f"  flaps densified for plates: {before} → {len(flaps_for_plates.faces)} faces")
+        except Exception as err:  # noqa: BLE001
+            print(f"  warn: flap densify skipped: {err}")
+            flaps_for_plates = flaps
+
+    parts = [hex_shell, plates]
+    if flaps_solid is not None and len(flaps_solid.faces):
+        parts.append(flaps_solid)
+        flap_plates = flap_plate_prisms(flaps_for_plates)
         print(f"  flap plates: {len(flap_plates.faces) // 20} tiles")
         if len(flap_plates.faces):
             parts.append(flap_plates)

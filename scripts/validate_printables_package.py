@@ -94,6 +94,7 @@ def main() -> None:
         "CC BY-NC",
         "260.5",
         "byte-for-byte",
+        "GitHub Releases",
     ):
         if needle.lower() not in desc.lower() and needle not in desc:
             # case-insensitive for prose hooks
@@ -125,6 +126,9 @@ def main() -> None:
             fail(f"do not publish blueprint/2D drawing image: {banned.name}")
         if banned.stat().st_size < 5000:
             fail(f"gallery image too small (placeholder?): {banned.name}")
+    closeup = PKG / "images" / "05-hex-tiles-closeup.png"
+    if closeup.exists() and closeup.stat().st_size < 5000:
+        fail("gallery closeup too small")
     ok(f"{len(images)} gallery images (cover={cover.name})")
 
     shells = connected_shells(files_dir / "starship_1_200_hex_tiles_one_piece.stl")
