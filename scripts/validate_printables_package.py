@@ -116,9 +116,9 @@ def main() -> None:
     images = sorted((PKG / "images").glob("*.png"))
     if len(images) < 5:
         fail(f"need ≥5 gallery images, found {len(images)}")
-    cover = PKG / "images" / "01-cover-underside.png"
+    cover = PKG / "images" / "01-cover.png"
     if not cover.exists():
-        fail("missing cover image 01-cover-underside.png")
+        fail("missing cover image 01-cover.png")
     for banned in images:
         if "blueprint" in banned.name.lower() or "2d" in banned.name.lower():
             fail(f"do not publish blueprint/2D drawing image: {banned.name}")
