@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.11";
+import { build3mf } from "./export3mf.js?v=2.4.12";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.11";
+} from "./version.js?v=2.4.12";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -2071,7 +2071,7 @@ Font = "${openscadFont}"; // web font: ${fontKey}
 Style = "${s.style}"; // [raised, engraved]
 
 /* [Placement] */
-Text_Y = ${Number(s.pos)}; // [-30:1:30]
+Text_Y = ${Number(s.pos)}; // [-60:1:60]
 Side = "${s.side}"; // [right, left]
 Text_X_Offset = 0;
 Surface_Offset = -${ship.embedMm};

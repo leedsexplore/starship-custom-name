@@ -1,4 +1,4 @@
-// Starship Custom Name — OpenSCAD path (v2.4.11)
+// Starship Custom Name — OpenSCAD path (v2.4.12)
 // Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
 // Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship
@@ -38,7 +38,7 @@ Style = "raised"; // [raised, engraved]
 /* [Placement] */
 // Position along the ship length (Y). Nose is +Y, engines/base are -Y.
 // Default matches SpaceX S## markings on the leeward mid-barrel (slightly aft of mid-gap).
-Text_Y = -2; // [-30:1:30]
+Text_Y = -2; // [-60:1:60]
 // Which side of the hull
 Side = "right"; // [right, left]
 // Nudge text along the cross-section (X), mm
