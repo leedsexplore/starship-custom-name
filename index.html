@@ -8,7 +8,7 @@
       name="description"
       content="Put your name on a 3D-printable Starship: original parametric CAD, one-piece print, MMU-ready. Download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=2.0.0" />
+    <link rel="stylesheet" href="styles.css?v=2.0.1" />
   </head>
   <body>
     <div id="app">
@@ -16,26 +16,35 @@
         <header class="brand">
           <p class="eyebrow">
             Printables customizer
-            <span class="version" id="app-version" aria-label="App version">v2.0.0</span>
+            <span class="version" id="app-version" aria-label="App version">v2.0.1</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
-            Type a name on an original parametric Starship CAD — one-piece print,
-            true 1:200 — preview Prusa/space colors, download STL or multi-material
-            3MF. Preview colors are a guide — assign filament in your slicer.
+            Put a name on Starship — toggle the original parametric CAD (true 1:200,
+            one-piece) or the classic remix mesh, preview Prusa/space colors, then
+            download STL or multi-material 3MF. Preview colors are a guide — assign
+            filament in your slicer.
           </p>
         </header>
 
         <form id="controls" autocomplete="off">
-          <label class="field">
-            <span>Base model</span>
-            <select id="ship-model" aria-label="Base model">
-              <option value="parametric" selected>
-                Parametric CAD 1:200 — original (CC BY)
-              </option>
-              <option value="legacy">Classic remix mesh — v1.x (CC BY-NC)</option>
-            </select>
-          </label>
+          <fieldset class="field fieldset">
+            <legend>Base design</legend>
+            <div class="segmented">
+              <label
+                ><input type="radio" name="ship" value="parametric" checked />
+                Original CAD</label
+              >
+              <label
+                ><input type="radio" name="ship" value="legacy" />
+                Classic remix</label
+              >
+            </div>
+            <p class="field-note">
+              Original = parametric 1:200 (CC BY). Classic = Josh1297 + anventia
+              mesh (CC BY-NC).
+            </p>
+          </fieldset>
 
           <label class="field">
             <span>Name on the hull</span>
@@ -44,7 +53,7 @@
               type="text"
               maxlength="24"
               value="Custom Name"
-              placeholder="Your name"
+              placeholder="S40"
               spellcheck="false"
             />
           </label>
@@ -79,12 +88,16 @@
             <legend>Hull side</legend>
             <div class="segmented">
               <label
-                ><input type="radio" name="side" value="right" checked /> Right</label
+                ><input type="radio" name="side" value="right" checked />
+                Leeward</label
               >
               <label
-                ><input type="radio" name="side" value="left" /> Left</label
+                ><input type="radio" name="side" value="left" /> Windward</label
               >
             </div>
+            <p class="field-note">
+              Leeward is the stainless face where SpaceX paints ship IDs like S40.
+            </p>
           </fieldset>
 
           <fieldset class="field fieldset">
@@ -113,8 +126,8 @@
           </label>
 
           <label class="field">
-            <span>Position (along hull) <em id="pos-label">-2</em></span>
-            <input id="pos" type="range" min="-30" max="30" step="1" value="-2" />
+            <span>Position (along hull) <em id="pos-label">-10</em></span>
+            <input id="pos" type="range" min="-30" max="30" step="1" value="-10" />
           </label>
 
           <label class="field">
@@ -187,7 +200,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.0.0</span>)
+            · <span id="footer-version">v2.0.1</span>)
           </p>
           <p>
             The parametric CAD base model is original work — CC BY 4.0, remix away.
@@ -231,6 +244,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.0.0"></script>
+    <script type="module" src="app.js?v=2.0.1"></script>
   </body>
 </html>

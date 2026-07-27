@@ -22,7 +22,7 @@ import {
 const SHIPS = {
   parametric: {
     id: "parametric",
-    label: "Parametric CAD 1:200 (original)",
+    label: "Original CAD 1:200",
     url: "./assets/starship_ship_print_1_200.stl",
     /** Key into print_envelope.json meshes[] for measured dimensions. */
     envelopeFile: "assets/starship_ship_print_1_200.stl",
@@ -33,6 +33,11 @@ const SHIPS = {
     hardSpanMm: 120,
     flapZoneYMm: 60,
     defaultSizeMm: 8,
+    /**
+     * SpaceX-style S## marking: leeward mid-barrel, slightly aft of the
+     * clear-section midpoint (≈23 m up a 52.1 m ship → ≈−10 mm here).
+     */
+    defaultPosMm: -10,
     /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
@@ -49,7 +54,7 @@ const SHIPS = {
   },
   legacy: {
     id: "legacy",
-    label: "Classic remix mesh (v1.x)",
+    label: "Classic remix (v1.x)",
     url: "./assets/StarShipV2_cleaned_flaps.stl",
     envelopeFile: "assets/StarShipV2_cleaned_flaps.stl",
     bodyCenterX: -22.3,
@@ -60,6 +65,8 @@ const SHIPS = {
     hardSpanMm: 60,
     flapZoneYMm: 28,
     defaultSizeMm: 5,
+    /** Same S##-style band, scaled to the shorter remix mesh. */
+    defaultPosMm: -5,
     orient() {},
     meshDefaults: {
       meshHeightMm: 121,
@@ -350,7 +357,6 @@ const ACCENT_FOLD = {
 
 const el = {
   form: document.getElementById("controls"),
-  shipModel: document.getElementById("ship-model"),
   name: document.getElementById("name"),
   color: document.getElementById("color"),
   textColor: document.getElementById("text-color"),
@@ -477,6 +483,17 @@ function selectedSide() {
     : "right";
 }
 
+function selectedShipId() {
+  const value = document.querySelector('input[name="ship"]:checked')?.value;
+  return SHIPS[value] ? value : DEFAULT_SHIP_ID;
+}
+
+function setShipRadio(shipId) {
+  const id = SHIPS[shipId] ? shipId : DEFAULT_SHIP_ID;
+  const radio = document.querySelector(`input[name="ship"][value="${id}"]`);
+  if (radio) radio.checked = true;
+}
+
 function selectedStyle() {
   return document.querySelector('input[name="style"]:checked')?.value ===
     "engraved"
@@ -580,11 +597,11 @@ async function loadShipGeometry(shipDef) {
   return geometry;
 }
 
-/** Swap the base mesh, retune scale to its 1:200 preset, and rebuild text. */
+/** Swap the base mesh, retune scale/placement to its 1:200 preset, and rebuild text. */
 async function applyShipSelection(shipId, { retune = true } = {}) {
   const id = SHIPS[shipId] ? shipId : DEFAULT_SHIP_ID;
   ship = SHIPS[id];
-  if (el.shipModel && el.shipModel.value !== id) el.shipModel.value = id;
+  setShipRadio(id);
   applyEnvelopeForShip();
 
   setStatus(`Loading ${ship.label}…`);
@@ -597,6 +614,7 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
   if (retune) {
     el.scale.value = String(coreOneScalePercent());
     el.size.value = String(ship.defaultSizeMm);
+    el.pos.value = String(ship.defaultPosMm);
   }
   updateLabels();
   applyModelScale();
@@ -1478,9 +1496,10 @@ async function boot() {
   // Resolve the base ship first — envelope numbers, slider limits, and the
   // default letter size all depend on it.
   ship = SHIPS[urlState.ship] || SHIPS[DEFAULT_SHIP_ID];
-  if (el.shipModel) el.shipModel.value = ship.id;
+  setShipRadio(ship.id);
   applyEnvelopeForShip();
   if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
+  if (urlState.pos == null) el.pos.value = String(ship.defaultPosMm);
   mountFontOptions(
     urlState.font && FONT_OPTIONS[urlState.font] ? urlState.font : "optimer-bold"
   );
@@ -1509,12 +1528,14 @@ async function boot() {
     writeUrl();
   });
   el.coreOnePreset?.addEventListener("click", () => applyCoreOnePreset());
-  el.shipModel?.addEventListener("change", () => {
-    applyShipSelection(el.shipModel.value).catch((err) => {
-      console.error(err);
-      setStatus("Failed to load that base model.", true);
+  for (const radio of document.querySelectorAll('input[name="ship"]')) {
+    radio.addEventListener("change", () => {
+      applyShipSelection(selectedShipId()).catch((err) => {
+        console.error(err);
+        setStatus("Failed to load that base model.", true);
+      });
     });
-  });
+  }
   el.wrap.addEventListener("change", onControlChange);
   el.fontStyle.addEventListener("change", () => {
     applyFontSelection(el.fontStyle.value).catch((err) => {

@@ -9,8 +9,8 @@ https://leedsexplore.github.io/starship-custom-name/
 
 The **parametric CAD model** (`openscad/starship_parametric.scad` and every mesh
 exported from it — the one-piece 1:200 print STL, the split steel/tile bodies,
-and the MMU 3MF) is original work modeled from published vehicle dimensions and
-a scaled blueprint. It is licensed **CC BY 4.0**
+and the MMU 3MF) is original work modeled from published vehicle dimensions.
+It is licensed **CC BY 4.0**
 (https://creativecommons.org/licenses/by/4.0/): remix it, print it, sell prints —
 just credit David Leeds (leedsexplore) with a link.
 

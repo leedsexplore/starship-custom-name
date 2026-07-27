@@ -17,6 +17,8 @@ const BODY_CENTER_X = 0;
 const HULL_RADIUS_Z = 22.575;
 const EMBED_MM = 0.35;
 const LETTER_MM = 8;
+/** SpaceX-style S## band on the leeward mid-barrel (see SHIPS.parametric.defaultPosMm). */
+const TEXT_Y = -10;
 
 function loadBinarySTL(filePath) {
   const buf = fs.readFileSync(filePath);
@@ -80,7 +82,7 @@ const shipGeo = orientParametric(
 );
 const font = loadFont(path.join(ROOT, "fonts/optimer_bold.typeface.json"));
 const textGeo = buildFlatTextGeometry(font, "Custom Name", LETTER_MM, EMBED_MM + 0.5);
-wrapGeometryToHull(textGeo, "right", -2, "raised");
+wrapGeometryToHull(textGeo, "right", TEXT_Y, "raised");
 
 const group = new THREE.Group();
 group.add(new THREE.Mesh(shipGeo));
@@ -99,7 +101,7 @@ if (buffer instanceof DataView) {
   throw new Error("Unexpected STLExporter output");
 }
 const header = Buffer.alloc(80, 0);
-header.write("Starship sample v2.0.0 parametric CAD 1:200");
+header.write("Starship sample v2.0.1 parametric CAD 1:200");
 bytes.set(header, 0);
 
 const outPath = path.join(ROOT, "assets/starship_custom_name_sample.stl");

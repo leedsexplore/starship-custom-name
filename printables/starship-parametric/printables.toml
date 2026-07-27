@@ -1,5 +1,5 @@
 # Printables listing for the ORIGINAL parametric Starship CAD.
-# Copy this folder into printables-integration/packages/ and publish with:
+# Publish with printables-integration CLI:
 #   printables validate packages/starship-parametric
 #   printables publish packages/starship-parametric --draft --no-dry-run --confirm
 #   printables publish packages/starship-parametric --no-dry-run --confirm
@@ -7,11 +7,11 @@
 # This is original work (openscad/starship_parametric.scad, built from published
 # dimensions) — NOT a remix, so there is no remix_of and the license is CC BY 4.0.
 
-[model]
+[listing]
 title = "SpaceX Starship 1:200 — One-Piece Print, MMU Two-Color, Custom Name (Parametric CAD)"
-summary = "Original parametric Starship CAD: prints in ONE piece with zero assembly, MMU3-ready two-color 3MF with hex-tile heat shield, plus a free web customizer that puts any name on the hull."
 license = "CC BY 4.0"
-category_id = "82" # Other Ideas — adjust in the Printables UI if a better fit exists
+category = "Other Ideas"
+category_id = "82"
 tags = [
   "spacex",
   "starship",
@@ -20,18 +20,11 @@ tags = [
   "customizable",
   "parametric",
   "openscad",
-  "multi-material",
+  "multimaterial",
   "mmu3",
-  "single-piece",
-  "no-assembly",
+  "singlepiece",
+  "noassembly",
 ]
 
-[files]
-include = ["files/**/*.stl", "files/**/*.3mf", "files/**/*.scad"]
-
-[images]
-cover = "images/01-cover-custom-name.png"
-include = ["images/**/*.png"]
-
-[description]
-file = "DESCRIPTION.md"
+files = ["files/**/*.stl", "files/**/*.3mf", "files/**/*.scad"]
+images = ["images/**/*.png"]

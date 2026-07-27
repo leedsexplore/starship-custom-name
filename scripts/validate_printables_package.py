@@ -70,20 +70,21 @@ def main() -> None:
         fail("missing DESCRIPTION.md")
 
     meta = tomllib.loads(toml_path.read_text())
-    model = meta.get("model", {})
-    for key in ("title", "summary", "license", "tags"):
-        if key not in model:
-            fail(f"printables.toml missing model.{key}")
-    if model.get("license") != "CC BY 4.0":
-        fail(f"expected CC BY 4.0, got {model.get('license')!r}")
-    if "remix_of" in model or "remix_of" in meta:
+    # CLI schema uses [listing]; accept legacy [model] as a fallback.
+    listing = meta.get("listing") or meta.get("model") or {}
+    for key in ("title", "license", "tags"):
+        if key not in listing:
+            fail(f"printables.toml missing listing.{key}")
+    if listing.get("license") != "CC BY 4.0":
+        fail(f"expected CC BY 4.0, got {listing.get('license')!r}")
+    if "remix_of" in listing or "remix_of" in meta:
         fail("original listing must not set remix_of")
-    tags = set(model["tags"])
-    for required in ("starship", "mmu3", "single-piece", "no-assembly", "parametric"):
+    tags = set(listing["tags"])
+    for required in ("starship", "mmu3", "singlepiece", "noassembly", "parametric"):
         if required not in tags:
             fail(f"missing tag {required!r}")
-    ok(f"title: {model['title'][:72]}…")
-    ok(f"license={model['license']}  tags={len(tags)}")
+    ok(f"title: {listing['title'][:72]}…")
+    ok(f"license={listing['license']}  tags={len(tags)}")
 
     desc = desc_path.read_text()
     for needle in (
@@ -113,11 +114,14 @@ def main() -> None:
         ok(f"files/{name}  {p.stat().st_size / 1e6:.2f} MB")
 
     images = sorted((PKG / "images").glob("*.png"))
-    if len(images) < 6:
-        fail(f"need ≥6 gallery images, found {len(images)}")
-    cover = PKG / "images" / "01-cover-custom-name.png"
+    if len(images) < 5:
+        fail(f"need ≥5 gallery images, found {len(images)}")
+    cover = PKG / "images" / "01-cover-underside.png"
     if not cover.exists():
-        fail("missing cover image 01-cover-custom-name.png")
+        fail("missing cover image 01-cover-underside.png")
+    for banned in images:
+        if "blueprint" in banned.name.lower() or "2d" in banned.name.lower():
+            fail(f"do not publish blueprint/2D drawing image: {banned.name}")
     ok(f"{len(images)} gallery images (cover={cover.name})")
 
     shells = connected_shells(files_dir / "starship_1_200_one_piece.stl")

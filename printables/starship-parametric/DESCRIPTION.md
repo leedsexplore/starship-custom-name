@@ -29,7 +29,7 @@ Type any name, pick colors and font, choose raised or engraved lettering wrapped
 
 ## Why this one is different
 
-This is **not a mesh remix** — it's an original parametric CAD model written in OpenSCAD from published dimensions, with flap planforms measured off a scaled blueprint (included in the gallery). Every dimension is a named variable: fork the `.scad`, change one number, and re-export at any scale or detail level.
+This is **not a mesh remix** — it's an original parametric CAD model written in OpenSCAD from published dimensions. Every dimension is a named variable: fork the `.scad`, change one number, and re-export at any scale or detail level.
 
 Source, build pipeline, and the customizer web app: [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
 

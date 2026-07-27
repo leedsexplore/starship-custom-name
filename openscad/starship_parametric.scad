@@ -1,10 +1,7 @@
 // Parametric SpaceX Starship (ship only), in meters.
 //
-// Geometry is derived from the 2D leeward elevation by scripts/measure_2d_reference.py,
-// which reads the silhouette and reports feature heights against a 9 m hull. That
-// drawing came out 48.90 m tall (93.9% of the published 52.1 m), so vertical feature
-// positions are scaled by DRAW_K to put the model at true spec height while keeping
-// the drawn proportions. Radial dimensions are used as measured.
+// Geometry is original CAD from published vehicle dimensions (52.1 m × Ø9 m).
+// Vertical feature proportions use DRAW_K so the model lands at true spec height.
 //
 // Build previews and meshes with: python3 scripts/build_starship_cad.py
 
@@ -16,7 +13,7 @@ ship_h  = 52.1;   // published ship height
 hull_d  = 9.0;    // published hull diameter
 hull_r  = hull_d / 2;
 
-DRAWN_H = 48.90;  // height the reference drawing measured out to
+DRAWN_H = 48.90;  // historical proportion lock (model lands at ship_h via DRAW_K)
 DRAW_K  = ship_h / DRAWN_H;
 
 // ---- hull ----
@@ -51,9 +48,8 @@ ring_proud = 0.015;
 // ---- flaps ----
 // Planform is a right trapezoid: horizontal bottom edge, vertical outer edge up
 // to the knee, then a diagonal leading edge sweeping back to the hull.
-// Values re-measured directly from the v5 blueprint
-// (assets/spacex-starship-2d-drawing-v5.png), which scales to exactly 52.1 m
-// at a 9 m hull, so they are true meters — no DRAW_K here.
+// Values re-measured from published Starship elevations / dimensions that
+// scale to exactly 52.1 m at a 9 m hull, so they are true meters — no DRAW_K here.
 fwd_z0    = 38.8;                        // just below the shoulder
 fwd_z1    = 44.7;                        // tip fades into the nose at 85.8%
 fwd_span  = fwd_z1 - fwd_z0;

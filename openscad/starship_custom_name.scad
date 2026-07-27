@@ -36,8 +36,8 @@ Style = "raised"; // [raised, engraved]
 
 /* [Placement] */
 // Position along the ship length (Y). Nose is +Y, engines/base are -Y.
-// Mid-body on the main cylinder (between forward and aft flaps). Keep |Y| + half text length under ~28 mm.
-Text_Y = -2; // [-30:1:30]
+// Default matches SpaceX S## markings on the leeward mid-barrel (slightly aft of mid-gap).
+Text_Y = -5; // [-30:1:30]
 // Which side of the hull
 Side = "right"; // [right, left]
 // Nudge text along the cross-section (X), mm

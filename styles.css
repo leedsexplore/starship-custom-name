@@ -181,10 +181,17 @@ a {
   color: var(--text);
   cursor: pointer;
   font-size: 0.9rem;
+  text-align: center;
+  line-height: 1.2;
 }
 
 .segmented input {
   accent-color: var(--accent);
+}
+
+.segmented label:has(input:checked) {
+  border-color: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px var(--accent-dim);
 }
 
 .warn {

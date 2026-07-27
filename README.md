@@ -40,11 +40,13 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 
 Shareable URLs look like:
 
-`https://leedsexplore.github.io/starship-custom-name/?ship=parametric&name=Alex&color=c8ced6&text=e10600&font=optimer-bold&size=8&pos=-2&depth=0.5&scale=100&side=right&style=raised&wrap=1`
+`https://leedsexplore.github.io/starship-custom-name/?ship=parametric&name=Alex&color=c8ced6&text=e10600&font=optimer-bold&size=8&pos=-10&depth=0.5&scale=100&side=right&style=raised&wrap=1`
 
 | Control | Notes |
 |--------|--------|
-| Base model | `ship=parametric` (default) or `ship=legacy` — v1.x links keep working |
+| Base design | `ship=parametric` (default, original CAD) or `ship=legacy` (classic remix) — segmented toggle in the UI |
+| Hull side | `side=right` = leeward (SpaceX S## face) · `side=left` = windward |
+| Position | Default `pos=-10` (parametric) / `-5` (legacy) — S## mid-barrel band |
 | Font style | Classic (Optimer/Helvetiker/Gentilis/Droid) + popular (Roboto, Open Sans, Montserrat, Inter, …) + display (Oswald, Bebas Neue) |
 | Model scale | Baked into STL/3MF; **CORE One 1:200** preset (100% parametric / ~215% legacy) → H 260.5 mm |
 | Color presets | Prusament-oriented names on hover (approx where noted) |
@@ -64,7 +66,7 @@ python3 -m http.server 8080
 ## Parametric CAD build
 
 The whole ship is one OpenSCAD file: [`openscad/starship_parametric.scad`](openscad/starship_parametric.scad)
-(52.1 m × Ø9 m, blunted-ogive nose, blueprint-measured flaps, 3 SL + 3 vacuum Raptors).
+(52.1 m × Ø9 m, blunted-ogive nose, 3 SL + 3 vacuum Raptors).
 
 ```bash
 # One-piece 1:200 print STL + 3MF + refreshed envelope
@@ -84,7 +86,6 @@ node scripts/build_sample_stl.mjs
 | `assets/starship_ship_print_1_200.stl` | **One-piece print file** — H 260.5 mm, engines flush |
 | `assets/starship_print_1_200_mmu.3mf` | Two-color MMU 3MF (steel + heat shield/Raptors) |
 | `assets/starship_cad_preview.html` | Interactive three.js viewer (steel/tiles/bay/engines layers) |
-| `assets/starship-cad-blueprint.svg` | Dimensioned blueprint generated from the model |
 | `assets/StarShipV2_cleaned_flaps.stl` | Legacy customizer mesh (remix, CC BY-NC) |
 
 ## Print scale (Prusa CORE One / 1:200)

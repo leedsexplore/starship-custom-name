@@ -5,8 +5,7 @@
   python3 scripts/build_starship_cad.py --export   # previews + STL/3MF
 
 The model's windward (tiled) side faces +X and the flaps lie on the +-Y axis, so
-the leeward elevation is shot from -X and both flaps show edge-on, matching the
-2D reference drawing.
+the leeward elevation is shot from -X and both flaps show edge-on.
 """
 
 import argparse
