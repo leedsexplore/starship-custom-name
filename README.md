@@ -41,12 +41,11 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 
 Shareable URLs look like:
 
-`https://leedsexplore.github.io/starship-custom-name/?ship=parametric&tiles=hex&name=Alex&color=c8ced6&text=e10600&font=optimer-bold&size=8&pos=-10&depth=0.5&scale=100&side=right&style=raised&wrap=1`
+`https://leedsexplore.github.io/starship-custom-name/?ship=parametric&name=Alex&color=c8ced6&text=e10600&font=optimer-bold&size=8&pos=-10&depth=0.5&scale=100&side=right&style=raised&wrap=1`
 
 | Control | Notes |
 |--------|--------|
 | Base design | `ship=parametric` (default, original CAD) or `ship=legacy` (classic remix) — segmented toggle in the UI |
-| Heat shield | `tiles=hex` (default on parametric — printable grooves) or `tiles=flat` (smooth shell + preview bump) |
 | Hull side | `side=right` = leeward (SpaceX S## face) · `side=left` = windward |
 | Position | Default `pos=-10` (parametric) / `-2` (legacy) — S## mid-barrel band |
 | Font style | Classic (Optimer/Helvetiker/Gentilis/Droid) + popular (Roboto, Open Sans, Montserrat, Inter, …) + display (Oswald, Bebas Neue) |

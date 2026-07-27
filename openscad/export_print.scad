@@ -12,9 +12,11 @@ use <starship_parametric.scad>
 print_height_mm = 260.5;
 ship_h_m = 52.1;
 
-// Coarser tessellation for printable meshes (override model defaults).
-$fa = 5;
-$fs = 0.35;
+// Fragment count = min(360/$fa, π·D/$fs). Keep $fs small so the Ø9 m
+// hull isn't capped at a few hundred facets (vertical flats).
+// ~0.03 m → ~940 segments → ~0.15 mm chords at 1:200.
+$fa = 0.5;
+$fs = 0.03;
 
 scale(print_height_mm / ship_h_m)
     starship(tiles = false);

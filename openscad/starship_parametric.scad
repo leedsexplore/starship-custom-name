@@ -5,8 +5,11 @@
 //
 // Build previews and meshes with: python3 scripts/build_starship_cad.py
 
-$fa = 2;
-$fs = 0.25;
+// Circumference smoothness: fragment count is min(360/$fa, π·D/$fs).
+// Hull Ø9 m needs a small $fs or $fs caps segments far below $fa's intent
+// (e.g. $fs=0.1 → only ~283 facets → obvious vertical flats in preview).
+$fa = 0.5;
+$fs = 0.03;
 
 // ---- master dimensions ----
 ship_h  = 52.1;   // published ship height
@@ -39,11 +42,7 @@ function nose_x(z) =
         ? ogive_x(z)
         : sqrt(max(nose_tip_r * nose_tip_r - pow(z - nose_zc, 2), 0));
 
-// weld ring seams
-ring_pitch = 1.83;
-ring_w     = 0.06;
-ring_proud = 0.015;
-
+// (Weld-ring seams removed — they read as harsh horizontal lines at 1:200.)
 
 // ---- flaps ----
 // Planform is a right trapezoid: horizontal bottom edge, vertical outer edge up
@@ -96,6 +95,8 @@ bell_black = [0.07, 0.07, 0.08];
 module hull_solid(extra = 0) {
     r = hull_r + extra;
     union() {
+        // Plain cylinder — no weld-ring bands. Circumference smoothness comes
+        // from global $fa/$fs (print exports use ~0.5° → ~720 segments).
         cylinder(h = cyl_h, r = r);
         translate([0, 0, cyl_h])
             rotate_extrude()
@@ -118,16 +119,6 @@ module hull_body() {
             // the ceiling so no shiny steel shows behind the bells.
             translate([0, 0, -0.01]) cylinder(h = bay_recess + 0.10, r = bay_wall_r);
         }
-    color(steel_dark)
-        for (z = [ring_pitch : ring_pitch : cyl_h - 0.4])
-            translate([0, 0, z - ring_w / 2])
-                // Annular band, not a solid disk — a disk crosses the engine
-                // bay cavity and seals a phantom chamber inside the print.
-                difference() {
-                    cylinder(h = ring_w, r = hull_r + ring_proud);
-                    translate([0, 0, -0.01])
-                        cylinder(h = ring_w + 0.02, r = hull_r - 0.05);
-                }
 }
 
 module heat_shield() {

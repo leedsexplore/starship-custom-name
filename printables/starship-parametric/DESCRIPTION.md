@@ -12,11 +12,11 @@ This listing is the **embossed hex-tile** print: real grooves on the windward he
 | `starship_1_200_hex_tiles_mmu.3mf` | Same ship as two MMU3 bodies: stainless hull + black heat shield / windward flap faces / Raptors |
 | `starship_parametric.scad` | OpenSCAD source (smooth shell in CAD; hex relief is generated in the build pipeline) |
 
-**Want a name on the hull, smooth heat shield, or your own colors?** Use the free web customizer — it exports your STL/3MF directly (no sample file needed here):
+**Want a name on the hull, or your own colors?** Use the free web customizer — it exports your STL/3MF directly (no sample file needed here):
 
 **[leedsexplore.github.io/starship-custom-name](https://leedsexplore.github.io/starship-custom-name/)**
 
-On Original CAD, pick **Heat shield: Hex relief** or **Flat**, type a name, download.
+On Original CAD, type a name and download. For embossed hex heat-shield files without a custom name, use the STLs above.
 
 ## Printing
 

@@ -23,38 +23,22 @@ const SHIPS = {
   parametric: {
     id: "parametric",
     label: "Original CAD 1:200",
-    url: "./assets/starship_ship_print_1_200.stl",
+    url: "./assets/starship_ship_print_1_200.stl?v=2.0.8",
     /** Key into print_envelope.json meshes[] for measured dimensions. */
     envelopeFile: "assets/starship_ship_print_1_200.stl",
-    /** One-piece with embossed hex heat shield (export/CSG when tiles=hex). */
-    hexUrl: "./assets/starship_ship_print_1_200_hex.stl",
     /** Preview layers (steel + tiled heat shield) — same look as assets/starship_cad_preview.html. */
     layers: [
       {
         id: "steel",
         role: "steel",
-        url: "./assets/starship_print_1_200_steel.stl",
+        url: "./assets/starship_print_1_200_steel.stl?v=2.0.8",
       },
       {
         id: "tiles",
         role: "tiles",
-        url: "./assets/starship_print_1_200_tiles.stl",
+        url: "./assets/starship_print_1_200_tiles.stl?v=2.0.8",
       },
     ],
-    /** Preview layers with real printable hex grooves (no bump-map sugar). */
-    hexLayers: [
-      {
-        id: "steel",
-        role: "steel",
-        url: "./assets/starship_print_1_200_steel.stl",
-      },
-      {
-        id: "tiles",
-        role: "tiles",
-        url: "./assets/starship_print_1_200_tiles_hex.stl",
-      },
-    ],
-    supportsHexTiles: true,
     bodyCenterX: 0,
     hullRadiusZ: 22.575, // measured mid-barrel Ø 45.15 mm
     embedMm: 0.35,
@@ -85,7 +69,7 @@ const SHIPS = {
     id: "legacy",
     label: "Classic remix (v1.x)",
     /** Pre-v2 customizer mesh — Josh1297 Starship (same as v1.1.5). */
-    url: "./assets/StarShipV2_original.stl",
+    url: "./assets/StarShipV2_original.stl?v=2.0.8",
     envelopeFile: "assets/StarShipV2_original.stl",
     bodyCenterX: -22.3,
     /** Mid-body cylinder radius tuned for this mesh (v1.1.x placement). */
@@ -413,7 +397,6 @@ const el = {
   hullPresets: document.getElementById("hull-presets"),
   textPresets: document.getElementById("text-presets"),
   fontStyle: document.getElementById("font-style"),
-  tilesField: document.getElementById("tiles-field"),
   viewport: document.getElementById("viewport"),
   hud: document.getElementById("hud"),
 };
@@ -528,7 +511,7 @@ function makeHexTileTexture() {
   return tex;
 }
 
-/** Preview sugar for the smooth tile shell; disabled when real hex grooves load. */
+/** Preview sugar for the smooth tile shell. */
 const tilesBumpMap = makeHexTileTexture();
 /** Parametric preview: black heat-shield tiles with hex bump. */
 const tilesMaterial = new THREE.MeshStandardMaterial({
@@ -659,49 +642,8 @@ function selectedStyle() {
     : "raised";
 }
 
-/** Heat-shield mesh mode for parametric CAD: flat shell or printable hex relief. */
-function selectedTiles() {
-  if (!ship?.supportsHexTiles) return "flat";
-  return document.querySelector('input[name="tiles"]:checked')?.value === "flat"
-    ? "flat"
-    : "hex";
-}
-
-function setTilesRadio(mode) {
-  const value = mode === "flat" ? "flat" : "hex";
-  const radio = document.querySelector(`input[name="tiles"][value="${value}"]`);
-  if (radio) radio.checked = true;
-}
-
-function syncTilesFieldVisibility() {
-  if (!el.tilesField) return;
-  el.tilesField.hidden = !ship?.supportsHexTiles;
-}
-
-function applyTilesMaterialMode(mode) {
-  const hex = mode === "hex";
-  tilesMaterial.bumpMap = hex ? null : tilesBumpMap;
-  tilesMaterial.bumpScale = hex ? 0 : 1.1;
-  tilesMaterial.needsUpdate = true;
-}
-
-function shipCacheKey(shipDef, tilesMode = selectedTiles()) {
-  const mode = shipDef.supportsHexTiles ? tilesMode : "flat";
-  return `${shipDef.id}:${mode}`;
-}
-
-function shipGeometryUrl(shipDef, tilesMode = selectedTiles()) {
-  if (shipDef.supportsHexTiles && tilesMode === "hex" && shipDef.hexUrl) {
-    return shipDef.hexUrl;
-  }
-  return shipDef.url;
-}
-
-function shipLayerDefs(shipDef, tilesMode = selectedTiles()) {
-  if (shipDef.supportsHexTiles && tilesMode === "hex" && shipDef.hexLayers) {
-    return shipDef.hexLayers;
-  }
-  return shipDef.layers;
+function shipCacheKey(shipDef) {
+  return shipDef.id;
 }
 
 function modelScale() {
@@ -790,25 +732,22 @@ function applyEnvelopeForShip() {
 const shipGeometryCache = new Map();
 const shipLayerCache = new Map();
 
-async function loadShipGeometry(shipDef, tilesMode = selectedTiles()) {
-  const key = shipCacheKey(shipDef, tilesMode);
+async function loadShipGeometry(shipDef) {
+  const key = shipCacheKey(shipDef);
   if (shipGeometryCache.has(key)) {
     return shipGeometryCache.get(key);
   }
-  const geometry = await new STLLoader().loadAsync(
-    shipGeometryUrl(shipDef, tilesMode)
-  );
+  const geometry = await new STLLoader().loadAsync(shipDef.url);
   shipDef.orient(geometry);
   geometry.computeVertexNormals();
   shipGeometryCache.set(key, geometry);
   return geometry;
 }
 
-async function loadShipLayers(shipDef, tilesMode = selectedTiles()) {
-  const layerDefs = shipLayerDefs(shipDef, tilesMode);
+async function loadShipLayers(shipDef) {
+  const layerDefs = shipDef.layers;
   if (!layerDefs?.length) return null;
-  applyTilesMaterialMode(tilesMode);
-  const key = shipCacheKey(shipDef, tilesMode);
+  const key = shipCacheKey(shipDef);
   if (shipLayerCache.has(key)) {
     return shipLayerCache.get(key);
   }
@@ -816,7 +755,7 @@ async function loadShipLayers(shipDef, tilesMode = selectedTiles()) {
   const parts = await Promise.all(
     layerDefs.map(async (layer) => {
       const geometry = await loader.loadAsync(layer.url);
-      if (layer.role === "tiles" && tilesMode === "flat") applyTileUVs(geometry);
+      if (layer.role === "tiles") applyTileUVs(geometry);
       geometry.computeVertexNormals();
       shipDef.orient(geometry);
       const material =
@@ -836,24 +775,20 @@ function buildShipDisplay(geometry, shipDef, layers) {
 }
 
 /** Swap the base mesh, retune scale/placement to its 1:200 preset, and rebuild text. */
+let shipLoadToken = 0;
 async function applyShipSelection(shipId, { retune = true } = {}) {
   const id = SHIPS[shipId] ? shipId : DEFAULT_SHIP_ID;
   ship = SHIPS[id];
   setShipRadio(id);
-  syncTilesFieldVisibility();
   applyEnvelopeForShip();
 
-  const tilesMode = selectedTiles();
-  applyTilesMaterialMode(tilesMode);
-  setStatus(
-    tilesMode === "hex" && ship.supportsHexTiles
-      ? `Loading ${ship.label} (hex tiles)…`
-      : `Loading ${ship.label}…`
-  );
+  const token = ++shipLoadToken;
+  setStatus(`Loading ${ship.label}…`);
   const [geometry, layers] = await Promise.all([
-    loadShipGeometry(ship, tilesMode),
-    loadShipLayers(ship, tilesMode),
+    loadShipGeometry(ship),
+    loadShipLayers(ship),
   ]);
+  if (token !== shipLoadToken) return;
   if (shipMesh) modelGroup.remove(shipMesh);
   shipGeometry = geometry;
   shipMesh = buildShipDisplay(geometry, ship, layers);
@@ -872,13 +807,10 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
   applyColor();
   if (ready) {
     await flushRebuild();
+    if (token !== shipLoadToken) return;
     frameCamera();
     writeUrl();
-    setStatus(
-      tilesMode === "hex" && ship.supportsHexTiles
-        ? `Base model: ${ship.label} · hex-tile heat shield.`
-        : `Base model: ${ship.label}.`
-    );
+    setStatus(`Base model: ${ship.label}.`);
   }
 }
 
@@ -1250,7 +1182,6 @@ function nameSlug() {
 function readState() {
   return {
     ship: ship.id,
-    tiles: selectedTiles(),
     name: el.name.value.trim(),
     color: el.color.value.replace("#", ""),
     text: el.textColor.value.replace("#", ""),
@@ -1298,9 +1229,6 @@ function applyState(state) {
     );
     if (radio) radio.checked = true;
   }
-  if (state.tiles === "flat" || state.tiles === "hex") {
-    setTilesRadio(state.tiles);
-  }
   if (state.wrap === "0" || state.wrap === "false") el.wrap.checked = false;
   if (state.wrap === "1" || state.wrap === "true") el.wrap.checked = true;
   updateLabels();
@@ -1313,7 +1241,6 @@ function stateFromUrl() {
   const state = {};
   for (const key of [
     "ship",
-    "tiles",
     "name",
     "color",
     "text",
@@ -1335,7 +1262,6 @@ function writeUrl(replace = true) {
   const s = readState();
   const q = new URLSearchParams();
   q.set("ship", s.ship);
-  if (s.ship === "parametric") q.set("tiles", s.tiles);
   if (s.name) q.set("name", s.name);
   q.set("color", s.color);
   q.set("text", s.text);
@@ -1800,12 +1726,6 @@ async function boot() {
   // default letter size all depend on it.
   ship = SHIPS[urlState.ship] || SHIPS[DEFAULT_SHIP_ID];
   setShipRadio(ship.id);
-  if (urlState.tiles === "flat" || urlState.tiles === "hex") {
-    setTilesRadio(urlState.tiles);
-  } else if (ship.supportsHexTiles) {
-    setTilesRadio("hex");
-  }
-  syncTilesFieldVisibility();
   applyEnvelopeForShip();
   if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
   if (urlState.pos == null) el.pos.value = String(ship.defaultPosMm);
@@ -1843,14 +1763,6 @@ async function boot() {
       applyShipSelection(selectedShipId()).catch((err) => {
         console.error(err);
         setStatus("Failed to load that base model.", true);
-      });
-    });
-  }
-  for (const radio of document.querySelectorAll('input[name="tiles"]')) {
-    radio.addEventListener("change", () => {
-      applyShipSelection(selectedShipId(), { retune: false }).catch((err) => {
-        console.error(err);
-        setStatus("Failed to load heat-shield mesh.", true);
       });
     });
   }

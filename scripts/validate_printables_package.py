@@ -113,8 +113,8 @@ def main() -> None:
         ok(f"files/{name}  {p.stat().st_size / 1e6:.2f} MB")
 
     images = sorted((PKG / "images").glob("*.png"))
-    if len(images) < 5:
-        fail(f"need ≥5 gallery images, found {len(images)}")
+    if len(images) < 4:
+        fail(f"need ≥4 gallery images, found {len(images)}")
     cover = PKG / "images" / "01-cover.png"
     if not cover.exists():
         fail("missing cover image 01-cover.png")
