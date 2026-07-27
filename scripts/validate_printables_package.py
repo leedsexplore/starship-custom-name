@@ -106,20 +106,38 @@ def main() -> None:
         "GitHub Releases",
         "Unofficial fan model",
         "Block 2",
+        "no glue",
+        "display stand",
+        "1:250",
     ):
         if needle.lower() not in desc.lower():
             fail(f"DESCRIPTION.md missing required phrase: {needle!r}")
     ok(f"DESCRIPTION.md ({len(desc)} chars)")
+
+    profiles = PKG / "PRINT_PROFILES.md"
+    if not profiles.exists() or profiles.stat().st_size < 100:
+        fail("missing PRINT_PROFILES.md at package root")
+    ok("PRINT_PROFILES.md present")
+
+    if str(listing.get("category_id") or "") not in ("91",) and listing.get("category") != "Physics & Astronomy":
+        fail("expected category Physics & Astronomy (id 91) for Starship discoverability")
+    ok(f"category={listing.get('category')} id={listing.get('category_id')}")
 
     files_dir = PKG / "files"
     required_files = [
         "starship_1_200_hex_tiles_one_piece.stl",
         "starship_1_200_hex_tiles_mmu.3mf",
         "starship_parametric.scad",
+        "starship_1_200_display_stand.stl",
+        "starship_1_200_nameplate.stl",
+        "starship_1_200_mmu_hex_with_stand.3mf",
+        "starship_1_250_hex_tiles_one_piece.stl",
     ]
     for name in required_files:
         p = files_dir / name
-        if not p.exists() or p.stat().st_size < 1000:
+        if not p.exists() or (name.endswith((".stl", ".3mf")) and p.stat().st_size < 1000):
+            fail(f"missing/empty files/{name}")
+        if name.endswith(".md") and p.stat().st_size < 100:
             fail(f"missing/empty files/{name}")
         ok(f"files/{name}  {p.stat().st_size / 1e6:.2f} MB")
 

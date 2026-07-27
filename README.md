@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.1.11** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.2.0** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
@@ -126,11 +126,12 @@ Measured via `python3 scripts/measure_ship_mesh.py` → `assets/print_envelope.j
 ## Printables
 
 **Live listing:** [printables.com/model/1792868](https://www.printables.com/model/1792868)
-— embossed hex-tile heat shield, one-piece STL + MMU 3MF.
+— embossed hex-tile heat shield, one-piece STL + MMU 3MF, desk stand, 1:250 mini.
 
 The listing package for the original parametric model lives in
 [`printables/starship-parametric/`](printables/starship-parametric/) — hex one-piece
-STL, hex MMU 3MF, `.scad` source, gallery images, and the listing copy.
+STL, hex MMU 3MF, stand/nameplate, mini 1:250, `.scad` source, gallery images, and
+the listing copy. Cross-post notes: [`printables/mirrors/README.md`](printables/mirrors/README.md).
 See [`printables/README.md`](printables/README.md) for the publish commands.
 
 Hex print files are also published on

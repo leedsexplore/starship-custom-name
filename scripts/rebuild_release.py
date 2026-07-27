@@ -123,6 +123,28 @@ def main() -> int:
             shutil.copy2(src, dst)
             print(f"synced {dst.relative_to(ROOT)}")
 
+        # Popularity extras: stand, mini scale, profiled 3MF
+        for wrapper, out in (
+            (OPENSCAD / "export_display_stand.scad", ASSETS / "starship_display_stand.stl"),
+            (OPENSCAD / "export_nameplate.scad", ASSETS / "starship_nameplate.stl"),
+        ):
+            if wrapper.exists():
+                openscad_export(wrapper, out)
+                shutil.copy2(
+                    out,
+                    PKG_FILES
+                    / (
+                        "starship_1_200_display_stand.stl"
+                        if "stand" in out.name
+                        else "starship_1_200_nameplate.stl"
+                    ),
+                )
+        run([py, str(ROOT / "scripts" / "build_mini_scale.py")], "1:250 mini hex")
+        run(
+            [py, str(ROOT / "scripts" / "build_profiled_3mf.py")],
+            "MMU hex + stand 3MF",
+        )
+
         run(
             [py, str(ROOT / "scripts" / "validate_printables_package.py")],
             "validate Printables package",
