@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.10";
+import { build3mf } from "./export3mf.js?v=2.4.11";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.10";
+} from "./version.js?v=2.4.11";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -64,7 +64,7 @@ const SHIPS = {
      * a bit toward the nose (higher on a nose-up print), biased toward the
      * tile/steel seam — not centered on the bare face.
      */
-    defaultPosMm: 10,
+    defaultPosMm: 30,
     /** Circumferential offset (mm along hull) toward the TPS seam (+X flaps). */
     markingAcrossMm: 16,
     /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
