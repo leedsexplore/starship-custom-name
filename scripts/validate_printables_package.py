@@ -2,7 +2,8 @@
 """Local validator for printables/starship-parametric (mirrors `printables validate`).
 
 Does not talk to Printables — checks package structure, licenses, file presence,
-and that the one-piece STL is a single connected shell.
+byte-identity with assets/, and that the hex one-piece STL has many discrete
+tile shells (expected for embossed hex plates, not a single solid).
 """
 
 from __future__ import annotations
@@ -15,6 +16,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 PKG = ROOT / "printables" / "starship-parametric"
+HEX_STL_ASSET = ROOT / "assets" / "starship_ship_print_1_200_hex.stl"
+HEX_3MF_ASSET = ROOT / "assets" / "starship_print_1_200_mmu_hex.3mf"
+LIVE_MODEL_ID = "1792868"
 
 
 def fail(msg: str) -> None:
@@ -69,7 +73,12 @@ def main() -> None:
     if not desc_path.exists():
         fail("missing DESCRIPTION.md")
 
-    meta = tomllib.loads(toml_path.read_text())
+    toml_text = toml_path.read_text()
+    if LIVE_MODEL_ID not in toml_text:
+        fail(f"printables.toml should reference live model id {LIVE_MODEL_ID}")
+    ok(f"printables.toml references model {LIVE_MODEL_ID}")
+
+    meta = tomllib.loads(toml_text)
     # CLI schema uses [listing]; accept legacy [model] as a fallback.
     listing = meta.get("listing") or meta.get("model") or {}
     for key in ("title", "license", "tags"):
@@ -80,7 +89,7 @@ def main() -> None:
     if "remix_of" in listing or "remix_of" in meta:
         fail("original listing must not set remix_of")
     tags = set(listing["tags"])
-    for required in ("starship", "mmu3", "singlepiece", "noassembly", "parametric"):
+    for required in ("starship", "mmu3", "singlepiece", "noassembly", "parametric", "scalemodel"):
         if required not in tags:
             fail(f"missing tag {required!r}")
     ok(f"title: {listing['title'][:72]}…")
@@ -98,10 +107,8 @@ def main() -> None:
         "Unofficial fan model",
         "Block 2",
     ):
-        if needle.lower() not in desc.lower() and needle not in desc:
-            # case-insensitive for prose hooks
-            if needle.lower() not in desc.lower():
-                fail(f"DESCRIPTION.md missing required phrase: {needle!r}")
+        if needle.lower() not in desc.lower():
+            fail(f"DESCRIPTION.md missing required phrase: {needle!r}")
     ok(f"DESCRIPTION.md ({len(desc)} chars)")
 
     files_dir = PKG / "files"
@@ -115,6 +122,16 @@ def main() -> None:
         if not p.exists() or p.stat().st_size < 1000:
             fail(f"missing/empty files/{name}")
         ok(f"files/{name}  {p.stat().st_size / 1e6:.2f} MB")
+
+    pkg_stl = files_dir / "starship_1_200_hex_tiles_one_piece.stl"
+    pkg_3mf = files_dir / "starship_1_200_hex_tiles_mmu.3mf"
+    if not HEX_STL_ASSET.exists() or not HEX_3MF_ASSET.exists():
+        fail("missing hex assets under assets/ (rebuild before validate)")
+    if pkg_stl.read_bytes() != HEX_STL_ASSET.read_bytes():
+        fail("package hex STL is not byte-identical to assets/starship_ship_print_1_200_hex.stl")
+    if pkg_3mf.read_bytes() != HEX_3MF_ASSET.read_bytes():
+        fail("package hex 3MF is not byte-identical to assets/starship_print_1_200_mmu_hex.3mf")
+    ok("package hex STL/3MF match assets/ digests")
 
     images = sorted((PKG / "images").glob("*.png"))
     if len(images) < 4:
@@ -133,15 +150,17 @@ def main() -> None:
         fail("gallery closeup too small")
     ok(f"{len(images)} gallery images (cover={cover.name})")
 
-    shells = connected_shells(files_dir / "starship_1_200_hex_tiles_one_piece.stl")
-    if len(shells) < 1:
-        fail(f"hex one-piece STL has no shells")
-    ok(f"hex one-piece STL has {len(shells)} shell(s) ({shells[0]} verts in largest)")
+    shells = connected_shells(pkg_stl)
+    n_shells = len(shells)
+    # Discrete hex plates → thousands of shells; a single-shell STL would be wrong.
+    if n_shells < 1000:
+        fail(f"hex one-piece STL expected ≥1000 discrete shells, got {n_shells}")
+    ok(f"hex one-piece STL has {n_shells} shells ({shells[0]} verts in largest)")
 
     # 3MF is a zip with the expected model path
     import zipfile
 
-    with zipfile.ZipFile(files_dir / "starship_1_200_hex_tiles_mmu.3mf") as z:
+    with zipfile.ZipFile(pkg_3mf) as z:
         names = z.namelist()
         if "3D/3dmodel.model" not in names:
             fail("hex MMU 3MF missing 3D/3dmodel.model")

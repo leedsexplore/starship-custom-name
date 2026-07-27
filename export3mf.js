@@ -2,8 +2,11 @@ import { zipSync, strToU8 } from "fflate";
 
 /** Convert #RRGGBB → 3MF displaycolor #AARRGGBB */
 function hexToDisplayColor(hex, alpha = "FF") {
-  const h = hex.replace("#", "").toUpperCase();
-  return `#${alpha}${h}`;
+  const raw = String(hex || "").trim();
+  if (!/^#[0-9A-Fa-f]{6}$/.test(raw)) {
+    return `#${alpha}C8CED6`;
+  }
+  return `#${alpha}${raw.slice(1).toUpperCase()}`;
 }
 
 function escapeXml(s) {

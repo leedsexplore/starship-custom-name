@@ -6,9 +6,19 @@
     <title>Starship Custom Name</title>
     <meta
       name="description"
-      content="Put your name on a 3D-printable Starship: original parametric CAD, one-piece print, MMU-ready. Download STL, 3MF, or a PNG cover."
+      content="Unofficial fan model — put your name on a 3D-printable Starship (Block 2/3 ship, 1:200). Original parametric CAD, one-piece / MMU hex heat shield. Download STL, 3MF, or a PNG cover."
     />
-    <link rel="stylesheet" href="styles.css?v=2.1.9" />
+    <meta property="og:title" content="Starship Custom Name" />
+    <meta
+      property="og:description"
+      content="Unofficial fan model — name a 1:200 Block 2/3 Starship and download print-ready STL/3MF."
+    />
+    <meta
+      property="og:url"
+      content="https://leedsexplore.github.io/starship-custom-name/"
+    />
+    <link rel="canonical" href="https://leedsexplore.github.io/starship-custom-name/" />
+    <link rel="stylesheet" href="styles.css?v=2.1.10" />
   </head>
   <body>
     <div id="app">
@@ -16,7 +26,7 @@
         <header class="brand">
           <p class="eyebrow">
             Printables customizer
-            <span class="version" id="app-version" aria-label="App version">v2.1.9</span>
+            <span class="version" id="app-version" aria-label="App version">v2.1.10</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -25,6 +35,11 @@
             then download STL or 3MF. Empty name on Original CAD at 1:200 serves the
             exact Printables hex files; with a name, 3MF is Hull + Letters. Preview
             steel/tiles coloring is a guide for the named path.
+          </p>
+          <p class="field-note">
+            Unofficial fan model — not affiliated with SpaceX. Envelope matches the
+            Block 2 / Block 3 <em>ship</em> (52.1 m × Ø9 m), not the full V3 stack
+            (~124.4 m).
           </p>
         </header>
 
@@ -43,7 +58,13 @@
             </div>
             <p class="field-note">
               Original = parametric 1:200 (CC BY-NC). Classic = Josh1297 + anventia
-              mesh (CC BY-NC).
+              mesh (CC BY-NC). Hex print files:
+              <a
+                href="https://www.printables.com/model/1792868"
+                target="_blank"
+                rel="noopener"
+                >Printables</a
+              >.
             </p>
           </fieldset>
 
@@ -176,6 +197,10 @@
                 OpenSCAD params
               </button>
             </div>
+            <p class="field-note" id="openscad-path-note">
+              OpenSCAD params are for the classic remix flat path (no hull wrap). Prefer
+              the web export for Original CAD.
+            </p>
             <div class="secondary-row">
               <button type="button" id="copy-link" class="secondary">
                 Copy link
@@ -206,11 +231,29 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.1.9</span>)
+            · <span id="footer-version">v2.1.10</span>)
           </p>
           <p>
-            The parametric CAD base model is original work — CC BY-NC 4.0
-            (credit + non-commercial). The classic v1.x mesh remains a remix of
+            Print files (hex one-piece + MMU):
+            <a
+              href="https://www.printables.com/model/1792868"
+              target="_blank"
+              rel="noopener"
+              >Printables model 1792868</a
+            >
+            ·
+            <a
+              href="https://github.com/leedsexplore/starship-custom-name/releases"
+              target="_blank"
+              rel="noopener"
+              >GitHub Releases</a
+            >.
+          </p>
+          <p>
+            Unofficial fan model — not affiliated with or endorsed by SpaceX.
+            SpaceX and Starship are trademarks of their respective owners. The
+            parametric CAD is original work — CC BY-NC 4.0 (credit + non-commercial).
+            The classic v1.x mesh remains a remix of
             <a
               href="https://www.printables.com/model/225040-spacex-starship"
               target="_blank"
@@ -250,6 +293,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.1.9"></script>
+    <script type="module" src="app.js?v=2.1.10"></script>
   </body>
 </html>

@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.1.9";
+import { build3mf } from "./export3mf.js?v=2.1.10";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.1.9";
+} from "./version.js?v=2.1.10";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -1014,7 +1014,10 @@ function mountPresets(container, input) {
     const tip = `${preset.name} · ${preset.filament} · ${preset.sku}`;
     btn.title = tip;
     btn.setAttribute("aria-label", tip);
-    btn.innerHTML = `<span class="swatch-name">${tip}</span>`;
+    const nameSpan = document.createElement("span");
+    nameSpan.className = "swatch-name";
+    nameSpan.textContent = tip;
+    btn.appendChild(nameSpan);
     btn.addEventListener("click", () => {
       input.value = preset.hex;
       applyColor();
@@ -1862,13 +1865,13 @@ function downloadOpenscadSnippet() {
 // Open with openscad/starship_custom_name.scad or paste into Customizer.
 // NOTE: that flat path is tuned to the classic remix mesh${
     ship.id === "parametric"
-      ? " — your current base is the parametric CAD, so placement will differ"
+      ? " — your current base is the parametric CAD, so placement will differ. Prefer web STL/3MF export for Original CAD"
       : ""
   }.
 
 /* [Text] */
 Name = "${nameEscaped}";
-Text_Size = ${Number(s.size).toFixed(1)}; // [3:0.5:8]
+Text_Size = ${Number(s.size).toFixed(1)}; // [3:0.5:14] (web max 14 mm)
 Text_Depth = ${textDepth}; // [0.5:0.05:1.5]
 Font = "${openscadFont}"; // web font: ${fontKey}
 Style = "${s.style}"; // [raised, engraved]
@@ -1889,7 +1892,11 @@ Part = "preview_with_ship"; // [text_only, preview_with_ship]
     new Blob([scad], { type: "text/plain" }),
     `starship_${nameSlug()}_params.scad`
   );
-  setStatus("OpenSCAD params downloaded — open with the included .scad (no hull wrap).");
+  setStatus(
+    ship.id === "parametric"
+      ? "OpenSCAD params downloaded — flat classic-mesh path only; prefer web export for Original CAD."
+      : "OpenSCAD params downloaded — open with the included .scad (no hull wrap)."
+  );
   writeUrl();
 }
 

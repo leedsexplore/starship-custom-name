@@ -10,9 +10,12 @@ https://leedsexplore.github.io/starship-custom-name/
 The **parametric CAD model** (`openscad/starship_parametric.scad` and every mesh
 exported from it — the one-piece 1:200 print STL, the split steel/tile bodies,
 and the MMU 3MF) is original work modeled from published vehicle dimensions.
-It is licensed **CC BY-NC 4.0**
+It is an **unofficial fan model** (not affiliated with SpaceX); SpaceX and Starship
+are trademarks of their respective owners. Licensed **CC BY-NC 4.0**
 (https://creativecommons.org/licenses/by-nc/4.0/): remix and share with credit —
 non-commercial only. Credit David Leeds (leedsexplore) with a link.
+
+Live print files: https://www.printables.com/model/1792868
 
 ## Legacy remix mesh (v1.x customizer option)
 

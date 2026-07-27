@@ -1,9 +1,13 @@
 # Starship Custom Name
 
-**v2.1.9** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.1.10** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 An **original parametric SpaceX Starship CAD** (OpenSCAD, built from published dimensions)
 plus a **web customizer** that puts any name on the hull and exports print-ready meshes.
+
+**Unofficial fan model** — not affiliated with or endorsed by SpaceX. Outer envelope
+matches the **Block 2 / Block 3 ship** (52.1 m × Ø9 m), not the full V3 stack
+(~124.4 m). SpaceX and Starship are trademarks of their respective owners.
 
 - **One single print file** — hull, flaps, engine bay, and all six Raptors in one
   watertight body. Zero assembly.
@@ -121,6 +125,9 @@ Measured via `python3 scripts/measure_ship_mesh.py` → `assets/print_envelope.j
 
 ## Printables
 
+**Live listing:** [printables.com/model/1792868](https://www.printables.com/model/1792868)
+— embossed hex-tile heat shield, one-piece STL + MMU 3MF.
+
 The listing package for the original parametric model lives in
 [`printables/starship-parametric/`](printables/starship-parametric/) — hex one-piece
 STL, hex MMU 3MF, `.scad` source, gallery images, and the listing copy.
@@ -133,6 +140,11 @@ Hex print files are also published on
 ## Version
 
 Bump `APP_VERSION` in [`version.js`](version.js) when shipping user-facing changes.
-Also update matching `?v=` cache-bust params in `index.html` (CSS + `app.js`), and
-keep `export3mf.js?v=` / asset URLs in `app.js` on the same version (fonts get
-`?v=` automatically from `APP_VERSION`).
+Also update matching `?v=` cache-bust params in `index.html` (CSS + `app.js`),
+`package.json` `"version"`, and keep `export3mf.js?v=` / `version.js?v=` in `app.js`
+on the same version (fonts get `?v=` automatically from `APP_VERSION`).
+
+```bash
+python3 scripts/check_version_sync.py
+python3 scripts/validate_printables_package.py
+```

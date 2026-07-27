@@ -41,9 +41,10 @@ printables publish packages/starship-parametric --no-dry-run --confirm
 
 Notes:
 
-- This listing is an ORIGINAL model (no `remix_of`), licensed CC BY-NC 4.0. Keep it
-  separate from the legacy `starship-custom-name` remix package, which stays
-  CC BY-NC with Josh1297/anventia attribution.
+- This listing is an ORIGINAL model (no `remix_of`), licensed CC BY-NC 4.0.
+  Live model: https://www.printables.com/model/1792868
+- Only `starship-parametric/` ships in this repo (no separate remix Printables
+  package here — the classic Josh1297/anventia mesh is a customizer option only).
 - Package `files/` is hex one-piece STL + hex MMU 3MF + parametric `.scad` (not the
   web customizer sample, and not the smooth MMU).
 - If the CLI's `printables.toml` schema differs from this file's keys, keep the

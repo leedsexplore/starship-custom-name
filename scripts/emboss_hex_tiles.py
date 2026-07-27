@@ -46,8 +46,8 @@ TILE_WRAP_DEG = 190.0
 NOSE_LEN = 12.97 * S
 NOSE_TIP_R = 0.60 * S
 
-# Tile lattice calibrated to the Fusion reference mesh
-# ~/Desktop/SpaceX AI Engineer/tiles_combined.stl (H≈360 mm ⇒ 1:144.6).
+# Tile lattice calibrated to an external Fusion reference hex-tile mesh
+# (H≈360 mm ⇒ ~1:144.6; not shipped in this repo).
 # Autocorrelation of its unwrapped barrel: pointy-top hexes laid in
 # circumferential rows, 2.0 mm across flats, plates ~0.30 mm proud, ~0.2 mm
 # grooves — i.e. scale-true 0.29 m Starship tiles. At our 1:200 that is:

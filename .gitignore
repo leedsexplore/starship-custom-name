@@ -8,6 +8,13 @@ dist/
 *.stl.bak
 node_modules/
 
+# Secrets / local auth (never commit)
+.env
+.env.*
+credentials.json
+**/credentials.json
+**/auth*.json
+
 # Flap rebuild inputs + local preview rasters (keep *_clean.stl + preview.html)
 assets/flaps_cleaned/source/
 assets/flaps_cleaned/*_preview.png

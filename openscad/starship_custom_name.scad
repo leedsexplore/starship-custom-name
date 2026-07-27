@@ -1,11 +1,12 @@
-// Starship Custom Name — OpenSCAD path (v1.1.5)
+// Starship Custom Name — OpenSCAD path (v2.1.10)
 // Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
 // Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship
 // License: CC BY-NC (same as parent). Attribution: Josh1297 (+ credit this remix if you share).
 //
 // Prefer the web customizer (repo root) for wrap-to-hull, boolean engraved STL/3MF,
-// PNG covers, and share links. This OpenSCAD file is the advanced flat path.
+// PNG covers, and share links. This OpenSCAD file is the advanced flat path for the
+// classic remix mesh — Original CAD naming is web-only.
 //
 // How to customize:
 //   1. Open this file in OpenSCAD
@@ -25,8 +26,8 @@
 /* [Text] */
 // Name / text on the side of the ship
 Name = "Custom Name";
-// Letter height (mm) — matches web customizer range
-Text_Size = 5; // [3:0.5:8]
+// Letter height (mm) — matches web customizer range (max 14 mm)
+Text_Size = 5; // [3:0.5:14]
 // Full letter extrusion (mm). Default matches web: 0.35 embed + 0.5 proud.
 Text_Depth = 0.85; // [0.5:0.05:1.5]
 // Font (must be installed on your system)
