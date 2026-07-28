@@ -25,7 +25,7 @@ const BASE = `http://127.0.0.1:${PORT}`;
 /** Match gallery hrefs / SHIPS.parametric defaults in app.js. */
 const PRESET_QUERY = {
   ship: "parametric",
-  side: "right",
+  side: "both",
   style: "raised",
   scale: "100",
   size: "3.5",

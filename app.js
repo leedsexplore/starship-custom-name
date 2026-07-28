@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.17";
+import { build3mf } from "./export3mf.js?v=2.4.18";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.17";
+} from "./version.js?v=2.4.18";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -61,9 +61,10 @@ const SHIPS = {
     defaultSizeMm: 3.5,
     /**
      * Leeward stainless, toward the nose; letters run nose→engines (first char at top).
+     * Default side "both" = port + starboard stainless flanks (real ship).
      */
     defaultPosMm: 30,
-    defaultSide: "right",
+    defaultSide: "both",
     /** Circumferential offset (mm along hull) toward the opposite TPS seam (−X). */
     markingAcrossMm: -16,
     /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
@@ -97,7 +98,8 @@ const SHIPS = {
     defaultSizeMm: 5,
     /** Same S##-style band, scaled to the shorter remix mesh. */
     defaultPosMm: -2,
-    defaultSide: "right",
+    defaultSide: "both",
+    /** No seam bias — "both" places opposite ±Z faces on this mesh. */
     markingAcrossMm: 0,
     orient() {},
     meshDefaults: {
@@ -733,9 +735,14 @@ async function applyNamePreset(name) {
 }
 
 function selectedSide() {
-  return document.querySelector('input[name="side"]:checked')?.value === "left"
-    ? "left"
-    : "right";
+  const value = document.querySelector('input[name="side"]:checked')?.value;
+  if (value === "left" || value === "both") return value;
+  return "right";
+}
+
+/** Camera / single-face view direction for the selected side control. */
+function viewSide() {
+  return selectedSide() === "left" ? "left" : "right";
 }
 
 function selectedShipId() {
@@ -1014,7 +1021,10 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
       el.scale.value = String(coreOneScalePercent());
       el.size.value = String(ship.defaultSizeMm);
       el.pos.value = String(ship.defaultPosMm);
-      const side = ship.defaultSide === "left" ? "left" : "right";
+      const side =
+        ship.defaultSide === "left" || ship.defaultSide === "both"
+          ? ship.defaultSide
+          : "right";
       const sideRadio = document.querySelector(
         `input[name="side"][value="${side}"]`
       );
@@ -1303,18 +1313,19 @@ function applyFlightItalicShear(geometry) {
 
 /**
  * Bend flat text onto the cylindrical hull (axis // Y through body center).
- * Writes world-space coordinates into the geometry.
+ * Writes model-space coordinates into the geometry.
  */
-function wrapGeometryToHull(geometry, side, textY, style) {
+function wrapGeometryToHull(geometry, side, textY, style, acrossBias) {
   const sign = side === "right" ? 1 : -1;
   const R = ship.hullRadiusZ;
-  const acrossBias = Number(ship.markingAcrossMm) || 0;
+  const bias =
+    acrossBias == null ? Number(ship.markingAcrossMm) || 0 : Number(acrossBias);
   const pos = geometry.attributes.position;
   const v = new THREE.Vector3();
 
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i);
-    const across = (side === "left" ? -v.x : v.x) + acrossBias;
+    const across = (side === "left" ? -v.x : v.x) + bias;
     const along = v.y;
     const radial = style === "raised" ? R - ship.embedMm + v.z : R - v.z;
     const theta = across / R;
@@ -1328,11 +1339,12 @@ function wrapGeometryToHull(geometry, side, textY, style) {
   return geometry;
 }
 
-function placeFlatOnHull(geometry, side, textY, style) {
+function placeFlatOnHull(geometry, side, textY, style, acrossBias) {
   const sign = side === "right" ? 1 : -1;
   const R = ship.hullRadiusZ;
-  const acrossBias = Number(ship.markingAcrossMm) || 0;
-  const theta = acrossBias / R;
+  const bias =
+    acrossBias == null ? Number(ship.markingAcrossMm) || 0 : Number(acrossBias);
+  const theta = bias / R;
   const radial = style === "raised" ? R - ship.embedMm : R;
   const mesh = new THREE.Mesh(geometry, textMaterial);
   mesh.position.set(
@@ -1346,6 +1358,111 @@ function placeFlatOnHull(geometry, side, textY, style) {
     mesh.rotation.y = (side === "left" ? 0 : Math.PI) - sign * theta;
   }
   return mesh;
+}
+
+/** Bake flat/wrap placement into a standalone model-space geometry. */
+function buildPlacedTextGeometry(flat, side, textY, style, wrap, acrossBias) {
+  const geo = flat.clone();
+  if (wrap) {
+    wrapGeometryToHull(geo, side, textY, style, acrossBias);
+    return geo;
+  }
+  const mesh = placeFlatOnHull(geo, side, textY, style, acrossBias);
+  mesh.updateMatrix();
+  geo.applyMatrix4(mesh.matrix);
+  return geo;
+}
+
+/**
+ * Mirror lettering across the ship's longitudinal plane (through body center).
+ * Maps one stainless flank marking onto the opposite flank with correct
+ * outside-readable orientation (nose→engines on both sides).
+ */
+function mirrorGeometryAcrossShipYZ(geometry) {
+  const pos = geometry.attributes.position;
+  const cx = ship.bodyCenterX;
+  for (let i = 0; i < pos.count; i++) {
+    pos.setX(i, 2 * cx - pos.getX(i));
+  }
+  pos.needsUpdate = true;
+
+  if (geometry.index) {
+    const idx = geometry.index;
+    const arr = idx.array;
+    for (let i = 0; i < arr.length; i += 3) {
+      const tmp = arr[i + 1];
+      arr[i + 1] = arr[i + 2];
+      arr[i + 2] = tmp;
+    }
+    idx.needsUpdate = true;
+  } else {
+    const arr = pos.array;
+    for (let i = 0; i < arr.length; i += 9) {
+      for (let k = 0; k < 3; k++) {
+        const a = i + 3 + k;
+        const b = i + 6 + k;
+        const tmp = arr[a];
+        arr[a] = arr[b];
+        arr[b] = tmp;
+      }
+    }
+  }
+
+  if (geometry.attributes.normal) geometry.deleteAttribute("normal");
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+function mergeLetterGeometries(geometries) {
+  if (geometries.length === 1) return geometries[0];
+  const nonIndexed = geometries.map((g) =>
+    g.index ? g.toNonIndexed() : g
+  );
+  let vertCount = 0;
+  for (const g of nonIndexed) vertCount += g.attributes.position.count;
+  const positions = new Float32Array(vertCount * 3);
+  let offset = 0;
+  for (const g of nonIndexed) {
+    positions.set(g.attributes.position.array, offset);
+    offset += g.attributes.position.array.length;
+  }
+  const merged = new THREE.BufferGeometry();
+  merged.setAttribute("position", new THREE.BufferAttribute(positions, 3));
+  merged.computeVertexNormals();
+  for (const g of nonIndexed) {
+    if (!geometries.includes(g)) g.dispose();
+  }
+  for (const g of geometries) g.dispose();
+  return merged;
+}
+
+function disposeTextMesh() {
+  if (!textMesh) return;
+  modelGroup.remove(textMesh);
+  textMesh.traverse((obj) => {
+    if (obj.isMesh && obj.geometry) obj.geometry.dispose();
+  });
+  textMesh = null;
+}
+
+/**
+ * Placement recipes for the side control.
+ * "both" on Original CAD → dual stainless flanks near the tile seams;
+ * "both" with no seam bias → opposite hull faces (±Z).
+ */
+function letterPlacements(side) {
+  const bias = Number(ship.markingAcrossMm) || 0;
+  const across = Math.abs(bias);
+  if (side === "both") {
+    if (across > 0.5) {
+      return [{ side: "right", across: -across }];
+    }
+    return [
+      { side: "right", across: 0 },
+      { side: "left", across: 0 },
+    ];
+  }
+  return [{ side, across: bias }];
 }
 
 function measureSpan(geometry) {
@@ -1366,11 +1483,7 @@ function rebuildText() {
   const { missing, folded, used } = sanitizeName(el.name.value);
   updateGlyphWarn(missing, folded);
 
-  if (textMesh) {
-    modelGroup.remove(textMesh);
-    textMesh.geometry.dispose();
-    textMesh = null;
-  }
+  disposeTextMesh();
 
   // Empty name → ship-only preview (no placeholder lettering).
   if (!used.trim()) {
@@ -1388,11 +1501,34 @@ function rebuildText() {
   const spanMm = measureSpan(flat);
   updateLengthWarn(spanMm);
 
-  if (wrap) {
-    wrapGeometryToHull(flat, side, textY, style);
-    textMesh = new THREE.Mesh(flat, textMaterial);
+  const placements = letterPlacements(side);
+  const geos = [];
+  for (const place of placements) {
+    geos.push(
+      buildPlacedTextGeometry(
+        flat,
+        place.side,
+        textY,
+        style,
+        wrap,
+        place.across
+      )
+    );
+  }
+  flat.dispose();
+
+  // Dual stainless flanks: mirror the first leeward marking across the ship.
+  if (side === "both" && placements.length === 1) {
+    geos.push(mirrorGeometryAcrossShipYZ(geos[0].clone()));
+  }
+
+  if (geos.length === 1) {
+    textMesh = new THREE.Mesh(geos[0], textMaterial);
   } else {
-    textMesh = placeFlatOnHull(flat, side, textY, style);
+    textMesh = new THREE.Group();
+    for (const geo of geos) {
+      textMesh.add(new THREE.Mesh(geo, textMaterial));
+    }
   }
 
   modelGroup.add(textMesh);
@@ -1422,7 +1558,7 @@ function frameCamera() {
   const center = box.getCenter(new THREE.Vector3());
   controls.target.copy(center);
   const maxDim = Math.max(size.x, size.y, size.z);
-  const zDir = selectedSide() === "right" ? 1 : -1;
+  const zDir = viewSide() === "right" ? 1 : -1;
   camera.position.set(
     center.x + maxDim * 0.35,
     center.y + maxDim * 0.05,
@@ -1453,7 +1589,7 @@ function frameCoverCamera() {
   const fit = Math.max(size.x, size.y, size.z) * 1.35;
   const fov = THREE.MathUtils.degToRad(camera.fov);
   const dist = fit / 2 / Math.tan(fov / 2);
-  const zDir = selectedSide() === "right" ? 1 : -1;
+  const zDir = viewSide() === "right" ? 1 : -1;
 
   // Slight X bias for a 3/4 read without losing horizontal centering much.
   camera.position.set(center.x + fit * 0.12, center.y, center.z + zDir * dist);
@@ -1648,7 +1784,11 @@ function applyState(state) {
   if (state.pos != null) clampRangeInput(el.pos, state.pos);
   if (state.depth != null) clampRangeInput(el.depth, state.depth);
   if (state.scale != null) clampRangeInput(el.scale, state.scale);
-  if (state.side === "left" || state.side === "right") {
+  if (
+    state.side === "left" ||
+    state.side === "right" ||
+    state.side === "both"
+  ) {
     const radio = document.querySelector(
       `input[name="side"][value="${state.side}"]`
     );
@@ -1755,10 +1895,24 @@ function cloneModelSpaceParts() {
   }
 
   textMesh.updateMatrixWorld(true);
-  const text = textMesh.geometry.clone();
-  text.applyMatrix4(textMesh.matrix);
+  const parts = [];
+  if (textMesh.isMesh) {
+    const text = textMesh.geometry.clone();
+    text.applyMatrix4(textMesh.matrix);
+    parts.push(text);
+  } else {
+    textMesh.traverse((obj) => {
+      if (!obj.isMesh || !obj.geometry) return;
+      const geo = obj.geometry.clone();
+      geo.applyMatrix4(obj.matrix);
+      parts.push(geo);
+    });
+  }
 
-  return { ship: shipClone, text };
+  return {
+    ship: shipClone,
+    text: parts.length ? mergeLetterGeometries(parts) : null,
+  };
 }
 
 function applyScaleToGeometry(geometry, scale) {
@@ -2160,7 +2314,7 @@ Style = "${s.style}"; // [raised, engraved]
 
 /* [Placement] */
 Text_Y = ${Number(s.pos)}; // [-60:1:60]
-Side = "${s.side}"; // [right, left]
+Side = "${s.side === "both" ? "both" : s.side}"; // [both, right, left]
 Text_X_Offset = ${Number(ship.markingAcrossMm) || 0}; // web circumferential bias (approx on classic mesh)
 Surface_Offset = -${ship.embedMm};
 
@@ -2255,7 +2409,10 @@ async function boot() {
   if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
   if (urlState.pos == null) el.pos.value = String(ship.defaultPosMm);
   if (urlState.side == null) {
-    const side = ship.defaultSide === "left" ? "left" : "right";
+    const side =
+      ship.defaultSide === "left" || ship.defaultSide === "both"
+        ? ship.defaultSide
+        : "right";
     const sideRadio = document.querySelector(
       `input[name="side"][value="${side}"]`
     );

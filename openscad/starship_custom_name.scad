@@ -1,4 +1,4 @@
-// Starship Custom Name — OpenSCAD path (v2.4.17)
+// Starship Custom Name — OpenSCAD path (v2.4.18)
 // Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
 // Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship
@@ -39,8 +39,8 @@ Style = "raised"; // [raised, engraved]
 // Position along the ship length (Y). Nose is +Y, engines/base are -Y.
 // Default matches SpaceX S## markings on the leeward mid-barrel (slightly aft of mid-gap).
 Text_Y = -2; // [-60:1:60]
-// Which side of the hull
-Side = "right"; // [right, left]
+// Which side of the hull (both = port + starboard, like the real ship)
+Side = "both"; // [both, right, left]
 // Nudge text along the cross-section (X), mm
 Text_X_Offset = 0; // [-8:0.5:8]
 // Offset from hull surface (mm). Negative embeds letters; ~0.2mm proud for a light emboss.
@@ -60,14 +60,14 @@ module ship() {
     import(stl_file, convexity=10);
 }
 
-module name_plate() {
-    z_sign = Side == "right" ? 1 : -1;
+module name_plate_one(side_name, x_offset) {
+    z_sign = side_name == "right" ? 1 : -1;
     z0 = Style == "raised"
         ? z_sign * (hull_radius_z + Surface_Offset)
         : z_sign * hull_radius_z;
 
-    translate([body_center_x + Text_X_Offset, Text_Y, z0])
-        rotate([Side == "right" ? 0 : 180, 0, 90])
+    translate([body_center_x + x_offset, Text_Y, z0])
+        rotate([side_name == "right" ? 0 : 180, 0, 90])
             mirror([0, 0, Style == "engraved" ? 1 : 0])
                 linear_extrude(height = Text_Depth, convexity = 8)
                     text(
@@ -78,6 +78,25 @@ module name_plate() {
                         valign = "center",
                         $fn = 32
                     );
+}
+
+module name_plate() {
+    if (Side == "both") {
+        // Opposite hull faces when Text_X_Offset is 0; otherwise mirror the
+        // offset flank across the ship centerline (web dual-stainless path).
+        if (abs(Text_X_Offset) > 0.05) {
+            name_plate_one("right", -abs(Text_X_Offset));
+            translate([body_center_x, 0, 0])
+                mirror([1, 0, 0])
+                    translate([-body_center_x, 0, 0])
+                        name_plate_one("right", -abs(Text_X_Offset));
+        } else {
+            name_plate_one("right", 0);
+            name_plate_one("left", 0);
+        }
+    } else {
+        name_plate_one(Side, Text_X_Offset);
+    }
 }
 
 if (Part == "preview_with_ship") {
