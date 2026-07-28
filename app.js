@@ -57,14 +57,24 @@ const SHIPS = {
     embedMm: 0.35,
     safeSpanMm: 100,
     hardSpanMm: 120,
-    flapZoneYMm: 60,
+    /**
+     * Warn when lettering climbs past the forward-flap band into the nose.
+     * Forward flap occupies ~Y 63.75–75.55 (mesh-centered 1:200).
+     */
+    flapZoneYMm: 95,
     defaultSizeMm: 3.5,
     /**
      * Leeward stainless, toward the nose; letters run nose→engines (first char at top).
      * Default side "both" = port + starboard stainless flanks (real ship).
+     * Default pos centers so the bottom glyph sits on the forward-flap bottom.
      */
-    defaultPosMm: 30,
+    defaultPosMm: 68,
     defaultSide: "both",
+    /**
+     * Bottom of forward flaps in mesh-centered app Y (CAD fwd_z0=38.8 m → 194 mm
+     * above the base at 1:200; half-height 130.25 → Y 63.75).
+     */
+    forwardFlapBottomYMm: 63.75,
     /** Circumferential offset (mm along hull) toward the opposite TPS seam (−X). */
     markingAcrossMm: -16,
     /** Exported nose-up along +Z with flaps on ±Y — swing into app convention. */
@@ -637,6 +647,11 @@ let textMesh = null;
 let ready = false;
 let rebuildTimer = 0;
 let lastSpanMm = 0;
+/**
+ * When false, parametric lettering keeps its bottom glyph on the forward-flap
+ * line as name/size change. Manual position slider / share-URL pos pins it.
+ */
+let posPinnedByUser = false;
 const csgEvaluator = new Evaluator();
 // STL ship has position/normal/color — no uvs. Default evaluator attrs include uv and crash.
 csgEvaluator.attributes = ["position", "normal"];
@@ -728,6 +743,8 @@ function showPostDownloadCta(show = true) {
 
 async function applyNamePreset(name) {
   el.name.value = name;
+  // Presets re-lock the bottom glyph to the forward-flap line.
+  posPinnedByUser = false;
   onControlChange();
   await flushRebuild();
   writeUrl();
@@ -1021,6 +1038,7 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
       el.scale.value = String(coreOneScalePercent());
       el.size.value = String(ship.defaultSizeMm);
       el.pos.value = String(ship.defaultPosMm);
+      posPinnedByUser = false;
       const side =
         ship.defaultSide === "left" || ship.defaultSide === "both"
           ? ship.defaultSide
@@ -1465,6 +1483,35 @@ function letterPlacements(side) {
   return [{ side, across: bias }];
 }
 
+/** Center Y so the engines-end glyph sits on the forward-flap bottom. */
+function flapAlignedCenterY(spanMm) {
+  const bottom = Number(ship.forwardFlapBottomYMm);
+  if (!Number.isFinite(bottom)) return Number(ship.defaultPosMm) || 0;
+  return bottom + Math.max(spanMm, 0) / 2;
+}
+
+function clampPosToSlider(raw) {
+  const max = Number(el.pos.max);
+  const min = Number(el.pos.min);
+  const lo = Number.isFinite(min) ? min : raw;
+  const hi = Number.isFinite(max) ? max : raw;
+  return Math.min(hi, Math.max(lo, raw));
+}
+
+/** Keep bottom glyph on the forward-flap line unless the user pinned pos. */
+function syncFlapAlignedPos(spanMm) {
+  if (posPinnedByUser || !Number.isFinite(Number(ship.forwardFlapBottomYMm))) {
+    return Number(el.pos.value);
+  }
+  const aligned = Math.round(flapAlignedCenterY(spanMm));
+  const clamped = clampPosToSlider(aligned);
+  if (Number(el.pos.value) !== clamped) {
+    el.pos.value = String(clamped);
+    updateLabels();
+  }
+  return clamped;
+}
+
 function measureSpan(geometry) {
   geometry.computeBoundingBox();
   const bb = geometry.boundingBox;
@@ -1478,7 +1525,6 @@ function rebuildText() {
   const totalDepth = ship.embedMm + proud;
   const side = selectedSide();
   const style = selectedStyle();
-  const textY = Number(el.pos.value);
   const wrap = el.wrap.checked;
   const { missing, folded, used } = sanitizeName(el.name.value);
   updateGlyphWarn(missing, folded);
@@ -1499,6 +1545,7 @@ function rebuildText() {
     totalDepth
   );
   const spanMm = measureSpan(flat);
+  const textY = syncFlapAlignedPos(spanMm);
   updateLengthWarn(spanMm);
 
   const placements = letterPlacements(side);
@@ -1781,7 +1828,10 @@ function applyState(state) {
     currentFontId = state.font;
   }
   if (state.size != null) clampRangeInput(el.size, state.size);
-  if (state.pos != null) clampRangeInput(el.pos, state.pos);
+  if (state.pos != null) {
+    clampRangeInput(el.pos, state.pos);
+    posPinnedByUser = true;
+  }
   if (state.depth != null) clampRangeInput(el.depth, state.depth);
   if (state.scale != null) clampRangeInput(el.scale, state.scale);
   if (
@@ -2313,7 +2363,7 @@ Font = "${openscadFont}"; // web font: ${fontKey}
 Style = "${s.style}"; // [raised, engraved]
 
 /* [Placement] */
-Text_Y = ${Number(s.pos)}; // [-60:1:60]
+Text_Y = ${Number(s.pos)}; // [-90:1:90]
 Side = "${s.side === "both" ? "both" : s.side}"; // [both, right, left]
 Text_X_Offset = ${Number(ship.markingAcrossMm) || 0}; // web circumferential bias (approx on classic mesh)
 Surface_Offset = -${ship.embedMm};
@@ -2407,7 +2457,12 @@ async function boot() {
   setShipRadio(ship.id);
   applyEnvelopeForShip();
   if (urlState.size == null) el.size.value = String(ship.defaultSizeMm);
-  if (urlState.pos == null) el.pos.value = String(ship.defaultPosMm);
+  if (urlState.pos == null) {
+    el.pos.value = String(ship.defaultPosMm);
+    posPinnedByUser = false;
+  } else {
+    posPinnedByUser = true;
+  }
   if (urlState.side == null) {
     const side =
       ship.defaultSide === "left" || ship.defaultSide === "both"
@@ -2449,7 +2504,10 @@ async function boot() {
   });
   el.name.addEventListener("input", onControlChange);
   el.size.addEventListener("input", onControlChange);
-  el.pos.addEventListener("input", onControlChange);
+  el.pos.addEventListener("input", () => {
+    posPinnedByUser = true;
+    onControlChange();
+  });
   el.depth.addEventListener("input", onControlChange);
   el.scale.addEventListener("input", () => {
     updateLabels();

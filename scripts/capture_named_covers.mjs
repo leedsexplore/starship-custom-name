@@ -29,7 +29,7 @@ const PRESET_QUERY = {
   style: "raised",
   scale: "100",
   size: "3.5",
-  pos: "30",
+  // Omit pos — customizer auto-aligns bottom glyph to the forward-flap line.
   text: "1c1c1c",
   font: "oswald-bold",
 };
