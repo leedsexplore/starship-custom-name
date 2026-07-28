@@ -169,6 +169,10 @@ a {
   gap: 0.4rem;
 }
 
+.segmented.segmented-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
 .segmented label {
   display: flex;
   align-items: center;

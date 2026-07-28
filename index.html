@@ -18,7 +18,7 @@
       content="https://leedsexplore.github.io/starship-custom-name/"
     />
     <link rel="canonical" href="https://leedsexplore.github.io/starship-custom-name/" />
-    <link rel="stylesheet" href="styles.css?v=2.4.17" />
+    <link rel="stylesheet" href="styles.css?v=2.4.18" />
   </head>
   <body>
     <div id="app">
@@ -26,7 +26,7 @@
         <header class="brand">
           <p class="eyebrow">
             Your name on Starship
-            <span class="version" id="app-version" aria-label="App version">v2.4.17</span>
+            <span class="version" id="app-version" aria-label="App version">v2.4.18</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -119,9 +119,13 @@
 
           <fieldset class="field fieldset">
             <legend>Hull side</legend>
-            <div class="segmented">
+            <div class="segmented segmented-3">
               <label
-                ><input type="radio" name="side" value="right" checked />
+                ><input type="radio" name="side" value="both" checked />
+                Both</label
+              >
+              <label
+                ><input type="radio" name="side" value="right" />
                 Leeward</label
               >
               <label
@@ -129,8 +133,9 @@
               >
             </div>
             <p class="field-note">
-              Leeward = bare stainless. Letters start at the nose and read down
-              the hull (left-to-right in the name string).
+              Both = port + starboard on stainless (like the real ship). Leeward =
+              one stainless flank; Windward = heat-tile face. Letters read
+              nose→engines.
             </p>
           </fieldset>
 
@@ -174,9 +179,13 @@
           </label>
 
           <label class="field">
-            <span>Position (along hull) <em id="pos-label">30 mm</em></span>
-            <input id="pos" type="range" min="-60" max="60" step="1" value="30" />
+            <span>Position (along hull) <em id="pos-label">68 mm</em></span>
+            <input id="pos" type="range" min="-90" max="90" step="1" value="68" />
           </label>
+          <p class="field-note">
+            Default lines the bottom letter up with the forward flaps. Drag to
+            override.
+          </p>
 
           <label class="field">
             <span>Emboss / engrave depth <em id="depth-label">0.50 mm</em></span>
@@ -267,10 +276,10 @@
             <div class="named-covers" id="named-covers">
               <a
                 class="named-cover"
-                href="?ship=parametric&amp;name=S40&amp;side=right&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=30&amp;text=1c1c1c&amp;font=oswald-bold"
+                href="?ship=parametric&amp;name=S40&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=67&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/s40.png?v=2.4.17"
+                  src="./assets/named-covers/thumbs/s40.png?v=2.4.18"
                   width="160"
                   height="160"
                   alt="S40 cover"
@@ -280,10 +289,10 @@
               </a>
               <a
                 class="named-cover"
-                href="?ship=parametric&amp;name=S33&amp;side=right&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=30&amp;text=1c1c1c&amp;font=oswald-bold"
+                href="?ship=parametric&amp;name=S33&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=67&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/s33.png?v=2.4.17"
+                  src="./assets/named-covers/thumbs/s33.png?v=2.4.18"
                   width="160"
                   height="160"
                   alt="S33 cover"
@@ -293,10 +302,10 @@
               </a>
               <a
                 class="named-cover"
-                href="?ship=parametric&amp;name=IFT-12&amp;side=right&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=30&amp;text=1c1c1c&amp;font=oswald-bold"
+                href="?ship=parametric&amp;name=IFT-12&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=70&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/ift-12.png?v=2.4.17"
+                  src="./assets/named-covers/thumbs/ift-12.png?v=2.4.18"
                   width="160"
                   height="160"
                   alt="IFT-12 cover"
@@ -306,10 +315,10 @@
               </a>
               <a
                 class="named-cover"
-                href="?ship=parametric&amp;name=Starship&amp;side=right&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=30&amp;text=1c1c1c&amp;font=oswald-bold"
+                href="?ship=parametric&amp;name=Starship&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=72&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/starship.png?v=2.4.17"
+                  src="./assets/named-covers/thumbs/starship.png?v=2.4.18"
                   width="160"
                   height="160"
                   alt="Starship cover"
@@ -339,7 +348,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.4.17</span>)
+            · <span id="footer-version">v2.4.18</span>)
           </p>
           <p>
             Print files (hex one-piece + MMU):
@@ -401,6 +410,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.4.17"></script>
+    <script type="module" src="app.js?v=2.4.18"></script>
   </body>
 </html>
