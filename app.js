@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.18";
+import { build3mf } from "./export3mf.js?v=2.4.19";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.18";
+} from "./version.js?v=2.4.19";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -1392,40 +1392,21 @@ function buildPlacedTextGeometry(flat, side, textY, style, wrap, acrossBias) {
 }
 
 /**
- * Mirror lettering across the ship's longitudinal plane (through body center).
- * Maps one stainless flank marking onto the opposite flank with correct
- * outside-readable orientation (nose→engines on both sides).
+ * Map one stainless flank marking onto the opposite flank.
+ * Flip X through the ship centerline and Y through the text center — a 180°
+ * hull-plane turn so letter handedness stays correct (not mirror-backed) and
+ * the first glyph sits toward the engines on that flank (S at the bottom when
+ * nose-up), reading left-to-right when the column is read vertically.
  */
-function mirrorGeometryAcrossShipYZ(geometry) {
+function mirrorGeometryAcrossShipYZ(geometry, textY) {
   const pos = geometry.attributes.position;
   const cx = ship.bodyCenterX;
+  const cy = Number(textY) || 0;
   for (let i = 0; i < pos.count; i++) {
-    pos.setX(i, 2 * cx - pos.getX(i));
+    pos.setXYZ(i, 2 * cx - pos.getX(i), 2 * cy - pos.getY(i), pos.getZ(i));
   }
   pos.needsUpdate = true;
-
-  if (geometry.index) {
-    const idx = geometry.index;
-    const arr = idx.array;
-    for (let i = 0; i < arr.length; i += 3) {
-      const tmp = arr[i + 1];
-      arr[i + 1] = arr[i + 2];
-      arr[i + 2] = tmp;
-    }
-    idx.needsUpdate = true;
-  } else {
-    const arr = pos.array;
-    for (let i = 0; i < arr.length; i += 9) {
-      for (let k = 0; k < 3; k++) {
-        const a = i + 3 + k;
-        const b = i + 6 + k;
-        const tmp = arr[a];
-        arr[a] = arr[b];
-        arr[b] = tmp;
-      }
-    }
-  }
-
+  // Two axis flips preserve winding — do not swap triangle indices.
   if (geometry.attributes.normal) geometry.deleteAttribute("normal");
   geometry.computeVertexNormals();
   return geometry;
@@ -1564,9 +1545,9 @@ function rebuildText() {
   }
   flat.dispose();
 
-  // Dual stainless flanks: mirror the first leeward marking across the ship.
+  // Dual stainless flanks: 180° hull-plane copy onto the opposite seam.
   if (side === "both" && placements.length === 1) {
-    geos.push(mirrorGeometryAcrossShipYZ(geos[0].clone()));
+    geos.push(mirrorGeometryAcrossShipYZ(geos[0].clone(), textY));
   }
 
   if (geos.length === 1) {

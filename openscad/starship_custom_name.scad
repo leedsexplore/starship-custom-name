@@ -1,4 +1,4 @@
-// Starship Custom Name — OpenSCAD path (v2.4.18)
+// Starship Custom Name — OpenSCAD path (v2.4.19)
 // Tool: David Leeds — https://github.com/leedsexplore/starship-custom-name
 // Remix of Josh1297's SpaceX Starship
 // https://www.printables.com/model/225040-spacex-starship
@@ -86,9 +86,11 @@ module name_plate() {
         // offset flank across the ship centerline (web dual-stainless path).
         if (abs(Text_X_Offset) > 0.05) {
             name_plate_one("right", -abs(Text_X_Offset));
-            translate([body_center_x, 0, 0])
-                mirror([1, 0, 0])
-                    translate([-body_center_x, 0, 0])
+            // 180° in the hull plane (mirror X and Y) so glyphs stay
+            // right-handed and the first letter sits toward the engines.
+            translate([body_center_x, Text_Y, 0])
+                mirror([1, 1, 0])
+                    translate([-body_center_x, -Text_Y, 0])
                         name_plate_one("right", -abs(Text_X_Offset));
         } else {
             name_plate_one("right", 0);
