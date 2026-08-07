@@ -37,7 +37,7 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 4. Download:
    - **Empty name + Original CAD at 100%** — exact Printables hex one-piece STL /
      hex MMU 3MF (byte-identical to the listing files).
-   - **With a name — STL** — engraved uses a true boolean subtract. Raised overlays
+   - **With a name — STL** — engraved uses a true boolean subtract when watertight (keychain often falls back to raised overlay). Raised overlays
      letters on the smooth hull (prefer **3MF** for clean multi-material).
    - **With a name — 3MF (Hull + Letters)** — raised: separate objects for lettering
      MMU. Engraved: booleaned solid (or Hull + cutter fallback if CSG fails).
