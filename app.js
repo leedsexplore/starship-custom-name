@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.41";
+import { build3mf } from "./export3mf.js?v=2.4.42";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.41";
+} from "./version.js?v=2.4.42";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -481,6 +481,10 @@ const el = {
   bareStainless: document.getElementById("bare-stainless"),
   bareStainlessField: document.getElementById("bare-stainless-field"),
   bareStainlessNote: document.getElementById("bare-stainless-note"),
+  wrapNote: document.getElementById("wrap-note"),
+  textColorHint: document.getElementById("text-color-hint"),
+  textColorNote: document.getElementById("text-color-note"),
+  textColorEngravedNote: document.getElementById("text-color-engraved-note"),
   sizeLabel: document.getElementById("size-label"),
   posLabel: document.getElementById("pos-label"),
   depthLabel: document.getElementById("depth-label"),
@@ -670,6 +674,22 @@ function bareStainlessOn() {
   return Boolean(el.bareStainless?.checked) && Boolean(ship.layers?.length);
 }
 
+function syncStyleUi() {
+  const engraved = selectedStyle() === "engraved";
+  if (el.wrapNote) el.wrapNote.hidden = !engraved;
+  if (el.textColorHint) {
+    el.textColorHint.textContent = engraved
+      ? "raised / 3MF fallback"
+      : "preview / 3MF";
+  }
+  if (el.textColorNote) {
+    el.textColorNote.hidden = engraved;
+  }
+  if (el.textColorEngravedNote) {
+    el.textColorEngravedNote.hidden = !engraved;
+  }
+}
+
 function syncBareStainlessControl() {
   const available = Boolean(ship.layers?.length);
   if (el.bareStainless) {
@@ -705,7 +725,12 @@ let shipGeometry = null;
 let shipMesh = null;
 /** Thick letter solid — used for CSG export / live cut (may be hidden). */
 let textMesh = null;
-/** True when shipMesh.geometry is a boolean-cut preview (not shipGeometry). */
+/**
+ * When Original CAD is layered, live engrave swaps the Group for this single
+ * cut Mesh (same-color recess). Null when inactive.
+ */
+let engravedHullMesh = null;
+/** True when a boolean-cut hull is shown instead of the stock display. */
 let engravedCutActive = false;
 let ready = false;
 let rebuildTimer = 0;
@@ -1116,6 +1141,7 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
       restoreShipDisplayGeometry();
       modelGroup.remove(shipMesh);
     }
+    disposeEngravedHullMesh();
     shipGeometry = geometry;
     engravedCutActive = false;
     shipMesh = buildShipDisplay(geometry, layers);
@@ -1226,6 +1252,7 @@ function updateLabels() {
   } else {
     el.scaleLabel.textContent = `${pct.toFixed(1)}% · H ${sz.heightMm.toFixed(1)} × Ø ${sz.diameterMm.toFixed(1)} mm`;
   }
+  syncStyleUi();
   updateDownloadLabels();
 }
 
@@ -1621,7 +1648,16 @@ function disposeTextMesh() {
   textMesh = null;
 }
 
+function disposeEngravedHullMesh() {
+  if (!engravedHullMesh) return;
+  modelGroup.remove(engravedHullMesh);
+  if (engravedHullMesh.geometry) engravedHullMesh.geometry.dispose();
+  engravedHullMesh = null;
+}
+
 function restoreShipDisplayGeometry() {
+  disposeEngravedHullMesh();
+  if (shipMesh) shipMesh.visible = true;
   if (!shipMesh?.isMesh || !shipGeometry) {
     engravedCutActive = false;
     return;
@@ -1638,17 +1674,31 @@ function restoreShipDisplayGeometry() {
 }
 
 function applyEngravedCutPreview(cutGeo) {
-  if (!shipMesh?.isMesh || !cutGeo) return false;
-  if (
-    engravedCutActive &&
-    shipMesh.geometry &&
-    shipMesh.geometry !== shipGeometry
-  ) {
-    shipMesh.geometry.dispose();
-  }
+  if (!cutGeo || !shipMesh) return false;
   if (cutGeo.attributes.normal) cutGeo.deleteAttribute("normal");
   cutGeo.computeVertexNormals();
-  shipMesh.geometry = cutGeo;
+
+  // Single-mesh bases (classic / keychain): swap geometry in place.
+  if (shipMesh.isMesh) {
+    if (
+      engravedCutActive &&
+      shipMesh.geometry &&
+      shipMesh.geometry !== shipGeometry
+    ) {
+      shipMesh.geometry.dispose();
+    }
+    shipMesh.geometry = cutGeo;
+    shipMesh.visible = true;
+    disposeEngravedHullMesh();
+    engravedCutActive = true;
+    return true;
+  }
+
+  // Layered Original CAD: hide steel+tiles Group; show one cut solid.
+  disposeEngravedHullMesh();
+  engravedHullMesh = new THREE.Mesh(cutGeo, shipMaterial);
+  modelGroup.add(engravedHullMesh);
+  shipMesh.visible = false;
   engravedCutActive = true;
   return true;
 }
@@ -1717,7 +1767,7 @@ async function rebuildText() {
   const style = selectedStyle();
   const wrap = el.wrap.checked;
   // Wrapped thick cutters self-intersect on small radii and break CSG.
-  // Engrave with a flat cutter + matching flat inlay (same pose).
+  // Engraved uses a flat cutter (wrap breaks CSG on small radii); raised can wrap.
   const wrapCutter = wrap && style !== "engraved";
   const { missing, folded, used } = sanitizeName(el.name.value);
   updateGlyphWarn(missing, folded);
@@ -1778,20 +1828,36 @@ async function rebuildText() {
   // (No separate fill mesh; STL/3MF still use this cutter for the true cut.)
   if (style === "engraved") {
     textMesh.visible = false;
-    if (shipGeometry && shipMesh?.isMesh && !ship.layers?.length) {
-      try {
+    let cutOk = false;
+    let loadedSolidForPreview = false;
+    try {
+      // Layered Original CAD defers the combined solid until cut/export.
+      if (ship.layers?.length && !shipGeometry) {
+        setStatus("Loading hull solid for engraved preview…");
+        await ensureShipGeometry();
+        loadedSolidForPreview = true;
+      }
+      if (shipGeometry && shipMesh) {
         await yieldToUi(0);
         const { ship: shipClone, text } = cloneModelSpaceParts();
         const cut = booleanEngrave(shipClone, text);
         shipClone.dispose();
         text.dispose();
-        applyEngravedCutPreview(cut);
-      } catch (err) {
-        console.warn("Engraved cut preview failed", err);
-        restoreShipDisplayGeometry();
+        cutOk = applyEngravedCutPreview(cut);
       }
-    } else {
+    } catch (err) {
+      console.warn("Engraved cut preview failed", err);
       restoreShipDisplayGeometry();
+    }
+    if (!cutOk) {
+      restoreShipDisplayGeometry();
+      // Fallback so Original CAD never shows a blank name if CSG fails.
+      textMesh.visible = true;
+      if (loadedSolidForPreview) {
+        setStatus("Engraved preview unavailable — export STL still cuts the name.", true);
+      }
+    } else if (loadedSolidForPreview) {
+      setStatus("Engraved preview ready.");
     }
     applyColor();
   } else {
@@ -2605,13 +2671,14 @@ function downloadOpenscadSnippet() {
 
   const scad = `// Generated by ${creditLine()}
 // ${AUTHOR.repo}
-// Wrap-to-hull is web-only — OpenSCAD uses flat emboss/engrave.
+// Wrap / reverse / mirror / italic are web-only — OpenSCAD uses flat emboss/engrave.
 // Open with openscad/starship_custom_name.scad or paste into Customizer.
 // NOTE: that flat path is tuned to the classic remix mesh${
     ship.id === "parametric"
       ? " — your current base is the parametric CAD, so placement will differ. Prefer web STL/3MF export for Original CAD"
       : ""
   }.
+// Web extras (not applied here): wrap=${s.wrap === "1" ? "on" : "off"}, reverse=${s.reverse === "1" ? "on" : "off"}, mirror=${s.mirror === "1" ? "on" : "off"}, italic=${s.italic === "1" ? "on" : "off"}.
 
 /* [Text] */
 Name = "${nameEscaped}";
@@ -2685,6 +2752,7 @@ async function fitTextToHull() {
 }
 
 function onControlChange() {
+  syncStyleUi();
   applyColor();
   scheduleRebuild().then(() => writeUrl());
 }

@@ -18,7 +18,7 @@
       content="https://leedsexplore.github.io/starship-custom-name/"
     />
     <link rel="canonical" href="https://leedsexplore.github.io/starship-custom-name/" />
-    <link rel="stylesheet" href="styles.css?v=2.4.41" />
+    <link rel="stylesheet" href="styles.css?v=2.4.42" />
   </head>
   <body>
     <div id="app">
@@ -26,7 +26,7 @@
         <header class="brand">
           <p class="eyebrow">
             Your name on Starship
-            <span class="version" id="app-version" aria-label="App version">v2.4.41</span>
+            <span class="version" id="app-version" aria-label="App version">v2.4.42</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -110,13 +110,20 @@
           </div>
 
           <div class="field">
-            <span>Name text color <em class="hint">preview / 3MF</em></span>
+            <span
+              >Name text color
+              <em class="hint" id="text-color-hint">preview / 3MF</em></span
+            >
             <div class="color-row">
               <div class="presets" id="text-presets" role="group" aria-label="Name text color presets"></div>
               <input id="text-color" type="color" value="#1c1c1c" aria-label="Custom name text color" />
             </div>
-            <p class="field-note">
+            <p class="field-note" id="text-color-note">
               Real ship IDs (e.g. S40 on FS-13) are matte black on stainless — not Signal Red.
+            </p>
+            <p class="field-note" id="text-color-engraved-note" hidden>
+              Engraved preview is a same-color hull recess (like the molded logo). Text color
+              applies to raised lettering and 3MF letter parts.
             </p>
           </div>
 
@@ -179,6 +186,9 @@
             <input id="wrap" type="checkbox" checked />
             <span>Wrap text to hull curve</span>
           </label>
+          <p class="field-note" id="wrap-note" hidden>
+            Wrap applies to raised lettering; engraved uses a flat cutter so CSG stays reliable.
+          </p>
 
           <label class="field check">
             <input id="italic" type="checkbox" />
@@ -300,7 +310,7 @@
                 href="?ship=parametric&amp;name=S40&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=67&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/s40.png?v=2.4.41"
+                  src="./assets/named-covers/thumbs/s40.png?v=2.4.42"
                   width="160"
                   height="160"
                   alt="S40 cover"
@@ -313,7 +323,7 @@
                 href="?ship=parametric&amp;name=S33&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=67&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/s33.png?v=2.4.41"
+                  src="./assets/named-covers/thumbs/s33.png?v=2.4.42"
                   width="160"
                   height="160"
                   alt="S33 cover"
@@ -326,7 +336,7 @@
                 href="?ship=parametric&amp;name=IFT-12&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=70&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/ift-12.png?v=2.4.41"
+                  src="./assets/named-covers/thumbs/ift-12.png?v=2.4.42"
                   width="160"
                   height="160"
                   alt="IFT-12 cover"
@@ -339,7 +349,7 @@
                 href="?ship=parametric&amp;name=Starship&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=72&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/starship.png?v=2.4.41"
+                  src="./assets/named-covers/thumbs/starship.png?v=2.4.42"
                   width="160"
                   height="160"
                   alt="Starship cover"
@@ -369,7 +379,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.4.41</span>)
+            · <span id="footer-version">v2.4.42</span>)
           </p>
           <p>
             Print files (hex one-piece + MMU):
@@ -418,8 +428,13 @@
           </p>
           <p>
             Advanced:
-            <a href="openscad/starship_custom_name.scad">OpenSCAD Customizer</a>
-            (flat emboss only; hull wrap is web-only)
+            <a
+              href="https://github.com/leedsexplore/starship-custom-name/blob/main/openscad/starship_custom_name.scad"
+              target="_blank"
+              rel="noopener"
+              >OpenSCAD Customizer</a
+            >
+            (flat emboss only; wrap / reverse / mirror are web-only)
           </p>
         </footer>
       </aside>
@@ -440,6 +455,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.4.41"></script>
+    <script type="module" src="app.js?v=2.4.42"></script>
   </body>
 </html>
