@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.43";
+import { build3mf } from "./export3mf.js?v=2.4.44";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.43";
+} from "./version.js?v=2.4.44";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -130,8 +130,11 @@ const SHIPS = {
     bodyCenterX: 0,
     /** Half of body depth after orient (text faces ±Z). */
     hullRadiusZ: 5.6,
-    /** Cutter starts well outside so CSG cleanly breaks the hull skin. */
-    embedMm: 1.0,
+    /**
+     * Shallow cutter — keychain walls are thin; deep CSG (≈1 mm+) often
+     * shatters the mesh into non-watertight fragments (empty layers in slicers).
+     */
+    embedMm: 0.35,
     safeSpanMm: 24,
     hardSpanMm: 30,
     flapZoneYMm: 18,
@@ -147,8 +150,11 @@ const SHIPS = {
     defaultName: "Custom Name",
     /** Fun default hull color for the keychain remix. */
     defaultColor: "#ff6eb4",
-    /** Recessed like the molded SpaceX logo on the opposite flank. */
-    defaultStyle: "engraved",
+    /**
+     * Raised prints reliably on this thin mesh. Engraved preview/CSG often
+     * shatters; export falls back to raised if the boolean is not watertight.
+     */
+    defaultStyle: "raised",
     markingAcrossMm: 0,
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
@@ -2291,23 +2297,96 @@ function prepareForCsg(geometry) {
   return geo;
 }
 
+/**
+ * Weld by position and count boundary edges. A watertight triangle soup has
+ * almost every edge shared by exactly two faces. Post-CSG keychain cuts that
+ * shatter often leave thousands of open edges → empty layers in PrusaSlicer.
+ */
+function meshBoundaryStats(geometry, digits = 4) {
+  const src = geometry.index ? geometry.toNonIndexed() : geometry;
+  const pos = src.attributes.position;
+  const weld = new Map();
+  let next = 0;
+  const idx = new Array(pos.count);
+  for (let i = 0; i < pos.count; i++) {
+    const k = `${pos.getX(i).toFixed(digits)},${pos.getY(i).toFixed(digits)},${pos.getZ(i).toFixed(digits)}`;
+    let id = weld.get(k);
+    if (id == null) {
+      id = next++;
+      weld.set(k, id);
+    }
+    idx[i] = id;
+  }
+  const edges = new Map();
+  const bump = (a, b) => {
+    const key = a < b ? `${a},${b}` : `${b},${a}`;
+    edges.set(key, (edges.get(key) || 0) + 1);
+  };
+  let tris = 0;
+  for (let i = 0; i + 2 < idx.length; i += 3) {
+    const a = idx[i];
+    const b = idx[i + 1];
+    const c = idx[i + 2];
+    if (a === b || b === c || a === c) continue;
+    tris += 1;
+    bump(a, b);
+    bump(b, c);
+    bump(c, a);
+  }
+  let open = 0;
+  for (const n of edges.values()) {
+    if (n !== 2) open += 1;
+  }
+  return { open, tris, verts: weld.size };
+}
+
+/** Reject CSG results that will slice as empty layers / floating islands. */
+function isPrintableBooleanCut(geometry, sourceShipGeo) {
+  if (!geometry?.attributes?.position) return false;
+  const cut = meshBoundaryStats(geometry);
+  // Stock keychain STL is closed (0 open edges after weld). Allow a little
+  // tolerance for logo/detail non-manifold spots; reject shattered cuts.
+  if (cut.open > 80) {
+    console.warn("Engraved CSG rejected — too many open edges", cut);
+    return false;
+  }
+  if (sourceShipGeo?.attributes?.position) {
+    const srcCount = sourceShipGeo.attributes.position.count;
+    const cutCount = geometry.attributes.position.count;
+    // Shattered booleans often balloon or collapse vertex count oddly; a sane
+    // engrave stays in the same ballpark as the source hull.
+    if (cutCount < srcCount * 0.5 || cutCount > srcCount * 4) {
+      console.warn("Engraved CSG rejected — vertex count out of range", {
+        srcCount,
+        cutCount,
+      });
+      return false;
+    }
+  }
+  return cut.tris > 100;
+}
+
 function booleanEngrave(shipGeo, textGeo) {
   const shipBrush = new Brush(prepareForCsg(shipGeo));
   const textBrush = new Brush(prepareForCsg(textGeo));
   shipBrush.updateMatrixWorld(true);
   textBrush.updateMatrixWorld(true);
 
+  const tryOp = (op) => {
+    const result = csgEvaluator.evaluate(shipBrush, textBrush, op);
+    const geo = result.geometry;
+    if (!isPrintableBooleanCut(geo, shipGeo)) {
+      geo.dispose?.();
+      throw new Error("CSG result not printable (open edges / shattered mesh)");
+    }
+    return geo;
+  };
+
   try {
-    const result = csgEvaluator.evaluate(shipBrush, textBrush, SUBTRACTION);
-    return result.geometry;
+    return tryOp(SUBTRACTION);
   } catch (err) {
     console.warn("SUBTRACTION failed, trying HOLLOW_SUBTRACTION", err);
-    const result = csgEvaluator.evaluate(
-      shipBrush,
-      textBrush,
-      HOLLOW_SUBTRACTION
-    );
-    return result.geometry;
+    return tryOp(HOLLOW_SUBTRACTION);
   }
 }
 
@@ -2342,7 +2421,7 @@ function buildExportMeshes({ preferBoolean }) {
         note: "Engraved with true boolean subtract.",
       };
     } catch (err) {
-      console.warn("CSG engraving failed; falling back to inset merge", err);
+      console.warn("CSG engraving failed; falling back to raised overlay", err);
     }
   }
 
@@ -2357,7 +2436,7 @@ function buildExportMeshes({ preferBoolean }) {
 
   const note =
     style === "engraved"
-      ? "Boolean failed — exported inset letter meshes (use slicer mesh-boolean if needed)."
+      ? "Engraved boolean was not watertight — exported hull + raised letters (printable). Prefer Raised style or shallower depth for a clean cut."
       : "Raised letters overlaid on hull (not boolean-unioned). Prefer 3MF for MMU.";
 
   return { mode: "merged", group, ship, text, note };
