@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.4.19** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.4.20** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 **North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
 real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.
@@ -52,7 +52,7 @@ Shareable URLs look like:
 
 | Control | Notes |
 |--------|--------|
-| Base design | `ship=parametric` (default, Original CAD) or `ship=legacy` (classic remix) — segmented toggle in the UI |
+| Base design | `ship=parametric` (default, Original CAD), `ship=legacy` (classic remix), or `ship=keychain` (Oliver Heisel 6 cm with SpaceX logo) — segmented toggle in the UI |
 | Hull side | Default `side=both` = port + starboard stainless flanks (real ship) · `side=right` = leeward only · `side=left` = windward (tiles) |
 | Position | Parametric default keeps the bottom glyph on the forward-flap line (~`pos=68` for short IDs); slider ±90 mm (nose +). Legacy default `pos=-2` |
 | Font style | Classic (Optimer/Helvetiker/Gentilis/Droid) + popular (Roboto, Open Sans, Montserrat, Inter, …) + display (Oswald, Bebas Neue) |

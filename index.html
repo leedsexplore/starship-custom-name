@@ -18,7 +18,7 @@
       content="https://leedsexplore.github.io/starship-custom-name/"
     />
     <link rel="canonical" href="https://leedsexplore.github.io/starship-custom-name/" />
-    <link rel="stylesheet" href="styles.css?v=2.4.19" />
+    <link rel="stylesheet" href="styles.css?v=2.4.20" />
   </head>
   <body>
     <div id="app">
@@ -26,7 +26,7 @@
         <header class="brand">
           <p class="eyebrow">
             Your name on Starship
-            <span class="version" id="app-version" aria-label="App version">v2.4.19</span>
+            <span class="version" id="app-version" aria-label="App version">v2.4.20</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -53,10 +53,21 @@
                 ><input type="radio" name="ship" value="legacy" />
                 Classic remix</label
               >
+              <label
+                ><input type="radio" name="ship" value="keychain" />
+                Keychain 6 cm</label
+              >
             </div>
             <p class="field-note">
               Original = parametric 1:200 (CC BY). Classic = Josh1297 + anventia
-              mesh (CC BY-NC). Hex print files:
+              mesh (CC BY-NC). Keychain = Oliver Heisel 6 cm with SpaceX logo
+              (CC BY-NC-SA,
+              <a
+                href="https://www.printables.com/model/1082625-spacex-starship-keychain"
+                target="_blank"
+                rel="noopener"
+                >Printables</a
+              >). Hex print files:
               <a
                 href="https://www.printables.com/model/1792868"
                 target="_blank"
@@ -175,7 +186,7 @@
 
           <label class="field">
             <span>Letter size <em id="size-label">3.5 mm</em></span>
-            <input id="size" type="range" min="3" max="14" step="0.5" value="3.5" />
+            <input id="size" type="range" min="2" max="14" step="0.1" value="3.5" />
           </label>
 
           <label class="field">
@@ -279,7 +290,7 @@
                 href="?ship=parametric&amp;name=S40&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=67&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/s40.png?v=2.4.19"
+                  src="./assets/named-covers/thumbs/s40.png?v=2.4.20"
                   width="160"
                   height="160"
                   alt="S40 cover"
@@ -292,7 +303,7 @@
                 href="?ship=parametric&amp;name=S33&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=67&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/s33.png?v=2.4.19"
+                  src="./assets/named-covers/thumbs/s33.png?v=2.4.20"
                   width="160"
                   height="160"
                   alt="S33 cover"
@@ -305,7 +316,7 @@
                 href="?ship=parametric&amp;name=IFT-12&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=70&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/ift-12.png?v=2.4.19"
+                  src="./assets/named-covers/thumbs/ift-12.png?v=2.4.20"
                   width="160"
                   height="160"
                   alt="IFT-12 cover"
@@ -318,7 +329,7 @@
                 href="?ship=parametric&amp;name=Starship&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=72&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/starship.png?v=2.4.19"
+                  src="./assets/named-covers/thumbs/starship.png?v=2.4.20"
                   width="160"
                   height="160"
                   alt="Starship cover"
@@ -348,7 +359,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.4.19</span>)
+            · <span id="footer-version">v2.4.20</span>)
           </p>
           <p>
             Print files (hex one-piece + MMU):
@@ -385,6 +396,15 @@
               >anventia’s Block&nbsp;2</a
             >
             — <strong>CC BY-NC</strong>; credit both if you share that variant.
+            The keychain base is a remix of
+            <a
+              href="https://www.printables.com/model/1082625-spacex-starship-keychain"
+              target="_blank"
+              rel="noopener"
+              >Oliver Heisel’s Starship Keychain</a
+            >
+            (with SpaceX logo) — <strong>CC BY-NC-SA</strong>; share alike and
+            credit Heisel if you share that variant.
           </p>
           <p>
             Advanced:
@@ -410,6 +430,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.4.19"></script>
+    <script type="module" src="app.js?v=2.4.20"></script>
   </body>
 </html>

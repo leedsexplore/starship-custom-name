@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.19";
+import { build3mf } from "./export3mf.js?v=2.4.20";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.19";
+} from "./version.js?v=2.4.20";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -116,6 +116,45 @@ const SHIPS = {
       meshHeightMm: 121,
       meshDiameterMm: 27.7807,
       meshFootprintMaxMm: 42.6,
+    },
+  },
+  /**
+   * Oliver Heisel SpaceX Starship Keychain (6 cm, with SpaceX logo) — CC BY-NC-SA.
+   * Source: https://www.printables.com/model/1082625-spacex-starship-keychain
+   */
+  keychain: {
+    id: "keychain",
+    label: "Keychain 6 cm",
+    url: `./assets/starship_keychain_6cm.stl?v=${CACHE_BUST}`,
+    envelopeFile: "assets/starship_keychain_6cm.stl",
+    bodyCenterX: 0,
+    /** Half of body depth after orient (text faces ±Z). */
+    hullRadiusZ: 5.6,
+    embedMm: 0.25,
+    safeSpanMm: 24,
+    hardSpanMm: 30,
+    flapZoneYMm: 18,
+    /** Smaller than desk models — slider min drops to 2 mm for this base. */
+    defaultSizeMm: 2.5,
+    defaultPosMm: 2,
+    /** One flank keeps the molded SpaceX logo readable on the other. */
+    defaultSide: "right",
+    markingAcrossMm: 0,
+    orient(geometry) {
+      geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
+      geometry.rotateY(Math.PI / 2); // flaps → ±X
+      geometry.computeBoundingBox();
+      const b = geometry.boundingBox;
+      geometry.translate(
+        -(b.min.x + b.max.x) / 2,
+        -(b.min.y + b.max.y) / 2,
+        -(b.min.z + b.max.z) / 2
+      );
+    },
+    meshDefaults: {
+      meshHeightMm: 57.94,
+      meshDiameterMm: 11.21,
+      meshFootprintMaxMm: 20.0,
     },
   },
 };
@@ -809,6 +848,17 @@ function scaledPrintSize(scalePct = Number(el.scale.value)) {
 }
 
 function applyCoreOnePreset() {
+  if (ship.id === "keychain") {
+    el.scale.value = "100";
+    updateLabels();
+    applyModelScale();
+    updateDownloadLabels();
+    writeUrl();
+    setStatus(
+      "Keychain prints at native size (H ≈58 mm). CORE One 1:200 is for the desk models."
+    );
+    return;
+  }
   const pct = coreOneScalePercent();
   const max = Number(el.scale.max);
   const min = Number(el.scale.min);
@@ -826,6 +876,18 @@ function applyCoreOnePreset() {
   setStatus(
     `CORE One 1:200 — H ${sz.heightMm.toFixed(1)} mm × Ø ${sz.diameterMm.toFixed(1)} mm (Z room ${ (z - sz.heightMm).toFixed(1) } mm).`
   );
+}
+
+/** Keychain needs a lower letter-size floor than the desk models. */
+function syncSizeSliderForShip() {
+  if (!el.size) return;
+  const keychain = ship.id === "keychain";
+  el.size.min = keychain ? "2" : "3";
+  el.size.step = keychain ? "0.1" : "0.5";
+  const v = Number(el.size.value);
+  const min = Number(el.size.min);
+  const max = Number(el.size.max);
+  if (v < min || v > max) el.size.value = String(Math.min(max, Math.max(min, v)));
 }
 
 /** Scale % for a true 1:denom print relative to the parametric 1:200 mesh. */
@@ -1035,12 +1097,18 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
     // ensureShipGeometry() — do not prefetch during Ready (steals bandwidth).
 
     if (retune) {
-      el.scale.value = String(coreOneScalePercent());
+      // Keychain prints at native mesh size; CAD bases retune toward 1:200.
+      el.scale.value = String(
+        ship.id === "keychain" ? 100 : coreOneScalePercent()
+      );
+      syncSizeSliderForShip();
       el.size.value = String(ship.defaultSizeMm);
       el.pos.value = String(ship.defaultPosMm);
       posPinnedByUser = false;
       const side =
-        ship.defaultSide === "left" || ship.defaultSide === "both"
+        ship.defaultSide === "left" ||
+        ship.defaultSide === "both" ||
+        ship.defaultSide === "right"
           ? ship.defaultSide
           : "right";
       const sideRadio = document.querySelector(
@@ -1050,6 +1118,8 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
       if (ship.layers?.length) {
         el.color.value = "#c8ced6";
       }
+    } else {
+      syncSizeSliderForShip();
     }
     updateLabels();
     applyModelScale();
@@ -2315,8 +2385,25 @@ async function downloadPng() {
   }
 }
 
-// Dev/automation hook for headless cover capture.
+// Dev/automation hooks for headless cover / STL export.
 window.__starshipCaptureCover = captureCoverDataUrl;
+window.__starshipExportStl = async function exportStlBuffer() {
+  await flushRebuild();
+  await ensureShipGeometry();
+  const preferBoolean = selectedStyle() === "engraved";
+  const payload = buildExportMeshes({ preferBoolean });
+  const exporter = new STLExporter();
+  let buffer;
+  if (payload.mode === "boolean" || payload.geometry) {
+    buffer = exporter.parse(new THREE.Mesh(payload.geometry), { binary: true });
+    payload.geometry.dispose();
+  } else {
+    buffer = exporter.parse(payload.group, { binary: true });
+    payload.ship?.dispose();
+    payload.text?.dispose();
+  }
+  return buffer;
+};
 
 function downloadOpenscadSnippet() {
   const s = readState();

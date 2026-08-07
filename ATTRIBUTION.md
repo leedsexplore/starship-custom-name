@@ -47,6 +47,20 @@ prints derived from the legacy mesh. Commercial use of that mesh is not allowed
 under the parent licenses. The original parametric model above is **CC BY 4.0**
 (credit David Leeds / leedsexplore).
 
+## Keychain remix mesh
+
+The keychain customizer base (`assets/starship_keychain_6cm.stl` — parent
+**6 cm with SpaceX logo**) is a **remix** of:
+
+**SpaceX Starship Keychain** by Oliver Heisel  
+https://www.printables.com/model/1082625-spacex-starship-keychain  
+
+License: Creative Commons Attribution–NonCommercial–ShareAlike (CC BY-NC-SA)  
+https://creativecommons.org/licenses/by-nc-sa/4.0/
+
+Credit **Oliver Heisel** when sharing remixed keychain files or prints. Remixes
+must stay under CC BY-NC-SA (share alike). Commercial use is not allowed.
+
 ## Fonts
 
 See [fonts/README.md](fonts/README.md). Bundled typefaces are MgOpen/Droid (via three.js) and Google Fonts OFL conversions (via @compai typefaces) for letter extrusion only.
