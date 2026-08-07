@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.20";
+import { build3mf } from "./export3mf.js?v=2.4.21";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.20";
+} from "./version.js?v=2.4.21";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -139,6 +139,8 @@ const SHIPS = {
     defaultPosMm: 2,
     /** One flank keeps the molded SpaceX logo readable on the other. */
     defaultSide: "right",
+    /** Friendly default for keychain share links / first paint. */
+    defaultName: "Starship",
     markingAcrossMm: 0,
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
@@ -1117,6 +1119,10 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
       if (sideRadio) sideRadio.checked = true;
       if (ship.layers?.length) {
         el.color.value = "#c8ced6";
+      }
+      // Keychain opens with "Starship" when the hull name is still blank.
+      if (ship.defaultName && !el.name.value.trim()) {
+        el.name.value = ship.defaultName;
       }
     } else {
       syncSizeSliderForShip();
@@ -2542,16 +2548,21 @@ async function boot() {
     if (sideRadio) sideRadio.checked = true;
   }
   // Classic remix must start at CORE One % (~215), not the HTML default 100.
-  if (urlState.scale == null) el.scale.value = String(coreOneScalePercent());
+  // Keychain stays native (100%).
+  if (urlState.scale == null) {
+    el.scale.value = String(
+      ship.id === "keychain" ? 100 : coreOneScalePercent()
+    );
+  }
   mountFontOptions(
     urlState.font && FONT_OPTIONS[urlState.font] ? urlState.font : "oswald-bold"
   );
   mountPresets(el.hullPresets, el.color);
   mountPresets(el.textPresets, el.textColor);
   applyState(urlState);
-  // Hull stays blank until the user types (or opens a share URL that includes name=).
+  // Desk models stay blank until typed; keychain defaults to "Starship".
   if (!urlState.name || !String(urlState.name).trim()) {
-    el.name.value = "";
+    el.name.value = ship.defaultName || "";
   }
   // Italic is opt-in only (default off). Explicit italic=1 in the URL still works.
   if (el.italic) {
