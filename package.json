@@ -1,6 +1,6 @@
 {
   "name": "starship-custom-name",
-  "version": "2.4.42",
+  "version": "2.4.43",
   "private": true,
   "type": "module",
   "imports": {
