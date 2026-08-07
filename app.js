@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.21";
+import { build3mf } from "./export3mf.js?v=2.4.22";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.21";
+} from "./version.js?v=2.4.22";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -137,8 +137,11 @@ const SHIPS = {
     /** Smaller than desk models — slider min drops to 2 mm for this base. */
     defaultSizeMm: 2.5,
     defaultPosMm: 2,
-    /** One flank keeps the molded SpaceX logo readable on the other. */
-    defaultSide: "right",
+    /**
+     * Logo sits on the +Z (Leeward / "right") flank after orient — put the
+     * name on the opposite −Z face (Windward / "left").
+     */
+    defaultSide: "left",
     /** Friendly default for keychain share links / first paint. */
     defaultName: "Starship",
     markingAcrossMm: 0,
