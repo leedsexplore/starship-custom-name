@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.37";
+import { build3mf } from "./export3mf.js?v=2.4.38";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.37";
+} from "./version.js?v=2.4.38";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -1642,6 +1642,23 @@ function pullEngravedCutterIntoPocket(geometry, side, pullMm) {
     pos.setZ(i, pos.getZ(i) + signZ * pullMm);
   }
   pos.needsUpdate = true;
+  return geometry;
+}
+
+/** Grow glyphs in the letter plane to cover the curved hull opening rim. */
+function inflateLetterPlane(geometry, scale = 1.08) {
+  const pos = geometry.attributes.position;
+  const box = new THREE.Box3().setFromBufferAttribute(pos);
+  const c = box.getCenter(new THREE.Vector3());
+  for (let i = 0; i < pos.count; i++) {
+    pos.setXYZ(
+      i,
+      c.x + (pos.getX(i) - c.x) * scale,
+      c.y + (pos.getY(i) - c.y) * scale,
+      pos.getZ(i)
+    );
+  }
+  pos.needsUpdate = true;
   if (geometry.attributes.normal) geometry.deleteAttribute("normal");
   geometry.computeVertexNormals();
   return geometry;
@@ -1791,19 +1808,16 @@ async function rebuildText() {
     }
 
     if (cutterGeo) {
-      // Only cancel the cutter's outside overhang so the fill mouth sits in
-      // the surface opening (extra pull causes parallax “pink rim” gaps).
+      // Cancel the cutter's outside overhang so the fill mouth sits in the
+      // surface opening, then inflate XY to cover the curved-hull rim.
       const pull = ship.embedMm;
       if (side === "both") {
-        // Dual flanks: split by Z sign and pull each half toward the axis.
         const pos = cutterGeo.attributes.position;
         for (let i = 0; i < pos.count; i++) {
           const z = pos.getZ(i);
           pos.setZ(i, z + (z >= 0 ? -pull : pull));
         }
         pos.needsUpdate = true;
-        if (cutterGeo.attributes.normal) cutterGeo.deleteAttribute("normal");
-        cutterGeo.computeVertexNormals();
       } else {
         pullEngravedCutterIntoPocket(
           cutterGeo,
@@ -1811,6 +1825,7 @@ async function rebuildText() {
           pull
         );
       }
+      inflateLetterPlane(cutterGeo, 1.1);
       inlayMesh = new THREE.Mesh(cutterGeo, inlayMaterial);
       inlayMesh.renderOrder = 10;
       modelGroup.add(inlayMesh);
