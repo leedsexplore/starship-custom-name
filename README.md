@@ -125,8 +125,11 @@ Measured via `python3 scripts/measure_ship_mesh.py` → `assets/print_envelope.j
 
 ## Printables
 
-**Live listing:** [printables.com/model/1792868](https://www.printables.com/model/1792868)
+**Desk / Original CAD:** [printables.com/model/1792868](https://www.printables.com/model/1792868)
 — one-piece hex tiles + put-your-name customizer.
+
+**Keychain remix:** [printables.com/model/1802829](https://www.printables.com/model/1802829)
+— Oliver Heisel 6 cm logo mesh + custom name (CC BY-NC-SA).
 
 Package: [`printables/starship-parametric/`](printables/starship-parametric/)  
 Print settings: [`PRINT_PROFILES.md`](printables/starship-parametric/PRINT_PROFILES.md).  
