@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.4.32** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.4.37** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 **North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
 real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.

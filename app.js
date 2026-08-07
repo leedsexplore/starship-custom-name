@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.32";
+import { build3mf } from "./export3mf.js?v=2.4.37";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.32";
+} from "./version.js?v=2.4.37";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -1632,36 +1632,19 @@ function applyEngravedCutPreview(cutGeo) {
 }
 
 /**
- * Engraved preview plate: thin glyph shell sitting mid-cavity after the
- * boolean cut. MeshBasicMaterial + no depth test → solid, no speckles.
+ * Pull a flat engraved cutter (model-space) into the pocket along ±Z so the
+ * preview fill is the exact boolean operand, just seated inside the hull.
  */
-function buildEngravedInlayGeometry(flatThin, side, textY, acrossBias) {
-  const proud = Number(el.depth.value);
-  const R = ship.hullRadiusZ;
-  const geo = flatThin.clone();
-  const sign = side === "right" ? 1 : -1;
-  const bias =
-    acrossBias == null ? Number(ship.markingAcrossMm) || 0 : Number(acrossBias);
-  const pos = geo.attributes.position;
-  const v = new THREE.Vector3();
-  // Mid-pocket depth — cavity walls from CSG give the recessed look.
-  const floorR = R - Math.min(Math.max(proud * 0.45, 0.18), 0.4);
+function pullEngravedCutterIntoPocket(geometry, side, pullMm) {
+  const signZ = side === "right" ? -1 : 1;
+  const pos = geometry.attributes.position;
   for (let i = 0; i < pos.count; i++) {
-    v.fromBufferAttribute(pos, i);
-    const across = (side === "left" ? -v.x : v.x) + bias;
-    const radial = floorR + v.z;
-    const theta = across / R;
-    pos.setXYZ(
-      i,
-      ship.bodyCenterX + radial * Math.sin(theta),
-      textY + v.y,
-      sign * radial * Math.cos(theta)
-    );
+    pos.setZ(i, pos.getZ(i) + signZ * pullMm);
   }
   pos.needsUpdate = true;
-  if (geo.attributes.normal) geo.deleteAttribute("normal");
-  geo.computeVertexNormals();
-  return geo;
+  if (geometry.attributes.normal) geometry.deleteAttribute("normal");
+  geometry.computeVertexNormals();
+  return geometry;
 }
 
 /**
@@ -1727,8 +1710,8 @@ async function rebuildText() {
   const side = selectedSide();
   const style = selectedStyle();
   const wrap = el.wrap.checked;
-  // Wrapped thick cutters self-intersect on small radii and break CSG
-  // (volume can even increase). Engrave with a flat cutter; wrap the inlay only.
+  // Wrapped thick cutters self-intersect on small radii and break CSG.
+  // Engrave with a flat cutter + matching flat inlay (same pose).
   const wrapCutter = wrap && style !== "engraved";
   const { missing, folded, used } = sanitizeName(el.name.value);
   updateGlyphWarn(missing, folded);
@@ -1786,18 +1769,19 @@ async function rebuildText() {
 
   modelGroup.add(textMesh);
 
-  // Engraved: boolean-cut the display hull (recess like the logo), then draw
-  // solid unlit glyphs in the pocket so strokes never speckled-z-fight.
+  // Engraved: boolean-cut the hull, then reuse the exact cutter mesh as the
+  // black fill (pulled into the pocket) so fill and recess cannot drift apart.
   if (style === "engraved") {
     textMesh.visible = false;
+    let cutterGeo = null;
     if (shipGeometry && shipMesh?.isMesh && !ship.layers?.length) {
       try {
         await yieldToUi(0);
         const { ship: shipClone, text } = cloneModelSpaceParts();
         const cut = booleanEngrave(shipClone, text);
         shipClone.dispose();
-        text.dispose();
         applyEngravedCutPreview(cut);
+        cutterGeo = text;
       } catch (err) {
         console.warn("Engraved cut preview failed", err);
         restoreShipDisplayGeometry();
@@ -1806,27 +1790,31 @@ async function rebuildText() {
       restoreShipDisplayGeometry();
     }
 
-    const faceFlat = buildFlatTextGeometry(used, Number(el.size.value), 0.08);
-    const inlays = [];
-    for (const place of placements) {
-      inlays.push(
-        buildEngravedInlayGeometry(faceFlat, place.side, textY, place.across)
-      );
-    }
-    faceFlat.dispose();
-    if (side === "both" && placements.length === 1) {
-      inlays.push(mirrorGeometryAcrossShipYZ(inlays[0].clone(), textY));
-    }
-    if (inlays.length === 1) {
-      inlayMesh = new THREE.Mesh(inlays[0], inlayMaterial);
-    } else {
-      inlayMesh = new THREE.Group();
-      for (const geo of inlays) {
-        inlayMesh.add(new THREE.Mesh(geo, inlayMaterial));
+    if (cutterGeo) {
+      // Only cancel the cutter's outside overhang so the fill mouth sits in
+      // the surface opening (extra pull causes parallax “pink rim” gaps).
+      const pull = ship.embedMm;
+      if (side === "both") {
+        // Dual flanks: split by Z sign and pull each half toward the axis.
+        const pos = cutterGeo.attributes.position;
+        for (let i = 0; i < pos.count; i++) {
+          const z = pos.getZ(i);
+          pos.setZ(i, z + (z >= 0 ? -pull : pull));
+        }
+        pos.needsUpdate = true;
+        if (cutterGeo.attributes.normal) cutterGeo.deleteAttribute("normal");
+        cutterGeo.computeVertexNormals();
+      } else {
+        pullEngravedCutterIntoPocket(
+          cutterGeo,
+          side === "right" ? "right" : "left",
+          pull
+        );
       }
+      inlayMesh = new THREE.Mesh(cutterGeo, inlayMaterial);
+      inlayMesh.renderOrder = 10;
+      modelGroup.add(inlayMesh);
     }
-    inlayMesh.renderOrder = 10;
-    modelGroup.add(inlayMesh);
     applyColor();
   } else {
     restoreShipDisplayGeometry();
