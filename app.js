@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.22";
+import { build3mf } from "./export3mf.js?v=2.4.23";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.22";
+} from "./version.js?v=2.4.23";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -142,8 +142,10 @@ const SHIPS = {
      * name on the opposite −Z face (Windward / "left").
      */
     defaultSide: "left",
-    /** Friendly default for keychain share links / first paint. */
-    defaultName: "Starship",
+    /** Placeholder name for keychain share links / first paint. */
+    defaultName: "Custom Name",
+    /** Fun default hull color for the keychain remix. */
+    defaultColor: "#ff6eb4",
     markingAcrossMm: 0,
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
@@ -434,6 +436,13 @@ const COLOR_PRESETS = [
     hex: "#0077c8",
     filament: "Prusament PLA",
     sku: "Azure Blue",
+  },
+  {
+    id: "bubblegum-pink",
+    name: "Bubblegum Pink",
+    hex: "#ff6eb4",
+    filament: "Custom",
+    sku: "keychain remix default",
   },
 ];
 
@@ -1120,12 +1129,19 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
         `input[name="side"][value="${side}"]`
       );
       if (sideRadio) sideRadio.checked = true;
-      if (ship.layers?.length) {
+      if (ship.defaultColor) {
+        el.color.value = ship.defaultColor;
+      } else if (ship.layers?.length) {
         el.color.value = "#c8ced6";
       }
-      // Keychain opens with "Starship" when the hull name is still blank.
-      if (ship.defaultName && !el.name.value.trim()) {
+      if (ship.defaultName) {
         el.name.value = ship.defaultName;
+      } else if (
+        el.name.value.trim() === "Custom Name" ||
+        el.name.value.trim() === "Starship"
+      ) {
+        // Clear keychain placeholders when switching back to desk models.
+        el.name.value = "";
       }
     } else {
       syncSizeSliderForShip();
@@ -2521,15 +2537,14 @@ async function boot() {
   setExportBusy(true);
   await loadPrintEnvelope();
   const urlState = stateFromUrl();
-  // Drop the old baked-in default so bookmarked/share URLs from v2.0.3 and
-  // earlier don't keep putting "Custom Name" on an empty-default launch.
-  if (urlState.name === "Custom Name") {
-    delete urlState.name;
-  }
   // Resolve the base ship first — envelope numbers, slider limits, and the
   // default letter size all depend on it.
   const bootShipId =
     urlState.ship && SHIPS[urlState.ship] ? urlState.ship : DEFAULT_SHIP_ID;
+  // Drop legacy "Custom Name" share URLs on desk models only — keychain uses it.
+  if (urlState.name === "Custom Name" && bootShipId !== "keychain") {
+    delete urlState.name;
+  }
   ship = SHIPS[bootShipId];
   setShipRadio(ship.id);
   applyEnvelopeForShip();
@@ -2563,9 +2578,12 @@ async function boot() {
   mountPresets(el.hullPresets, el.color);
   mountPresets(el.textPresets, el.textColor);
   applyState(urlState);
-  // Desk models stay blank until typed; keychain defaults to "Starship".
+  // Desk models stay blank until typed; keychain defaults to "Custom Name".
   if (!urlState.name || !String(urlState.name).trim()) {
     el.name.value = ship.defaultName || "";
+  }
+  if (!urlState.color && ship.defaultColor) {
+    el.color.value = ship.defaultColor;
   }
   // Italic is opt-in only (default off). Explicit italic=1 in the URL still works.
   if (el.italic) {
