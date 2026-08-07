@@ -20,13 +20,17 @@ OpenSCAD source + print tips: [GitHub](https://github.com/leedsexplore/starship-
 
 ## Custom name
 
-Empty name + Original CAD @ CORE One 1:200 = the hero hex files **byte-for-byte**. Named exports raise/engrave on the smooth hull. Share presets like `?name=S40` or `?name=IFT-12`. Also on [GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
+Empty name + Original CAD @ CORE One 1:200 = the hero hex files **byte-for-byte**. Named exports raise/engrave on the **smooth** hull (not the hex one-piece). Share presets like `?name=S40` or `?name=IFT-12`. Also on [GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
+
+**Named print tip:** Prefer **Download STL** for a single solid (raised letters are boolean-unioned — no floating parts / empty-layer warnings). **3MF (Hull + Letters)** is for MMU two-color lettering; PrusaSlicer may warn about empty layers on the Letters object — that is normal (letters sit mid-hull). The hull is continuous; export G-code anyway, or use STL for a warning-free single-color print. Supports: under forward flaps only (not “Everywhere” unless you need them).
+
+Want a pocket-size version instead? See the [Starship Keychain with Custom Name](https://www.printables.com/model/1802829) remix (6 cm, Oliver Heisel logo mesh + same browser customizer).
 
 **Printed yours?** [Post a Make](https://www.printables.com/model/1792868) on this model — photos help the next person pick filament and supports.
 
 ## Printing
 
-Nose up · supports under forward flaps only · **0.15–0.20 mm** layers · silver hull + matte black tiles. 1:200 needs Z ≥ 261 mm; use the **1:300** file on A1 mini.
+Nose up · supports under forward flaps only (not “Everywhere” unless you need them) · **0.15–0.20 mm** layers · silver hull + matte black tiles. 1:200 needs Z ≥ 261 mm; use the **1:300** file on A1 mini.
 
 Source: [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
 

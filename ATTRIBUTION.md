@@ -61,6 +61,13 @@ https://creativecommons.org/licenses/by-nc-sa/4.0/
 Credit **Oliver Heisel** when sharing remixed keychain files or prints. Remixes
 must stay under CC BY-NC-SA (share alike). Commercial use is not allowed.
 
+## Libraries (web customizer)
+
+- [three.js](https://threejs.org/) and addons — MIT
+- [three-mesh-bvh](https://github.com/gkjohnson/three-mesh-bvh) / [three-bvh-csg](https://github.com/gkjohnson/three-bvh-csg) — MIT
+- [Manifold](https://github.com/elalish/manifold) (`vendor/manifold-3d`, Apache-2.0) — watertight mesh booleans for named STL export
+- [fflate](https://github.com/101arrowz/fflate) — MIT
+
 ## Fonts
 
 See [fonts/README.md](fonts/README.md). Bundled typefaces are MgOpen/Droid (via three.js) and Google Fonts OFL conversions (via @compai typefaces) for letter extrusion only.

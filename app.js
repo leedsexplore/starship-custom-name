@@ -4,15 +4,22 @@ import { STLLoader } from "three/addons/loaders/STLLoader.js";
 import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
-import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.46";
+import {
+  Brush,
+  Evaluator,
+  ADDITION,
+  SUBTRACTION,
+  HOLLOW_SUBTRACTION,
+} from "three-bvh-csg";
+import Module from "manifold-3d";
+import { build3mf } from "./export3mf.js?v=2.4.47";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.46";
+} from "./version.js?v=2.4.47";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -1846,7 +1853,7 @@ async function rebuildText() {
       if (shipGeometry && shipMesh) {
         await yieldToUi(0);
         const { ship: shipClone, text } = cloneModelSpaceParts();
-        const cut = booleanEngrave(shipClone, text);
+        const cut = await booleanEngrave(shipClone, text);
         shipClone.dispose();
         text.dispose();
         cutOk = applyEngravedCutPreview(cut);
@@ -2300,6 +2307,76 @@ function prepareForCsg(geometry) {
   return geo;
 }
 
+/** Lazy-loaded Manifold WASM — reliable boolean union/subtract on large desk meshes. */
+let manifoldApiPromise = null;
+
+async function ensureManifold() {
+  if (!manifoldApiPromise) {
+    manifoldApiPromise = (async () => {
+      const wasm = await Module();
+      wasm.setup();
+      return wasm;
+    })();
+  }
+  return manifoldApiPromise;
+}
+
+/** Convert Three BufferGeometry → Manifold Mesh (positions only). */
+function geometryToManifoldMesh(geometry, Mesh) {
+  const pos = geometry.attributes.position;
+  const vertProperties = new Float32Array(pos.array);
+  let triVerts;
+  if (geometry.index) {
+    const idx = geometry.index.array;
+    triVerts =
+      idx instanceof Uint32Array ? idx.slice() : new Uint32Array(idx);
+  } else {
+    triVerts = new Uint32Array(vertProperties.length / 3);
+    for (let i = 0; i < triVerts.length; i++) triVerts[i] = i;
+  }
+  const mesh = new Mesh({ numProp: 3, vertProperties, triVerts });
+  mesh.merge();
+  return mesh;
+}
+
+function manifoldMeshToGeometry(mesh) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    "position",
+    new THREE.BufferAttribute(mesh.vertProperties.slice(), 3)
+  );
+  geometry.setIndex(new THREE.BufferAttribute(mesh.triVerts.slice(), 1));
+  geometry.computeVertexNormals();
+  return geometry;
+}
+
+/**
+ * Manifold boolean (union / difference). Throws if inputs are not manifold
+ * or the result fails the printable-mesh check.
+ */
+async function runManifoldBoolean(shipGeo, textGeo, op) {
+  const { Manifold, Mesh } = await ensureManifold();
+  const shipM = new Manifold(geometryToManifoldMesh(shipGeo, Mesh));
+  const textM = new Manifold(geometryToManifoldMesh(textGeo, Mesh));
+  let resultM;
+  try {
+    resultM =
+      op === "union"
+        ? Manifold.union(shipM, textM)
+        : Manifold.difference(shipM, textM);
+    const geo = manifoldMeshToGeometry(resultM.getMesh());
+    if (!isPrintableBooleanCut(geo, shipGeo)) {
+      geo.dispose?.();
+      throw new Error("Manifold result not printable (open edges / shattered mesh)");
+    }
+    return geo;
+  } finally {
+    shipM.delete();
+    textM.delete();
+    resultM?.delete();
+  }
+}
+
 /**
  * Weld by position and count boundary edges. A watertight triangle soup has
  * almost every edge shared by exactly two faces. Post-CSG keychain cuts that
@@ -2343,6 +2420,13 @@ function meshBoundaryStats(geometry, digits = 4) {
   return { open, tris, verts: weld.size };
 }
 
+/** Triangle count — STL triangle soup has 3× position count vs indexed meshes. */
+function geometryTriangleCount(geometry) {
+  if (!geometry?.attributes?.position) return 0;
+  if (geometry.index) return Math.floor(geometry.index.count / 3);
+  return Math.floor(geometry.attributes.position.count / 3);
+}
+
 /** Reject CSG results that will slice as empty layers / floating islands. */
 function isPrintableBooleanCut(geometry, sourceShipGeo) {
   if (!geometry?.attributes?.position) return false;
@@ -2350,18 +2434,18 @@ function isPrintableBooleanCut(geometry, sourceShipGeo) {
   // Stock keychain STL is closed (0 open edges after weld). Allow a little
   // tolerance for logo/detail non-manifold spots; reject shattered cuts.
   if (cut.open > 80) {
-    console.warn("Engraved CSG rejected — too many open edges", cut);
+    console.warn("Boolean result rejected — too many open edges", cut);
     return false;
   }
   if (sourceShipGeo?.attributes?.position) {
-    const srcCount = sourceShipGeo.attributes.position.count;
-    const cutCount = geometry.attributes.position.count;
-    // Shattered booleans often balloon or collapse vertex count oddly; a sane
-    // engrave stays in the same ballpark as the source hull.
-    if (cutCount < srcCount * 0.5 || cutCount > srcCount * 4) {
-      console.warn("Engraved CSG rejected — vertex count out of range", {
-        srcCount,
-        cutCount,
+    const srcTris = geometryTriangleCount(sourceShipGeo);
+    const cutTris = cut.tris;
+    // Shattered booleans often balloon or collapse triangle count oddly; a sane
+    // engrave/union stays in the same ballpark as the source hull.
+    if (srcTris > 0 && (cutTris < srcTris * 0.5 || cutTris > srcTris * 4)) {
+      console.warn("Boolean result rejected — triangle count out of range", {
+        srcTris,
+        cutTris,
       });
       return false;
     }
@@ -2369,34 +2453,48 @@ function isPrintableBooleanCut(geometry, sourceShipGeo) {
   return cut.tris > 100;
 }
 
-function booleanEngrave(shipGeo, textGeo) {
+function runCsg(shipGeo, textGeo, op) {
   const shipBrush = new Brush(prepareForCsg(shipGeo));
   const textBrush = new Brush(prepareForCsg(textGeo));
   shipBrush.updateMatrixWorld(true);
   textBrush.updateMatrixWorld(true);
+  const result = csgEvaluator.evaluate(shipBrush, textBrush, op);
+  const geo = result.geometry;
+  if (!isPrintableBooleanCut(geo, shipGeo)) {
+    geo.dispose?.();
+    throw new Error("CSG result not printable (open edges / shattered mesh)");
+  }
+  return geo;
+}
 
-  const tryOp = (op) => {
-    const result = csgEvaluator.evaluate(shipBrush, textBrush, op);
-    const geo = result.geometry;
-    if (!isPrintableBooleanCut(geo, shipGeo)) {
-      geo.dispose?.();
-      throw new Error("CSG result not printable (open edges / shattered mesh)");
-    }
-    return geo;
-  };
-
+async function booleanEngrave(shipGeo, textGeo) {
   try {
-    return tryOp(SUBTRACTION);
+    return await runManifoldBoolean(shipGeo, textGeo, "difference");
+  } catch (err) {
+    console.warn("Manifold engrave failed; trying three-bvh-csg", err);
+  }
+  try {
+    return runCsg(shipGeo, textGeo, SUBTRACTION);
   } catch (err) {
     console.warn("SUBTRACTION failed, trying HOLLOW_SUBTRACTION", err);
-    return tryOp(HOLLOW_SUBTRACTION);
+    return runCsg(shipGeo, textGeo, HOLLOW_SUBTRACTION);
+  }
+}
+
+/** Fuse raised letters into the hull so STL/single-body exports have no floating parts. */
+async function booleanRaiseUnion(shipGeo, textGeo) {
+  try {
+    return await runManifoldBoolean(shipGeo, textGeo, "union");
+  } catch (err) {
+    console.warn("Manifold union failed; trying three-bvh-csg ADDITION", err);
+    return runCsg(shipGeo, textGeo, ADDITION);
   }
 }
 
 /**
- * @returns {{ mode: 'boolean'|'merged', geometry?: THREE.BufferGeometry, group?: THREE.Group, note: string }}
+ * @returns {Promise<{ mode: 'boolean'|'merged', geometry?: THREE.BufferGeometry, group?: THREE.Group, ship?: THREE.BufferGeometry, text?: THREE.BufferGeometry, note: string }>}
  */
-function buildExportMeshes({ preferBoolean }) {
+async function buildExportMeshes({ preferBoolean }) {
   const scale = modelScale();
   const style = selectedStyle();
   const { ship, text } = cloneModelSpaceParts();
@@ -2411,20 +2509,31 @@ function buildExportMeshes({ preferBoolean }) {
     };
   }
 
-  if (style === "engraved" && preferBoolean) {
+  if (preferBoolean) {
     try {
-      const cut = booleanEngrave(ship, text);
-      applyScaleToGeometry(cut, scale);
-      cut.computeVertexNormals();
+      const fused =
+        style === "engraved"
+          ? await booleanEngrave(ship, text)
+          : await booleanRaiseUnion(ship, text);
+      applyScaleToGeometry(fused, scale);
+      fused.computeVertexNormals();
       ship.dispose();
       text.dispose();
       return {
         mode: "boolean",
-        geometry: cut,
-        note: "Engraved with true boolean subtract.",
+        geometry: fused,
+        note:
+          style === "engraved"
+            ? "Engraved with true boolean subtract."
+            : "Raised letters boolean-unioned into one solid (no floating letter parts).",
       };
     } catch (err) {
-      console.warn("CSG engraving failed; falling back to raised overlay", err);
+      console.warn(
+        style === "engraved"
+          ? "Boolean engraving failed; falling back to raised overlay"
+          : "Boolean union failed; falling back to separate hull + letters",
+        err
+      );
     }
   }
 
@@ -2440,7 +2549,7 @@ function buildExportMeshes({ preferBoolean }) {
   const note =
     style === "engraved"
       ? "Engraved boolean was not watertight — exported hull + raised letters (printable). Prefer Raised style or shallower depth for a clean cut."
-      : "Raised letters overlaid on hull (not boolean-unioned). Prefer 3MF for MMU.";
+      : "Raised letters as a separate object (MMU). Empty-layer warnings on Letters are normal — the hull is continuous; or use STL for a single solid.";
 
   return { mode: "merged", group, ship, text, note };
 }
@@ -2501,13 +2610,16 @@ async function downloadStl() {
     await ensureShipGeometry();
     await yieldToUi(50);
 
-    const preferBoolean = selectedStyle() === "engraved";
-    if (preferBoolean) {
-      setStatus("Boolean engraving… this can take a few seconds on large meshes.");
-      await yieldToUi(80);
-    }
+    // STL is always a single solid when CSG succeeds (engrave subtract / raise union).
+    const preferBoolean = true;
+    setStatus(
+      selectedStyle() === "engraved"
+        ? "Boolean engraving… this can take a few seconds on large meshes."
+        : "Boolean-unioning raised letters… this can take a few seconds on large meshes."
+    );
+    await yieldToUi(80);
 
-    const payload = buildExportMeshes({ preferBoolean });
+    const payload = await buildExportMeshes({ preferBoolean });
     const exporter = new STLExporter();
     let buffer;
     if (payload.mode === "boolean" || payload.geometry) {
@@ -2586,7 +2698,7 @@ async function download3mf() {
     if (style === "engraved") {
       setStatus("Boolean engraving for 3MF… this can take a few seconds.");
       await yieldToUi(80);
-      const payload = buildExportMeshes({ preferBoolean: true });
+      const payload = await buildExportMeshes({ preferBoolean: true });
       if (payload.mode === "boolean") {
         engravedSolid = true;
         hasLetters = true;
@@ -2648,7 +2760,7 @@ async function download3mf() {
       !hasLetters
         ? "3MF downloaded — ship only (enter a name for lettering)."
         : style === "raised"
-          ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU). Preview steel/tiles coloring is separate from this file."
+          ? "3MF downloaded — Hull + Letters for MMU. Empty-layer warnings on Letters are normal; hull is continuous. Use STL for a single solid."
           : engravedSolid
             ? "3MF downloaded — engraved hull is a single solid (recess cut)."
             : "3MF downloaded — engraved cut wasn’t watertight; Hull + Letters as raised overlay (assign extruders for MMU)."
@@ -2728,8 +2840,7 @@ window.__starshipCaptureCover = captureCoverDataUrl;
 window.__starshipExportStl = async function exportStlBuffer() {
   await flushRebuild();
   await ensureShipGeometry();
-  const preferBoolean = selectedStyle() === "engraved";
-  const payload = buildExportMeshes({ preferBoolean });
+  const payload = await buildExportMeshes({ preferBoolean: true });
   const exporter = new STLExporter();
   let buffer;
   if (payload.mode === "boolean" || payload.geometry) {
@@ -2740,7 +2851,13 @@ window.__starshipExportStl = async function exportStlBuffer() {
     payload.ship?.dispose();
     payload.text?.dispose();
   }
-  return buffer;
+  // Normalize to Uint8Array (STLExporter binary returns a DataView).
+  if (buffer instanceof Uint8Array) return buffer;
+  if (buffer instanceof ArrayBuffer) return new Uint8Array(buffer);
+  if (ArrayBuffer.isView(buffer)) {
+    return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+  }
+  return new TextEncoder().encode(String(buffer));
 };
 
 function downloadOpenscadSnippet() {
