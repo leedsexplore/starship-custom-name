@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.24";
+import { build3mf } from "./export3mf.js?v=2.4.30";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.24";
+} from "./version.js?v=2.4.30";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -130,7 +130,8 @@ const SHIPS = {
     bodyCenterX: 0,
     /** Half of body depth after orient (text faces ±Z). */
     hullRadiusZ: 5.6,
-    embedMm: 0.25,
+    /** Cutter starts well outside so CSG cleanly breaks the hull skin. */
+    embedMm: 1.0,
     safeSpanMm: 24,
     hardSpanMm: 30,
     flapZoneYMm: 18,
@@ -679,7 +680,9 @@ function syncBareStainlessControl() {
   if (el.bareStainlessNote) {
     el.bareStainlessNote.hidden = !available;
   }
-}const textMaterial = new THREE.MeshStandardMaterial({
+}
+
+const textMaterial = new THREE.MeshStandardMaterial({
   color: new THREE.Color(el.textColor.value),
   metalness: 0.15,
   roughness: 0.45,
@@ -690,6 +693,27 @@ function syncBareStainlessControl() {
   polygonOffsetUnits: -2,
 });
 
+/**
+ * Preview-only engraved plates. depthTest is off so leftover hull facets cannot
+ * speckled-z-fight the glyphs; STL/3MF export still uses a true boolean cut.
+ */
+const recessMaterial = new THREE.MeshStandardMaterial({
+  color: 0x141414,
+  metalness: 0.05,
+  roughness: 0.9,
+  side: THREE.DoubleSide,
+  depthTest: false,
+  depthWrite: false,
+});
+const inlayMaterial = new THREE.MeshStandardMaterial({
+  color: new THREE.Color(el.textColor.value),
+  metalness: 0.12,
+  roughness: 0.55,
+  side: THREE.DoubleSide,
+  depthTest: false,
+  depthWrite: false,
+});
+
 let font = null;
 let fontGlyphs = new Set();
 let currentFontId = "oswald-bold";
@@ -698,7 +722,10 @@ let fontLoadToken = 0;
 let shipGeometry = null;
 /** Display object: Mesh (legacy) or Group of layered meshes (parametric). */
 let shipMesh = null;
+/** Thick letter solid — used for CSG export / live cut (may be hidden). */
 let textMesh = null;
+/** Thin text-color plate drawn in the engraved cavity for a clean preview. */
+let inlayMesh = null;
 let ready = false;
 let rebuildTimer = 0;
 let lastSpanMm = 0;
@@ -1277,10 +1304,20 @@ function applyColor() {
   shipMaterial.color.set(hull);
   steelMaterial.color.set(hull);
   textMaterial.color.set(el.textColor.value);
+  inlayMaterial.color.set(el.textColor.value);
   // Slight lift on dark letter colors so they stay readable on Signal Red.
   const hsl = { h: 0, s: 0, l: 0 };
   textMaterial.color.getHSL(hsl);
-  textMaterial.emissive.setHex(hsl.l < 0.28 ? 0x222222 : 0x000000);
+  const lift = hsl.l < 0.28 ? 0x222222 : 0x000000;
+  textMaterial.emissive.setHex(lift);
+  inlayMaterial.emissive.setHex(lift);
+  // Thick cutter stays hidden when engraved; inlayMaterial draws the preview.
+  textMaterial.depthWrite = true;
+  textMaterial.polygonOffset = true;
+  textMaterial.polygonOffsetFactor = -1;
+  textMaterial.polygonOffsetUnits = -2;
+  textMaterial.needsUpdate = true;
+  inlayMaterial.needsUpdate = true;
 
   if (bareStainlessOn()) {
     // Whole ship reads as hull stainless — hide heat-tile look (bump + black).
@@ -1453,7 +1490,13 @@ function wrapGeometryToHull(geometry, side, textY, style, acrossBias) {
     v.fromBufferAttribute(pos, i);
     const across = (side === "left" ? -v.x : v.x) + bias;
     const along = v.y;
-    const radial = style === "raised" ? R - ship.embedMm + v.z : R - v.z;
+    // Raised: base digs in, front proud of the hull.
+    // Engraved: cutter starts slightly outside so the opening breaks the
+    // surface, then runs inward (floor at R − proud) — avoids z-fight flush.
+    const radial =
+      style === "raised"
+        ? R - ship.embedMm + v.z
+        : R + ship.embedMm - v.z;
     const theta = across / R;
     const x = ship.bodyCenterX + radial * Math.sin(theta);
     const z = sign * radial * Math.cos(theta);
@@ -1471,7 +1514,8 @@ function placeFlatOnHull(geometry, side, textY, style, acrossBias) {
   const bias =
     acrossBias == null ? Number(ship.markingAcrossMm) || 0 : Number(acrossBias);
   const theta = bias / R;
-  const radial = style === "raised" ? R - ship.embedMm : R;
+  const radial =
+    style === "raised" ? R - ship.embedMm : R + ship.embedMm;
   const mesh = new THREE.Mesh(geometry, textMaterial);
   mesh.position.set(
     ship.bodyCenterX + radial * Math.sin(theta),
@@ -1552,6 +1596,39 @@ function disposeTextMesh() {
   textMesh = null;
 }
 
+function disposeInlayMesh() {
+  if (!inlayMesh) return;
+  modelGroup.remove(inlayMesh);
+  inlayMesh.traverse((obj) => {
+    if (obj.isMesh && obj.geometry) obj.geometry.dispose();
+  });
+  inlayMesh = null;
+}
+
+/**
+ * Flat engraved preview plate (matches the flat CSG cutter used on export).
+ * Drawn without depth test so the intact hull cannot fragment the glyphs.
+ */
+function buildEngravedInlayGeometry(flatThin, side, textY, acrossBias, radialInset) {
+  const R = ship.hullRadiusZ;
+  const geo = flatThin.clone();
+  const sign = side === "right" ? 1 : -1;
+  const bias =
+    acrossBias == null ? Number(ship.markingAcrossMm) || 0 : Number(acrossBias);
+  const theta = bias / R;
+  const radial = R - radialInset;
+  const mesh = new THREE.Mesh(geo);
+  mesh.position.set(
+    ship.bodyCenterX + radial * Math.sin(theta),
+    textY,
+    sign * radial * Math.cos(theta)
+  );
+  mesh.rotation.y = (side === "left" ? Math.PI : 0) - sign * theta;
+  mesh.updateMatrix();
+  geo.applyMatrix4(mesh.matrix);
+  return geo;
+}
+
 /**
  * Placement recipes for the side control.
  * "both" on Original CAD → dual stainless flanks near the tile seams;
@@ -1607,25 +1684,29 @@ function measureSpan(geometry) {
   return Math.max(bb.max.y - bb.min.y, bb.max.x - bb.min.x, 0);
 }
 
-function rebuildText() {
-  if (!font || !ready) return Promise.resolve();
+async function rebuildText() {
+  if (!font || !ready) return;
 
   const proud = Number(el.depth.value);
   const totalDepth = ship.embedMm + proud;
   const side = selectedSide();
   const style = selectedStyle();
   const wrap = el.wrap.checked;
+  // Wrapped thick cutters self-intersect on small radii and break CSG
+  // (volume can even increase). Engrave with a flat cutter; wrap the inlay only.
+  const wrapCutter = wrap && style !== "engraved";
   const { missing, folded, used } = sanitizeName(el.name.value);
   updateGlyphWarn(missing, folded);
 
   disposeTextMesh();
+  disposeInlayMesh();
 
   // Empty name → ship-only preview (no placeholder lettering).
   if (!used.trim()) {
     lastSpanMm = 0;
     updateLengthWarn(0);
     applyModelScale();
-    return Promise.resolve();
+    return;
   }
 
   const flat = buildFlatTextGeometry(
@@ -1646,7 +1727,7 @@ function rebuildText() {
         place.side,
         textY,
         style,
-        wrap,
+        wrapCutter,
         place.across
       )
     );
@@ -1668,9 +1749,73 @@ function rebuildText() {
   }
 
   modelGroup.add(textMesh);
+
+  // Engraved preview: dark recess well + text-color face on the intact hull.
+  // Export still boolean-cuts via the hidden thick textMesh cutter.
+  if (style === "engraved") {
+    textMesh.visible = false;
+    const size = Number(el.size.value);
+    const wellInset = Math.min(Math.max(proud * 0.55, 0.22), 0.45);
+    const faceInset = Math.min(Math.max(proud * 0.25, 0.1), 0.22);
+    const mirrorBoth = side === "both" && placements.length === 1;
+
+    const wellFlat = buildFlatTextGeometry(used, size * 1.08, 0.16);
+    const faceFlat = buildFlatTextGeometry(used, size, 0.12);
+    inlayMesh = new THREE.Group();
+    for (const place of placements) {
+      const wellGeo = buildEngravedInlayGeometry(
+        wellFlat,
+        place.side,
+        textY,
+        place.across,
+        wellInset
+      );
+      const faceGeo = buildEngravedInlayGeometry(
+        faceFlat,
+        place.side,
+        textY,
+        place.across,
+        faceInset
+      );
+      const well = new THREE.Mesh(wellGeo, recessMaterial);
+      well.renderOrder = 2;
+      const face = new THREE.Mesh(faceGeo, inlayMaterial);
+      face.renderOrder = 3;
+      inlayMesh.add(well);
+      inlayMesh.add(face);
+      if (mirrorBoth) {
+        const w2 = new THREE.Mesh(
+          mirrorGeometryAcrossShipYZ(wellGeo.clone(), textY),
+          recessMaterial
+        );
+        w2.renderOrder = 2;
+        const f2 = new THREE.Mesh(
+          mirrorGeometryAcrossShipYZ(faceGeo.clone(), textY),
+          inlayMaterial
+        );
+        f2.renderOrder = 3;
+        inlayMesh.add(w2);
+        inlayMesh.add(f2);
+      }
+    }
+    wellFlat.dispose();
+    faceFlat.dispose();
+    modelGroup.add(inlayMesh);
+    applyColor();
+  } else {
+    textMesh.visible = true;
+    applyColor();
+  }
+
   applyModelScale();
-  return Promise.resolve();
 }
+
+/** Debug hook for engraved preview state (automation / local checks). */
+window.__starshipEngraveDebug = () => ({
+  style: selectedStyle(),
+  textVisible: textMesh ? textMesh.visible : null,
+  inlayVisible: inlayMesh ? inlayMesh.visible : null,
+});
 
 function scheduleRebuild() {
   updateLabels();
@@ -2533,6 +2678,7 @@ async function fitTextToHull() {
 }
 
 function onControlChange() {
+  applyColor();
   scheduleRebuild().then(() => writeUrl());
 }
 
