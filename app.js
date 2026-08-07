@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.23";
+import { build3mf } from "./export3mf.js?v=2.4.24";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.23";
+} from "./version.js?v=2.4.24";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -146,6 +146,8 @@ const SHIPS = {
     defaultName: "Custom Name",
     /** Fun default hull color for the keychain remix. */
     defaultColor: "#ff6eb4",
+    /** Recessed like the molded SpaceX logo on the opposite flank. */
+    defaultStyle: "engraved",
     markingAcrossMm: 0,
     orient(geometry) {
       geometry.rotateX(-Math.PI / 2); // nose +Z → +Y
@@ -1133,6 +1135,17 @@ async function applyShipSelection(shipId, { retune = true } = {}) {
         el.color.value = ship.defaultColor;
       } else if (ship.layers?.length) {
         el.color.value = "#c8ced6";
+      }
+      if (ship.defaultStyle === "raised" || ship.defaultStyle === "engraved") {
+        const styleRadio = document.querySelector(
+          `input[name="style"][value="${ship.defaultStyle}"]`
+        );
+        if (styleRadio) styleRadio.checked = true;
+      } else if (ship.id !== "keychain") {
+        const raised = document.querySelector(
+          'input[name="style"][value="raised"]'
+        );
+        if (raised) raised.checked = true;
       }
       if (ship.defaultName) {
         el.name.value = ship.defaultName;
@@ -2564,6 +2577,15 @@ async function boot() {
       `input[name="side"][value="${side}"]`
     );
     if (sideRadio) sideRadio.checked = true;
+  }
+  if (
+    urlState.style == null &&
+    (ship.defaultStyle === "raised" || ship.defaultStyle === "engraved")
+  ) {
+    const styleRadio = document.querySelector(
+      `input[name="style"][value="${ship.defaultStyle}"]`
+    );
+    if (styleRadio) styleRadio.checked = true;
   }
   // Classic remix must start at CORE One % (~215), not the HTML default 100.
   // Keychain stays native (100%).
