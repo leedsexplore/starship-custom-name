@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.38";
+import { build3mf } from "./export3mf.js?v=2.4.39";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.38";
+} from "./version.js?v=2.4.39";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -693,18 +693,6 @@ const textMaterial = new THREE.MeshStandardMaterial({
   polygonOffsetUnits: -2,
 });
 
-/**
- * Preview-only engraved letters. MeshBasicMaterial + no depth test = solid
- * glyphs that cannot z-fight the hull. STL/3MF still boolean-cut.
- */
-const inlayMaterial = new THREE.MeshBasicMaterial({
-  color: new THREE.Color(el.textColor.value),
-  side: THREE.DoubleSide,
-  depthTest: false,
-  depthWrite: false,
-  toneMapped: false,
-});
-
 let font = null;
 let fontGlyphs = new Set();
 let currentFontId = "oswald-bold";
@@ -715,8 +703,6 @@ let shipGeometry = null;
 let shipMesh = null;
 /** Thick letter solid — used for CSG export / live cut (may be hidden). */
 let textMesh = null;
-/** Thin text-color plate drawn in the engraved cavity for a clean preview. */
-let inlayMesh = null;
 /** True when shipMesh.geometry is a boolean-cut preview (not shipGeometry). */
 let engravedCutActive = false;
 let ready = false;
@@ -1301,7 +1287,6 @@ function applyColor() {
   shipMaterial.color.set(hull);
   steelMaterial.color.set(hull);
   textMaterial.color.set(el.textColor.value);
-  inlayMaterial.color.set(el.textColor.value);
   // Slight lift on dark letter colors so they stay readable on Signal Red.
   const hsl = { h: 0, s: 0, l: 0 };
   textMaterial.color.getHSL(hsl);
@@ -1311,7 +1296,6 @@ function applyColor() {
   textMaterial.polygonOffsetFactor = -1;
   textMaterial.polygonOffsetUnits = -2;
   textMaterial.needsUpdate = true;
-  inlayMaterial.needsUpdate = true;
 
   if (bareStainlessOn()) {
     // Whole ship reads as hull stainless — hide heat-tile look (bump + black).
@@ -1590,15 +1574,6 @@ function disposeTextMesh() {
   textMesh = null;
 }
 
-function disposeInlayMesh() {
-  if (!inlayMesh) return;
-  modelGroup.remove(inlayMesh);
-  inlayMesh.traverse((obj) => {
-    if (obj.isMesh && obj.geometry) obj.geometry.dispose();
-  });
-  inlayMesh = null;
-}
-
 function restoreShipDisplayGeometry() {
   if (!shipMesh?.isMesh || !shipGeometry) {
     engravedCutActive = false;
@@ -1629,39 +1604,6 @@ function applyEngravedCutPreview(cutGeo) {
   shipMesh.geometry = cutGeo;
   engravedCutActive = true;
   return true;
-}
-
-/**
- * Pull a flat engraved cutter (model-space) into the pocket along ±Z so the
- * preview fill is the exact boolean operand, just seated inside the hull.
- */
-function pullEngravedCutterIntoPocket(geometry, side, pullMm) {
-  const signZ = side === "right" ? -1 : 1;
-  const pos = geometry.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    pos.setZ(i, pos.getZ(i) + signZ * pullMm);
-  }
-  pos.needsUpdate = true;
-  return geometry;
-}
-
-/** Grow glyphs in the letter plane to cover the curved hull opening rim. */
-function inflateLetterPlane(geometry, scale = 1.08) {
-  const pos = geometry.attributes.position;
-  const box = new THREE.Box3().setFromBufferAttribute(pos);
-  const c = box.getCenter(new THREE.Vector3());
-  for (let i = 0; i < pos.count; i++) {
-    pos.setXYZ(
-      i,
-      c.x + (pos.getX(i) - c.x) * scale,
-      c.y + (pos.getY(i) - c.y) * scale,
-      pos.getZ(i)
-    );
-  }
-  pos.needsUpdate = true;
-  if (geometry.attributes.normal) geometry.deleteAttribute("normal");
-  geometry.computeVertexNormals();
-  return geometry;
 }
 
 /**
@@ -1734,7 +1676,6 @@ async function rebuildText() {
   updateGlyphWarn(missing, folded);
 
   disposeTextMesh();
-  disposeInlayMesh();
 
   // Empty name → ship-only preview (no placeholder lettering).
   if (!used.trim()) {
@@ -1786,49 +1727,24 @@ async function rebuildText() {
 
   modelGroup.add(textMesh);
 
-  // Engraved: boolean-cut the hull, then reuse the exact cutter mesh as the
-  // black fill (pulled into the pocket) so fill and recess cannot drift apart.
+  // Engraved: boolean-cut only — same-color recess like the molded logo.
+  // (No separate fill mesh; STL/3MF still use this cutter for the true cut.)
   if (style === "engraved") {
     textMesh.visible = false;
-    let cutterGeo = null;
     if (shipGeometry && shipMesh?.isMesh && !ship.layers?.length) {
       try {
         await yieldToUi(0);
         const { ship: shipClone, text } = cloneModelSpaceParts();
         const cut = booleanEngrave(shipClone, text);
         shipClone.dispose();
+        text.dispose();
         applyEngravedCutPreview(cut);
-        cutterGeo = text;
       } catch (err) {
         console.warn("Engraved cut preview failed", err);
         restoreShipDisplayGeometry();
       }
     } else {
       restoreShipDisplayGeometry();
-    }
-
-    if (cutterGeo) {
-      // Cancel the cutter's outside overhang so the fill mouth sits in the
-      // surface opening, then inflate XY to cover the curved-hull rim.
-      const pull = ship.embedMm;
-      if (side === "both") {
-        const pos = cutterGeo.attributes.position;
-        for (let i = 0; i < pos.count; i++) {
-          const z = pos.getZ(i);
-          pos.setZ(i, z + (z >= 0 ? -pull : pull));
-        }
-        pos.needsUpdate = true;
-      } else {
-        pullEngravedCutterIntoPocket(
-          cutterGeo,
-          side === "right" ? "right" : "left",
-          pull
-        );
-      }
-      inflateLetterPlane(cutterGeo, 1.1);
-      inlayMesh = new THREE.Mesh(cutterGeo, inlayMaterial);
-      inlayMesh.renderOrder = 10;
-      modelGroup.add(inlayMesh);
     }
     applyColor();
   } else {
@@ -1844,7 +1760,7 @@ async function rebuildText() {
 window.__starshipEngraveDebug = () => ({
   style: selectedStyle(),
   textVisible: textMesh ? textMesh.visible : null,
-  inlayVisible: inlayMesh ? inlayMesh.visible : null,
+  cutActive: engravedCutActive,
 });
 
 function scheduleRebuild() {
