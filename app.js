@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.44";
+import { build3mf } from "./export3mf.js?v=2.4.45";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.44";
+} from "./version.js?v=2.4.45";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -1857,11 +1857,14 @@ async function rebuildText() {
     }
     if (!cutOk) {
       restoreShipDisplayGeometry();
-      // Fallback so Original CAD never shows a blank name if CSG fails.
+      // Fallback so the name never disappears if CSG fails / is rejected.
       textMesh.visible = true;
-      if (loadedSolidForPreview) {
-        setStatus("Engraved preview unavailable — export STL still cuts the name.", true);
-      }
+      setStatus(
+        ship.id === "keychain"
+          ? "Engraved cut isn’t watertight on this mesh — showing raised letters. Export uses the same printable overlay (or pick Raised)."
+          : "Engraved preview unavailable — showing raised letters. Export tries a boolean cut, then the same overlay fallback.",
+        true
+      );
     } else if (loadedSolidForPreview) {
       setStatus("Engraved preview ready.");
     }
