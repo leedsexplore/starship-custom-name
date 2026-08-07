@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.45";
+import { build3mf } from "./export3mf.js?v=2.4.46";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.45";
+} from "./version.js?v=2.4.46";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -2598,11 +2598,11 @@ async function download3mf() {
           },
         ];
       } else if (payload.text) {
-        // Fallback: two objects so slicer can still assign materials / boolean.
+        // Watertight boolean failed — same printable raised overlay as STL fallback.
         hasLetters = true;
         parts = [
           { name: "Hull", geometry: payload.ship, color: hullColor },
-          { name: "Letters (cutter)", geometry: payload.text, color: letterColor },
+          { name: "Letters", geometry: payload.text, color: letterColor },
         ];
       } else {
         // No name entered — merged payload only carries the hull geometry.
@@ -2613,7 +2613,7 @@ async function download3mf() {
           ? "Packing ship-only 3MF…"
           : engravedSolid
             ? "Packing engraved 3MF…"
-            : "Packing 3MF (inset fallback)…"
+            : "Packing 3MF (raised overlay — engraved cut wasn’t watertight)…"
       );
     } else {
       const { ship: shipGeo, text } = cloneModelSpaceParts();
@@ -2651,7 +2651,7 @@ async function download3mf() {
           ? "3MF downloaded — assign Hull / Letters to extruders in your slicer (MMU). Preview steel/tiles coloring is separate from this file."
           : engravedSolid
             ? "3MF downloaded — engraved hull is a single solid (recess cut)."
-            : "3MF downloaded — boolean failed; Hull + Letters (cutter) for slicer boolean."
+            : "3MF downloaded — engraved cut wasn’t watertight; Hull + Letters as raised overlay (assign extruders for MMU)."
     );
     showPostDownloadCta(true);
   } catch (err) {
