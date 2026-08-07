@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.39";
+import { build3mf } from "./export3mf.js?v=2.4.40";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.39";
+} from "./version.js?v=2.4.40";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -475,6 +475,7 @@ const el = {
   depth: document.getElementById("depth"),
   scale: document.getElementById("scale"),
   wrap: document.getElementById("wrap"),
+  reverseDir: document.getElementById("reverse-dir"),
   italic: document.getElementById("italic"),
   bareStainless: document.getElementById("bare-stainless"),
   bareStainlessField: document.getElementById("bare-stainless-field"),
@@ -1432,9 +1433,15 @@ function buildFlatTextGeometry(text, size, extrudeMm) {
   // Letters run along the hull: first glyph toward the nose (+Y), last toward
   // the engines (−Y). Letter height along +X; extrude +Z.
   geometry.rotateZ(-Math.PI / 2);
+  // Reverse: first glyph toward engines (−Y), letters upright for engines→nose.
+  if (el.reverseDir?.checked) {
+    geometry.rotateZ(Math.PI);
+  }
   // Flight-style italic: slant tops toward the nose (+Y), matching S40 FS-13.
   if (el.italic?.checked) {
-    applyFlightItalicShear(geometry);
+    // After reverse, letter tops sit on −X — flip shear sign so they still
+    // lean toward the nose.
+    applyFlightItalicShear(geometry, el.reverseDir?.checked ? -1 : 1);
   }
   return geometry;
 }
@@ -1442,12 +1449,13 @@ function buildFlatTextGeometry(text, size, extrudeMm) {
 /** ~12° shear — bold stencil look without needing an italic typeface file. */
 const FLIGHT_ITALIC_SHEAR = 0.22;
 
-function applyFlightItalicShear(geometry) {
+function applyFlightItalicShear(geometry, sign = 1) {
   const pos = geometry.attributes.position;
   const v = new THREE.Vector3();
+  const k = FLIGHT_ITALIC_SHEAR * (sign < 0 ? -1 : 1);
   for (let i = 0; i < pos.count; i++) {
     v.fromBufferAttribute(pos, i);
-    pos.setXYZ(i, v.x, v.y + FLIGHT_ITALIC_SHEAR * v.x, v.z);
+    pos.setXYZ(i, v.x, v.y + k * v.x, v.z);
   }
   pos.needsUpdate = true;
 }
@@ -1982,6 +1990,7 @@ function readState() {
     side: selectedSide(),
     style: selectedStyle(),
     wrap: el.wrap.checked ? "1" : "0",
+    reverse: el.reverseDir?.checked ? "1" : "0",
     italic: el.italic?.checked ? "1" : "0",
     bare: el.bareStainless?.checked ? "1" : "0",
   };
@@ -2032,6 +2041,10 @@ function applyState(state) {
   }
   if (state.wrap === "0" || state.wrap === "false") el.wrap.checked = false;
   if (state.wrap === "1" || state.wrap === "true") el.wrap.checked = true;
+  if (el.reverseDir) {
+    el.reverseDir.checked =
+      state.reverse === "1" || state.reverse === "true";
+  }
   if (el.italic) {
     // Default OFF. Only enable when the share URL explicitly asks for italic=1
     // (old bookmarks from when italic was the default must not stick).
@@ -2064,6 +2077,7 @@ function stateFromUrl() {
     "side",
     "style",
     "wrap",
+    "reverse",
     "italic",
     "bare",
   ]) {
@@ -2087,6 +2101,7 @@ function writeUrl(replace = true) {
   q.set("side", s.side);
   q.set("style", s.style);
   q.set("wrap", s.wrap);
+  if (s.reverse === "1") q.set("reverse", "1");
   if (s.italic === "1") q.set("italic", "1");
   if (s.bare === "1") q.set("bare", "1");
   const url = `${window.location.pathname}?${q.toString()}`;
@@ -2741,6 +2756,7 @@ async function boot() {
     });
   }
   el.wrap.addEventListener("change", onControlChange);
+  el.reverseDir?.addEventListener("change", onControlChange);
   el.italic?.addEventListener("change", onControlChange);
   el.bareStainless?.addEventListener("change", () => {
     applyColor();
