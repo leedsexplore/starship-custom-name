@@ -16,23 +16,42 @@ This is a **print-first desk model**, not a rivet-count replica kit: hull, flaps
 
 The numbers are **scale**, not version: **1:200** = desk hero for CORE One / MK4 / P1S; **1:300** = smaller print for short Z. Other scales via the [customizer](https://leedsexplore.github.io/starship-custom-name/).
 
-OpenSCAD source + print tips: [GitHub](https://github.com/leedsexplore/starship-custom-name).
+## Recommended settings (start here)
+
+| Setting | Recommendation |
+|--------|----------------|
+| Orientation | **Nose up**, engines flush on the bed |
+| Supports | **Forward flaps only** — paint-on or organic/tree under the upper flaps. Do **not** use Supports Everywhere (wastes hours and scars the hull) |
+| Layer height | **0.15 mm** for crisp hex grooves · **0.20 mm** if you want a faster desk print |
+| Walls / infill | **3 walls** · **15% gyroid** (cubic OK) |
+| Nozzle | **0.4 mm** |
+| Filament | **PLA** for easy detail · **PETG** if the desk model will be handled a lot |
+| Colors | Silver / steel hull · matte black heat shield + Raptors |
+| Bed / Z | 1:200 needs **Z ≥ 261 mm** · shorter printers → **1:300** file |
+
+Expect roughly **~60–80 g** filament and a few hours at 0.20 mm on CORE One / P1S (more with MMU or 0.15 mm). Aft flaps sit on the plate — they need no support.
 
 ## Custom name
 
-Empty name + Original CAD @ CORE One 1:200 = the hero hex files **byte-for-byte**. Named exports default to the **same embossed hex hull** (toggle “Embossed hex tiles in download”; off = faster smooth CAD). Share presets like `?name=S40` or `?name=IFT-12`. Also on [GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
+1. Open the [customizer](https://leedsexplore.github.io/starship-custom-name/)
+2. Leave **Embossed hex tiles in download** on (default)
+3. Enter your name · style **Raised** · download **STL** for a single solid (letters boolean-unioned into the hex hull)
 
-**Named print tip:** Prefer **Download STL** for a single solid (raised letters are boolean-unioned onto the hex or smooth hull — no floating parts / empty-layer warnings). **3MF (Hull + Letters)** is for MMU two-color lettering; PrusaSlicer may warn about empty layers on the Letters object — that is normal (letters sit mid-hull). The hull is continuous; export G-code anyway, or use STL for a warning-free single-color print. Supports: under forward flaps only (not “Everywhere” unless you need them).
+Empty name @ Original CAD 1:200 = these listing files **byte-for-byte**. Named exports use the **same embossed hex geometry** unless you turn hex off (faster smooth CAD) or enable Bare stainless.
 
-Want a pocket-size version instead? See the [Starship Keychain with Custom Name](https://www.printables.com/model/1802829) remix (6 cm, Oliver Heisel logo mesh + same browser customizer).
+**STL vs 3MF:** Prefer **STL** for one-color named prints (no empty-layer warnings). Use **3MF (Hull + Letters)** only when you want MMU/AMS letter colors — PrusaSlicer may warn about empty layers on Letters; that is normal (glyphs sit mid-hull). The hull is continuous; export G-code or switch to STL.
 
-**Printed yours?** [Post a Make](https://www.printables.com/model/1792868) on this model — photos help the next person pick filament and supports.
+Share presets: `?name=S40`, `?name=IFT-12`, `?name=Noah`. Also on [GitHub Releases](https://github.com/leedsexplore/starship-custom-name/releases).
 
-## Printing
+Want a pocket-size version? [Starship Keychain with Custom Name](https://www.printables.com/model/1802829) (6 cm, Oliver Heisel logo mesh + same customizer).
 
-Nose up · supports under forward flaps only (not “Everywhere” unless you need them) · **0.15–0.20 mm** layers · silver hull + matte black tiles. 1:200 needs Z ≥ 261 mm; use the **1:300** file on A1 mini.
+**Printed yours?** [Post a Make](https://www.printables.com/model/1792868) — photos of supports and filament choices help the next person.
 
-Source: [github.com/leedsexplore/starship-custom-name](https://github.com/leedsexplore/starship-custom-name)
+## Printer notes
+
+- **Prusa CORE One / MK4 / XL:** true 1:200 fits; ~9.5 mm Z margin on CORE One. MMU: map stainless + heat-shield bodies (or Hull + Letters from a named 3MF).
+- **Bambu P1S / X1C / A1:** same; AMS for two-color. A1 mini → **1:300** one-piece.
+- OpenSCAD / source: [GitHub](https://github.com/leedsexplore/starship-custom-name)
 
 ## License
 
