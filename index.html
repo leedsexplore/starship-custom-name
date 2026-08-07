@@ -18,7 +18,7 @@
       content="https://leedsexplore.github.io/starship-custom-name/"
     />
     <link rel="canonical" href="https://leedsexplore.github.io/starship-custom-name/" />
-    <link rel="stylesheet" href="styles.css?v=2.4.47" />
+    <link rel="stylesheet" href="styles.css?v=2.4.48" />
   </head>
   <body>
     <div id="app">
@@ -26,7 +26,7 @@
         <header class="brand">
           <p class="eyebrow">
             Your name on Starship
-            <span class="version" id="app-version" aria-label="App version">v2.4.47</span>
+            <span class="version" id="app-version" aria-label="App version">v2.4.48</span>
           </p>
           <h1>Starship Custom Name</h1>
           <p class="lede">
@@ -212,6 +212,15 @@
             downloads use the smooth one-piece mesh instead of the hex Printables files.
           </p>
 
+          <label class="field check" id="hex-tiles-export-field">
+            <input id="hex-tiles-export" type="checkbox" checked />
+            <span>Embossed hex tiles in download</span>
+          </label>
+          <p class="field-note" id="hex-tiles-export-note">
+            Named STL/3MF use the Printables hex one-piece (~36 MB, real tile grooves).
+            Off = faster smooth CAD mesh. Preview always shows the layered hex look.
+          </p>
+
           <label class="field">
             <span>Letter size <em id="size-label">3.5 mm</em></span>
             <input id="size" type="range" min="2" max="14" step="0.1" value="3.5" />
@@ -262,8 +271,9 @@
             3MF is Hull + Letters. MMU 3MF is 1:200 only.
           </p>
           <p class="field-note" id="export-path-note" hidden>
-            Named export uses the smooth CAD mesh so lettering/CSG stays reliable.
-            Hex tile plates are in the empty-name Printables files (or GitHub Releases).
+            Named download uses the embossed hex heat shield (same geometry as the
+            empty-name Printables file). First load may fetch ~36 MB. Turn off
+            “Embossed hex tiles” for the faster smooth CAD mesh.
           </p>
 
           <div class="actions">
@@ -318,7 +328,7 @@
                 href="?ship=parametric&amp;name=S40&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=67&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/s40.png?v=2.4.47"
+                  src="./assets/named-covers/thumbs/s40.png?v=2.4.48"
                   width="160"
                   height="160"
                   alt="S40 cover"
@@ -331,7 +341,7 @@
                 href="?ship=parametric&amp;name=S33&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=67&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/s33.png?v=2.4.47"
+                  src="./assets/named-covers/thumbs/s33.png?v=2.4.48"
                   width="160"
                   height="160"
                   alt="S33 cover"
@@ -344,7 +354,7 @@
                 href="?ship=parametric&amp;name=IFT-12&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=70&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/ift-12.png?v=2.4.47"
+                  src="./assets/named-covers/thumbs/ift-12.png?v=2.4.48"
                   width="160"
                   height="160"
                   alt="IFT-12 cover"
@@ -357,7 +367,7 @@
                 href="?ship=parametric&amp;name=Starship&amp;side=both&amp;style=raised&amp;scale=100&amp;size=3.5&amp;pos=72&amp;text=1c1c1c&amp;font=oswald-bold"
               >
                 <img
-                  src="./assets/named-covers/thumbs/starship.png?v=2.4.47"
+                  src="./assets/named-covers/thumbs/starship.png?v=2.4.48"
                   width="160"
                   height="160"
                   alt="Starship cover"
@@ -387,7 +397,7 @@
               rel="noopener"
               >source</a
             >
-            · <span id="footer-version">v2.4.47</span>)
+            · <span id="footer-version">v2.4.48</span>)
           </p>
           <p>
             Printables:
@@ -478,6 +488,6 @@
         }
       }
     </script>
-    <script type="module" src="app.js?v=2.4.47"></script>
+    <script type="module" src="app.js?v=2.4.48"></script>
   </body>
 </html>

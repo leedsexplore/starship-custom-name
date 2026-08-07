@@ -1,6 +1,6 @@
 # Starship Custom Name
 
-**v2.4.47** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
+**v2.4.48** · by [David Leeds](https://github.com/leedsexplore) ([@leedsexplore](https://github.com/leedsexplore))
 
 **North star:** the Starship with *your* name on it — a one-piece 1:200 desk print,
 real embossed hex heat tiles, and a free web customizer. Not a rivet-count replica kit.
@@ -37,10 +37,11 @@ See [ATTRIBUTION.md](ATTRIBUTION.md) for details.
 4. Download:
    - **Empty name + Original CAD at 100%** — exact Printables hex one-piece STL /
      hex MMU 3MF (byte-identical to the listing files).
-   - **With a name — STL** — engraved uses a true boolean subtract when watertight (keychain often falls back to raised overlay). Raised overlays
-     letters on the smooth hull (prefer **3MF** for clean multi-material).
-   - **With a name — 3MF (Hull + Letters)** — raised: separate objects for lettering
-     MMU. Engraved: booleaned solid (or Hull + cutter fallback if CSG fails).
+   - **With a name — STL** — defaults to the **embossed hex** one-piece + boolean-unioned
+     letters (`Embossed hex tiles in download`; off = faster smooth CAD). Engraved uses
+     a true boolean subtract when watertight (keychain often falls back to raised).
+   - **With a name — 3MF (Hull + Letters)** — raised: hex or smooth hull + separate Letters
+     for MMU. Engraved: booleaned solid (or Hull + letters fallback if CSG fails).
    - **PNG cover** — square full-ship snapshot for Printables gallery images.
    - **OpenSCAD params** *(optional)* — settings snippet for the advanced flat path in `openscad/` (GitHub only; not needed for most users).
 5. Slice and print nose-up. The parametric ship at 100% is already true 1:200
@@ -62,6 +63,7 @@ Shareable URLs look like:
 | Reverse / mirror | `reverse=1` engines→nose · `mirror=1` flips letters left↔right from the side |
 | Wrap | Web-only cylindrical bend (raised lettering; engraved uses a flat cutter) |
 | Bare stainless | `bare=1` — Original CAD preview paints the whole ship stainless (no heat-tile look); empty-name downloads use the smooth mesh |
+| Embossed hex download | Default on for Original CAD named exports (`hex=0` to use the smooth CAD mesh instead) |
 
 ### Run locally
 

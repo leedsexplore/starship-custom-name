@@ -12,14 +12,14 @@ import {
   HOLLOW_SUBTRACTION,
 } from "three-bvh-csg";
 import Module from "manifold-3d";
-import { build3mf } from "./export3mf.js?v=2.4.47";
+import { build3mf } from "./export3mf.js?v=2.4.48";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.47";
+} from "./version.js?v=2.4.48";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -494,6 +494,9 @@ const el = {
   bareStainless: document.getElementById("bare-stainless"),
   bareStainlessField: document.getElementById("bare-stainless-field"),
   bareStainlessNote: document.getElementById("bare-stainless-note"),
+  hexTilesExport: document.getElementById("hex-tiles-export"),
+  hexTilesExportField: document.getElementById("hex-tiles-export-field"),
+  hexTilesExportNote: document.getElementById("hex-tiles-export-note"),
   wrapNote: document.getElementById("wrap-note"),
   textColorHint: document.getElementById("text-color-hint"),
   textColorNote: document.getElementById("text-color-note"),
@@ -714,6 +717,21 @@ function syncBareStainlessControl() {
   }
   if (el.bareStainlessNote) {
     el.bareStainlessNote.hidden = !available;
+  }
+  syncHexTilesExportControl();
+}
+
+function syncHexTilesExportControl() {
+  const available = Boolean(ship.layers?.length);
+  const bare = bareStainlessOn();
+  if (el.hexTilesExport) {
+    el.hexTilesExport.disabled = !available || bare;
+  }
+  if (el.hexTilesExportField) {
+    el.hexTilesExportField.hidden = !available;
+  }
+  if (el.hexTilesExportNote) {
+    el.hexTilesExportNote.hidden = !available;
   }
 }
 
@@ -1019,6 +1037,7 @@ function applyEnvelopeForShip() {
 }
 
 const shipGeometryCache = new Map();
+const hexShipGeometryCache = new Map();
 const shipLayerCache = new Map();
 
 async function loadShipGeometry(shipDef) {
@@ -1030,6 +1049,30 @@ async function loadShipGeometry(shipDef) {
   shipDef.orient(geometry);
   geometry.computeVertexNormals();
   shipGeometryCache.set(key, geometry);
+  return geometry;
+}
+
+/**
+ * Printables embossed-hex one-piece (local asset, or Release on slim Pages).
+ * Cached separately from the smooth CSG solid — ~36 MB / ~726k tris.
+ */
+async function ensureHexShipGeometry(shipDef = ship) {
+  const key = `${shipDef.id}-hex`;
+  if (hexShipGeometryCache.has(key)) {
+    return hexShipGeometryCache.get(key);
+  }
+  const loader = new STLLoader();
+  let geometry;
+  try {
+    geometry = await loader.loadAsync(PRINTABLES_HEX_STL_LOCAL);
+  } catch (err) {
+    console.warn("Local hex STL missing; fetching Release", err);
+    setStatus("Fetching embossed hex solid from GitHub Releases (~36 MB)…");
+    geometry = await loader.loadAsync(PRINTABLES_HEX_STL_REMOTE);
+  }
+  shipDef.orient(geometry);
+  geometry.computeVertexNormals();
+  hexShipGeometryCache.set(key, geometry);
   return geometry;
 }
 
@@ -2009,6 +2052,30 @@ function hasHullName() {
   return Boolean(el.name.value.trim());
 }
 
+/** Named Original CAD exports use embossed hex unless bare/smooth opted out. */
+function wantsHexNamedExport() {
+  return (
+    ship.id === "parametric" &&
+    hasHullName() &&
+    !bareStainlessOn() &&
+    Boolean(el.hexTilesExport?.checked)
+  );
+}
+
+/**
+ * Hull solid for named STL/3MF/CSG. Hex is lazy-loaded; smooth uses the
+ * existing combined CAD mesh. Does not swap the layered preview.
+ */
+async function resolveExportHullGeometry() {
+  if (wantsHexNamedExport()) {
+    setStatus("Loading embossed hex solid (~36 MB)…");
+    await yieldToUi(40);
+    return { geometry: await ensureHexShipGeometry(), hex: true };
+  }
+  await ensureShipGeometry();
+  return { geometry: shipGeometry, hex: false };
+}
+
 /**
  * Empty-name Original CAD at CORE One 1:200 downloads the exact Printables
  * hex files. At 1:250 / 1:300, downloads the same hex mesh uniformly scaled
@@ -2084,16 +2151,28 @@ function updateDownloadLabels() {
     el.download.textContent = "Download STL (smooth stainless)";
     el.download3mf.textContent = "Download 3MF (smooth stainless)";
     el.download3mf.disabled = false;
+  } else if (wantsHexNamedExport()) {
+    el.download.textContent = "Download STL (hex + name)";
+    el.download3mf.textContent = "Download 3MF (hex Hull + Letters)";
+    el.download3mf.disabled = false;
+  } else if (ship.id === "parametric" && hasHullName()) {
+    el.download.textContent = "Download STL (smooth + name)";
+    el.download3mf.textContent = "Download 3MF (smooth Hull + Letters)";
+    el.download3mf.disabled = false;
   } else {
     el.download.textContent = "Download STL";
     el.download3mf.textContent = "Download 3MF (Hull + Letters)";
     el.download3mf.disabled = false;
   }
   if (el.exportPathNote) {
-    // Show when Original CAD has a name (or non-matching Printables scale).
-    el.exportPathNote.hidden = !(
-      ship.id === "parametric" && !printables && !miniDenom
-    );
+    const namedParametric =
+      ship.id === "parametric" && !printables && !miniDenom && hasHullName();
+    el.exportPathNote.hidden = !namedParametric;
+    if (namedParametric && el.exportPathNote) {
+      el.exportPathNote.textContent = wantsHexNamedExport()
+        ? "Named download uses the embossed hex heat shield (same geometry as the empty-name Printables file). First load may fetch ~36 MB. Turn off “Embossed hex tiles” for the faster smooth CAD mesh."
+        : "Named export uses the smooth CAD mesh (faster). Turn on “Embossed hex tiles in download” for Printables-matching tile grooves.";
+    }
   }
 }
 
@@ -2115,6 +2194,8 @@ function readState() {
     mirror: el.mirrorLetters?.checked ? "1" : "0",
     italic: el.italic?.checked ? "1" : "0",
     bare: el.bareStainless?.checked ? "1" : "0",
+    // Default ON for Original CAD — only persist when explicitly off.
+    hex: el.hexTilesExport?.checked === false ? "0" : "1",
   };
 }
 
@@ -2181,6 +2262,14 @@ function applyState(state) {
     el.bareStainless.checked =
       state.bare === "1" || state.bare === "true";
   }
+  if (el.hexTilesExport) {
+    // Default ON. Only clear when the share URL explicitly says hex=0.
+    if (state.hex === "0" || state.hex === "false") {
+      el.hexTilesExport.checked = false;
+    } else if (state.hex === "1" || state.hex === "true") {
+      el.hexTilesExport.checked = true;
+    }
+  }
   syncBareStainlessControl();
   updateLabels();
   applyModelScale();
@@ -2207,6 +2296,7 @@ function stateFromUrl() {
     "mirror",
     "italic",
     "bare",
+    "hex",
   ]) {
     if (q.has(key)) state[key] = q.get(key);
   }
@@ -2232,6 +2322,7 @@ function writeUrl(replace = true) {
   if (s.mirror === "1") q.set("mirror", "1");
   if (s.italic === "1") q.set("italic", "1");
   if (s.bare === "1") q.set("bare", "1");
+  if (s.hex === "0") q.set("hex", "0");
   const url = `${window.location.pathname}?${q.toString()}`;
   if (replace) history.replaceState(null, "", url);
   return `${window.location.origin}${url}`;
@@ -2251,15 +2342,15 @@ function yieldToUi(ms = 30) {
 /**
  * Ship + text geometries in model space (pre-scale), with text world-baked.
  * Text may be null when the hull name field is empty.
- * Callers must await ensureShipGeometry() first when the solid may still be lazy.
+ * Pass hullGeometry to export against hex (or any solid) without swapping preview.
  */
-function cloneModelSpaceParts() {
-  if (!shipGeometry || !shipMesh) {
+function cloneModelSpaceParts(hullGeometry = shipGeometry) {
+  if (!hullGeometry || !shipMesh) {
     throw new Error("Model not ready — solid mesh still loading");
   }
   shipMesh.updateMatrixWorld(true);
 
-  const shipClone = shipGeometry.clone();
+  const shipClone = hullGeometry.clone();
   // Bake ship mesh local transform (identity today) into geometry.
   shipClone.applyMatrix4(shipMesh.matrix);
 
@@ -2492,12 +2583,13 @@ async function booleanRaiseUnion(shipGeo, textGeo) {
 }
 
 /**
- * @returns {Promise<{ mode: 'boolean'|'merged', geometry?: THREE.BufferGeometry, group?: THREE.Group, ship?: THREE.BufferGeometry, text?: THREE.BufferGeometry, note: string }>}
+ * @returns {Promise<{ mode: 'boolean'|'merged', geometry?: THREE.BufferGeometry, group?: THREE.Group, ship?: THREE.BufferGeometry, text?: THREE.BufferGeometry, note: string, hex?: boolean }>}
  */
-async function buildExportMeshes({ preferBoolean }) {
+async function buildExportMeshes({ preferBoolean, hullGeometry = null, hex = false }) {
   const scale = modelScale();
   const style = selectedStyle();
-  const { ship, text } = cloneModelSpaceParts();
+  const { ship, text } = cloneModelSpaceParts(hullGeometry || shipGeometry);
+  const hullLabel = hex ? "hex" : "smooth";
 
   if (!text) {
     applyScaleToGeometry(ship, scale);
@@ -2505,6 +2597,7 @@ async function buildExportMeshes({ preferBoolean }) {
     return {
       mode: "merged",
       geometry: ship,
+      hex,
       note: "Ship only — enter a hull name to add lettering.",
     };
   }
@@ -2522,10 +2615,11 @@ async function buildExportMeshes({ preferBoolean }) {
       return {
         mode: "boolean",
         geometry: fused,
+        hex,
         note:
           style === "engraved"
-            ? "Engraved with true boolean subtract."
-            : "Raised letters boolean-unioned into one solid (no floating letter parts).",
+            ? `Engraved into the ${hullLabel} hull (boolean subtract).`
+            : `Raised letters boolean-unioned into one ${hullLabel} solid (tile grooves preserved when hex).`,
       };
     } catch (err) {
       console.warn(
@@ -2548,10 +2642,10 @@ async function buildExportMeshes({ preferBoolean }) {
 
   const note =
     style === "engraved"
-      ? "Engraved boolean was not watertight — exported hull + raised letters (printable). Prefer Raised style or shallower depth for a clean cut."
-      : "Raised letters as a separate object (MMU). Empty-layer warnings on Letters are normal — the hull is continuous; or use STL for a single solid.";
+      ? `Engraved boolean was not watertight — exported ${hullLabel} hull + raised letters (printable). Prefer Raised style or shallower depth for a clean cut.`
+      : `Raised letters as a separate object on the ${hullLabel} hull (MMU). Empty-layer warnings on Letters are normal — the hull is continuous; or use STL for a single solid.`;
 
-  return { mode: "merged", group, ship, text, note };
+  return { mode: "merged", group, ship, text, hex, note };
 }
 
 function triggerDownload(blob, filename) {
@@ -2606,20 +2700,27 @@ async function downloadStl() {
       return;
     }
 
-    setStatus("Loading solid mesh for export…");
-    await ensureShipGeometry();
+    const { geometry: hullGeometry, hex } = await resolveExportHullGeometry();
     await yieldToUi(50);
 
     // STL is always a single solid when CSG succeeds (engrave subtract / raise union).
     const preferBoolean = true;
     setStatus(
-      selectedStyle() === "engraved"
-        ? "Boolean engraving… this can take a few seconds on large meshes."
-        : "Boolean-unioning raised letters… this can take a few seconds on large meshes."
+      hex
+        ? selectedStyle() === "engraved"
+          ? "Boolean engraving on hex mesh… this can take longer than the smooth hull."
+          : "Boolean-unioning letters onto hex tiles… this can take longer than the smooth hull."
+        : selectedStyle() === "engraved"
+          ? "Boolean engraving… this can take a few seconds on large meshes."
+          : "Boolean-unioning raised letters… this can take a few seconds on large meshes."
     );
     await yieldToUi(80);
 
-    const payload = await buildExportMeshes({ preferBoolean });
+    const payload = await buildExportMeshes({
+      preferBoolean,
+      hullGeometry,
+      hex,
+    });
     const exporter = new STLExporter();
     let buffer;
     if (payload.mode === "boolean" || payload.geometry) {
@@ -2633,7 +2734,7 @@ async function downloadStl() {
 
     triggerDownload(
       new Blob([buffer], { type: "model/stl" }),
-      `starship_${nameSlug()}.stl`
+      hex ? `starship_${nameSlug()}_hex.stl` : `starship_${nameSlug()}.stl`
     );
     writeUrl();
     setStatus(
@@ -2682,8 +2783,7 @@ async function download3mf() {
       return;
     }
 
-    setStatus("Loading solid mesh for export…");
-    await ensureShipGeometry();
+    const { geometry: hullGeometry, hex } = await resolveExportHullGeometry();
     await yieldToUi(50);
 
     const style = selectedStyle();
@@ -2696,9 +2796,17 @@ async function download3mf() {
     let hasLetters = false;
 
     if (style === "engraved") {
-      setStatus("Boolean engraving for 3MF… this can take a few seconds.");
+      setStatus(
+        hex
+          ? "Boolean engraving on hex mesh for 3MF…"
+          : "Boolean engraving for 3MF… this can take a few seconds."
+      );
       await yieldToUi(80);
-      const payload = await buildExportMeshes({ preferBoolean: true });
+      const payload = await buildExportMeshes({
+        preferBoolean: true,
+        hullGeometry,
+        hex,
+      });
       if (payload.mode === "boolean") {
         engravedSolid = true;
         hasLetters = true;
@@ -2728,7 +2836,8 @@ async function download3mf() {
             : "Packing 3MF (raised overlay — engraved cut wasn’t watertight)…"
       );
     } else {
-      const { ship: shipGeo, text } = cloneModelSpaceParts();
+      // Raised MMU: hex/smooth hull as-is + separate Letters (no boolean needed).
+      const { ship: shipGeo, text } = cloneModelSpaceParts(hullGeometry);
       applyScaleToGeometry(shipGeo, scale);
       if (text) applyScaleToGeometry(text, scale);
       parts = text
@@ -2739,7 +2848,11 @@ async function download3mf() {
         : [{ name: "Hull", geometry: shipGeo, color: hullColor }];
       hasLetters = Boolean(text);
       setStatus(
-        text ? "Packing multi-material 3MF…" : "Packing ship-only 3MF…"
+        text
+          ? hex
+            ? "Packing multi-material 3MF (hex hull)…"
+            : "Packing multi-material 3MF…"
+          : "Packing ship-only 3MF…"
       );
     }
 
@@ -2753,7 +2866,7 @@ async function download3mf() {
 
     triggerDownload(
       new Blob([zipped], { type: "model/3mf" }),
-      `starship_${nameSlug()}.3mf`
+      hex ? `starship_${nameSlug()}_hex.3mf` : `starship_${nameSlug()}.3mf`
     );
     writeUrl();
     setStatus(
@@ -2839,8 +2952,12 @@ async function downloadPng() {
 window.__starshipCaptureCover = captureCoverDataUrl;
 window.__starshipExportStl = async function exportStlBuffer() {
   await flushRebuild();
-  await ensureShipGeometry();
-  const payload = await buildExportMeshes({ preferBoolean: true });
+  const { geometry: hullGeometry, hex } = await resolveExportHullGeometry();
+  const payload = await buildExportMeshes({
+    preferBoolean: true,
+    hullGeometry,
+    hex,
+  });
   const exporter = new STLExporter();
   let buffer;
   if (payload.mode === "boolean" || payload.geometry) {
@@ -3073,7 +3190,12 @@ async function boot() {
   el.mirrorLetters?.addEventListener("change", onControlChange);
   el.italic?.addEventListener("change", onControlChange);
   el.bareStainless?.addEventListener("change", () => {
+    syncHexTilesExportControl();
     applyColor();
+    updateDownloadLabels();
+    writeUrl();
+  });
+  el.hexTilesExport?.addEventListener("change", () => {
     updateDownloadLabels();
     writeUrl();
   });
