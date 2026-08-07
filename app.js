@@ -5,14 +5,14 @@ import { STLExporter } from "three/addons/exporters/STLExporter.js";
 import { FontLoader } from "three/addons/loaders/FontLoader.js";
 import { TextGeometry } from "three/addons/geometries/TextGeometry.js";
 import { Brush, Evaluator, SUBTRACTION, HOLLOW_SUBTRACTION } from "three-bvh-csg";
-import { build3mf } from "./export3mf.js?v=2.4.40";
+import { build3mf } from "./export3mf.js?v=2.4.41";
 import {
   APP_NAME,
   APP_VERSION,
   AUTHOR,
   creditLine,
   versionLabel,
-} from "./version.js?v=2.4.40";
+} from "./version.js?v=2.4.41";
 
 const CACHE_BUST = APP_VERSION;
 
@@ -476,6 +476,7 @@ const el = {
   scale: document.getElementById("scale"),
   wrap: document.getElementById("wrap"),
   reverseDir: document.getElementById("reverse-dir"),
+  mirrorLetters: document.getElementById("mirror-letters"),
   italic: document.getElementById("italic"),
   bareStainless: document.getElementById("bare-stainless"),
   bareStainlessField: document.getElementById("bare-stainless-field"),
@@ -1437,13 +1438,51 @@ function buildFlatTextGeometry(text, size, extrudeMm) {
   if (el.reverseDir?.checked) {
     geometry.rotateZ(Math.PI);
   }
+  // Mirror: flip glyph handedness so the column reads left→right from the side.
+  if (el.mirrorLetters?.checked) {
+    mirrorLettersInPlane(geometry);
+  }
   // Flight-style italic: slant tops toward the nose (+Y), matching S40 FS-13.
   if (el.italic?.checked) {
-    // After reverse, letter tops sit on −X — flip shear sign so they still
-    // lean toward the nose.
-    applyFlightItalicShear(geometry, el.reverseDir?.checked ? -1 : 1);
+    // Reverse and/or mirror move letter tops onto −X — flip shear so they
+    // still lean toward the nose.
+    const flips =
+      (el.reverseDir?.checked ? 1 : 0) + (el.mirrorLetters?.checked ? 1 : 0);
+    applyFlightItalicShear(geometry, flips % 2 === 1 ? -1 : 1);
   }
   return geometry;
+}
+
+/** Flip glyph handedness in the letter plane (keep extrude +Z / winding OK). */
+function mirrorLettersInPlane(geometry) {
+  const pos = geometry.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    pos.setX(i, -pos.getX(i));
+  }
+  pos.needsUpdate = true;
+  if (geometry.index) {
+    const a = geometry.index.array;
+    for (let i = 0; i < a.length; i += 3) {
+      const t = a[i + 1];
+      a[i + 1] = a[i + 2];
+      a[i + 2] = t;
+    }
+    geometry.index.needsUpdate = true;
+  } else {
+    const arr = pos.array;
+    for (let i = 0; i < arr.length; i += 9) {
+      // Swap vertex 1 and 2 of each triangle.
+      let t0 = arr[i + 3];
+      let t1 = arr[i + 4];
+      let t2 = arr[i + 5];
+      arr[i + 3] = arr[i + 6];
+      arr[i + 4] = arr[i + 7];
+      arr[i + 5] = arr[i + 8];
+      arr[i + 6] = t0;
+      arr[i + 7] = t1;
+      arr[i + 8] = t2;
+    }
+  }
 }
 
 /** ~12° shear — bold stencil look without needing an italic typeface file. */
@@ -1991,6 +2030,7 @@ function readState() {
     style: selectedStyle(),
     wrap: el.wrap.checked ? "1" : "0",
     reverse: el.reverseDir?.checked ? "1" : "0",
+    mirror: el.mirrorLetters?.checked ? "1" : "0",
     italic: el.italic?.checked ? "1" : "0",
     bare: el.bareStainless?.checked ? "1" : "0",
   };
@@ -2045,6 +2085,10 @@ function applyState(state) {
     el.reverseDir.checked =
       state.reverse === "1" || state.reverse === "true";
   }
+  if (el.mirrorLetters) {
+    el.mirrorLetters.checked =
+      state.mirror === "1" || state.mirror === "true";
+  }
   if (el.italic) {
     // Default OFF. Only enable when the share URL explicitly asks for italic=1
     // (old bookmarks from when italic was the default must not stick).
@@ -2078,6 +2122,7 @@ function stateFromUrl() {
     "style",
     "wrap",
     "reverse",
+    "mirror",
     "italic",
     "bare",
   ]) {
@@ -2102,6 +2147,7 @@ function writeUrl(replace = true) {
   q.set("style", s.style);
   q.set("wrap", s.wrap);
   if (s.reverse === "1") q.set("reverse", "1");
+  if (s.mirror === "1") q.set("mirror", "1");
   if (s.italic === "1") q.set("italic", "1");
   if (s.bare === "1") q.set("bare", "1");
   const url = `${window.location.pathname}?${q.toString()}`;
@@ -2757,6 +2803,7 @@ async function boot() {
   }
   el.wrap.addEventListener("change", onControlChange);
   el.reverseDir?.addEventListener("change", onControlChange);
+  el.mirrorLetters?.addEventListener("change", onControlChange);
   el.italic?.addEventListener("change", onControlChange);
   el.bareStainless?.addEventListener("change", () => {
     applyColor();
